@@ -1,1 +1,1 @@
-git push origin origin/main:refs/heads/webapp --force
+git fetch; git push origin origin/main:refs/heads/webapp --force
