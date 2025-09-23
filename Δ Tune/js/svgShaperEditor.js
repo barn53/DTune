@@ -89,24 +89,15 @@ class SVGShaperEditor {
 
         // Connect UI components save method to attribute system
         this.uiComponents.saveAttributes = () => {
-            const currentSelectedPath = this.elementManager.getSelectedPath();
             this.attributeSystem.saveAttributes();
-            
+
             // Update SVG data to match what would be exported, then save to localStorage
             this.fileManager.updateSVGData();
             this.saveToLocalStorage();
-            
-            // Close modal but preserve selection temporarily for tooltip refresh
-            this.uiComponents.closeModal(false);
-            
-            // Refresh tooltip with updated attributes, then clear selection
-            if (currentSelectedPath) {
-                this.uiComponents.refreshTooltipIfVisible();
-                // Clear selection after tooltip refresh
-                setTimeout(() => {
-                    this.elementManager.selectPath(null);
-                }, 100);
-            }
+
+            // Refresh tooltip BEFORE closing modal (while selection is still active)
+            this.uiComponents.refreshTooltipIfVisible();
+            this.uiComponents.closeModal();
         };
 
         // Provide access to utility methods

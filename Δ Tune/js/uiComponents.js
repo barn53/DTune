@@ -38,12 +38,9 @@ class UIComponents {
         this.modal.style.display = 'flex';
     }
 
-    closeModal(clearSelection = true) {
+    closeModal() {
         this.modal.style.display = 'none';
-        
-        if (clearSelection) {
-            this.elementManager.selectPath(null);
-        }
+        this.elementManager.selectPath(null);
 
         // Clear form
         document.getElementById('cutDepth').value = '';
@@ -334,51 +331,12 @@ class UIComponents {
         if (this.tooltip && this.tooltip.style.display !== 'none' && this.tooltip.classList.contains('visible')) {
             const currentPath = this.elementManager.getHoveredPath() || this.elementManager.getSelectedPath();
             if (currentPath) {
-                // Update tooltip content immediately without hiding/showing animation
+                // Simply re-show the tooltip with updated content
                 const mousePos = { x: this.lastMouseX || 0, y: this.lastMouseY || 0 };
-                
-                // Get fresh tooltip content
-                let content = '<div class="tooltip-title">Element Info</div>';
-
-                // Add measurements section
-                const measurements = this.elementManager.getElementMeasurements(currentPath);
-                if (measurements.length > 0) {
-                    content += '<div class="tooltip-section"><div class="section-title">Measurements</div>';
-                    measurements.forEach(measurement => {
-                        content += `
-                            <div class="tooltip-measurement">
-                                <span class="measurement-name">${measurement.name}:</span>
-                                <span class="measurement-value">${measurement.value}</span>
-                            </div>`;
-                    });
-                    content += '</div>';
-                }
-
-                // Add shaper attributes section with fresh data
-                content += '<div class="tooltip-section"><div class="section-title">Shaper Attributes</div>';
-                const attributes = this.getShaperAttributes(currentPath);
-
-                if (attributes.length === 0) {
-                    content += '<div class="no-attributes">No shaper attributes defined<br>- click to change</div>';
-                } else {
-                    attributes.forEach(attr => {
-                        content += `
-                            <div class="tooltip-attribute">
-                                <span class="attr-name">${attr.name}:</span>
-                                <span class="attr-value">${attr.value}</span>
-                            </div>`;
-                    });
-                }
-                content += '</div>';
-
-                // Update tooltip content and position without hiding/showing
-                this.tooltip.innerHTML = content;
-                this.updateTooltipPosition(mousePos.x, mousePos.y);
+                this.showTooltip(currentPath, mousePos.x, mousePos.y);
             }
         }
-    }
-
-    // Shaper attributes helper
+    }    // Shaper attributes helper
     getShaperAttributes(path) {
         const attributes = [];
         const shaperNamespace = 'http://www.shapertools.com/namespaces/shaper';
