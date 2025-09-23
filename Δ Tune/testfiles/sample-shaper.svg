@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Example paths with Shaper attributes -->
+    <path d="M50,50 L150,50 L150,150 L50,150 Z" fill="none" stroke="black" stroke-width="1" />
+
+    <circle cx="250" cy="100" r="40" fill="none" stroke="blue" stroke-width="2" />
+
+    <rect x="300" y="180" width="80" height="60" fill="none" stroke="red" stroke-width="1.5" />
+
+    <path d="M80,200 Q120,160 160,200 T240,200" fill="none" stroke="green" stroke-width="2" />
+
+    <!-- Added line element -->
+    <line x1="50" y1="250" x2="200" y2="280" stroke="purple" stroke-width="2" />
+
+    <!-- Added ellipse element -->
+    <ellipse cx="320" cy="120" rx="60" ry="30" fill="none" stroke="orange" stroke-width="2" />
+
+</svg>

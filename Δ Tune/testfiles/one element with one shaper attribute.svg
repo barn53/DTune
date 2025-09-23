@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"
+    xmlns:shaper="http://www.shapertools.com/namespaces/shaper">
+
+    <rect x="200" y="20" width="30" height="30" fill="none" stroke="darkorange" stroke-width="1"
+        shaper:cutDepth="3.5mm" />
+
+</svg>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"
+    xmlns:shaper="http://www.shapertools.com/namespaces/shaper">
+
+    <!-- Example paths with properly namespaced Shaper attributes -->
+    <path d="M50,50 L150,50 L150,150 L50,150 Z" fill="none" stroke="black" stroke-width="1" shaper:cutType="online"
+        shaper:cutDepth="3.0mm" shaper:cutOffset="0mm" shaper:toolDia="6.35mm" />
+
+    <circle cx="250" cy="100" r="40" fill="none" stroke="blue" stroke-width="2" shaper:cutType="inside"
+        shaper:cutDepth="1.5mm" shaper:toolDia="3.175mm" />
+
+    <rect x="300" y="180" width="80" height="60" fill="none" stroke="red" stroke-width="1.5" shaper:cutType="pocket"
+        shaper:cutDepth="5mm" shaper:cutOffset="1mm" shaper:toolDia="6mm" />
+
+    <rect x="100" y="180" width="30" height="30" fill="none" stroke="red" stroke-width="1.5" />
+
+    <rect x="200" y="20" width="30" height="30" fill="none" stroke="darkorange" stroke-width="1"
+        shaper:cutDepth="5mm" />
+
+</svg>

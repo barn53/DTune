@@ -1,0 +1,1311 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+/* Utility Classes */
+.rounded-sm {
+    border-radius: 4px;
+}
+
+.rounded {
+    border-radius: 8px;
+}
+
+.rounded-pill {
+    border-radius: 20px;
+}
+
+.rounded-full {
+    border-radius: 50%;
+}
+
+.shadow-sm {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.shadow-pill {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.shadow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.transition-base {
+    transition: all 0.2s ease;
+}
+
+.bg-light-grey {
+    background: #e8e8e8;
+}
+
+.bg-hover-grey {
+    background: #d0d0d0;
+}
+
+.border-light {
+    border: none;
+}
+
+/* Flexbox utilities */
+.flex {
+    display: flex;
+}
+
+.inline-flex {
+    display: inline-flex;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-center-y {
+    display: flex;
+    align-items: center;
+}
+
+.flex-center-x {
+    display: flex;
+    justify-content: center;
+}
+
+/* Color utilities */
+.text-primary {
+    color: #333;
+}
+
+.text-secondary {
+    color: #666;
+}
+
+.text-muted {
+    color: #495057;
+}
+
+/* Complete pill styling - background + shadow + border-radius + transition + height */
+.pill-style {
+    background: #e8e8e8;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pill-style:hover {
+    background: #d0d0d0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    color: white;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Upload Section */
+.upload-section {
+    min-height: 60vh;
+    /* Uses .flex-center utility */
+}
+
+.upload-area {
+    background: white;
+    border: 3px dashed #667eea;
+    border-radius: 20px;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    max-width: 500px;
+    width: 100%;
+}
+
+.upload-area:hover {
+    border-color: #764ba2;
+    background: #f8f9ff;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+}
+
+.upload-area.dragover {
+    border-color: #764ba2;
+    background: #f0f2ff;
+    transform: scale(1.02);
+}
+
+/* Drag over state - used in fileManager.js */
+.upload-area.drag-over {
+    border-color: #764ba2;
+    background: #f0f2ff;
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.upload-area h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.upload-area p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Buttons */
+.btn {
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    /* Uses utility classes: .rounded .transition-fast */
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    color: #333;
+    /* Uses utility class: .border-light */
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+/* Upload button - uses same styling as btn-primary */
+.upload-btn {
+    background: #667eea;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Editor Section */
+.editor-section {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+/* Toolbar */
+.toolbar {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.current-file-name-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    background: rgba(20, 20, 20, 0.8);
+    color: #ddd;
+    font-size: 11px;
+    font-weight: 400;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    backdrop-filter: blur(2px);
+    display: none;
+}
+
+.current-file-name-overlay::before {
+    content: "📄 ";
+    margin-right: 4px;
+    font-size: 10px;
+}
+
+.toolbar-right {
+    gap: 25px;
+    font-size: 14px;
+    /* Uses .flex-center-y utility */
+}
+
+/* Zoom level display in toolbar */
+/* REMOVED - Uses generic .label-pill-group system */
+
+/* Unified toolbar label styling */
+.toolbar-label {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.0;
+    margin: 0;
+    display: inline-block;
+    vertical-align: baseline;
+    /* Uses .text-secondary utility */
+}
+
+/* Label-Pill Component System */
+.label-pill-group {
+    display: inline-block;
+    vertical-align: baseline;
+    position: relative;
+    top: 0px;
+    /* Perfect alignment - no offset needed */
+    /* Compensate for parent flex center alignment */
+}
+
+.label-pill-label {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 32px;
+    /* Match pill height for perfect alignment */
+    margin: 0;
+    margin-right: 10px;
+    display: inline-block;
+    vertical-align: baseline;
+}
+
+.pill-baseline {
+    /* Pill styling with baseline alignment for toolbar text elements */
+    width: 75px;
+    display: inline-block;
+    text-align: center;
+    line-height: 32px;
+    vertical-align: baseline;
+    padding: 0;
+    margin: 0;
+    transform: translateY(0);
+    position: static;
+    /* Reset to natural baseline alignment */
+}
+
+/* Button Component System */
+.btn-base {
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* Use with .rounded, .transition-base, color utilities */
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+/* Input Component System */
+.input-base {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    outline: none;
+    /* Use with .rounded-sm, .transition-base */
+}
+
+.input-base:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Floating Element System */
+.floating-base {
+    position: fixed;
+    z-index: 1000;
+    /* Use with .shadow-sm, .rounded-full, .bg-light-grey */
+}
+
+.floating-left {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.floating-right {
+    right: 20px;
+    bottom: 20px;
+}
+
+/* Toolbar Component System */
+.toolbar-base {
+    height: 60px;
+    padding: 0 20px;
+    border-bottom: 1px solid #e2e8f0;
+    /* Use with .flex-center-y, .bg-white */
+}
+
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: #e2e8f0;
+    margin: 0 8px;
+}
+
+/* REMOVED - Uses generic .pill-baseline class with font-weight: 600; font-size: 16px; width: 65px; applied inline or via utility */
+
+.toolbar-right input[type="text"] {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 14px;
+    /* Uses utility classes: .border-light .rounded-sm */
+}
+
+.gutter-input-container {
+    position: relative;
+    display: inline-block;
+}
+
+.gutter-input-container input {
+    width: 120px !important;
+    padding: 0 32px 0 12px;
+    font-size: 14px;
+    border: none;
+    background: white;
+    text-align: center;
+    /* Uses .pill-style utility class for height and alignment */
+}
+
+.gutter-input-container input:focus {
+    outline: none;
+    background: #d0d0d0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.unit-suffix {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+/* Unified Toggle System */
+.toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Uses .flex-center-y utility */
+}
+
+.toggle-label-pill-align {
+    transform: translateY(4px);
+}
+
+.toggle-switch {
+    display: none;
+}
+
+.toggle-button {
+    position: relative;
+    width: 80px;
+    cursor: pointer;
+    overflow: hidden;
+    transform: translateY(2px);
+    /* Uses .pill-style utility class for height, display, and alignment */
+}
+
+.toggle-button.toggle-narrow {
+    width: 70px;
+}
+
+.toggle-text {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.toggle-button .toggle-text.left {
+    left: 0;
+    color: #ffffff;
+    width: 50%;
+}
+
+.toggle-button .toggle-text.right {
+    right: 0;
+    color: #6c757d;
+    width: 50%;
+}
+
+.toggle-button.toggle-narrow .toggle-text {
+    font-size: 18px;
+    font-weight: 600;
+    width: 50%;
+}
+
+.toggle-button.toggle-with-label .toggle-text {
+    font-size: 12px;
+    width: 50%;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 32px;
+    transition: all 0.2s ease;
+    border-radius: 15px;
+    z-index: 1;
+}
+
+.toggle-button .toggle-slider {
+    width: 50%;
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    box-shadow: 0 1px 3px rgba(0, 123, 255, 0.4);
+}
+
+.toggle-button.toggle-narrow .toggle-slider {
+    background: linear-gradient(145deg, #6f42c1, #5a2d8f);
+    box-shadow: 0 1px 3px rgba(111, 66, 193, 0.4);
+}
+
+.toggle-button.toggle-with-label .toggle-slider {
+    background: linear-gradient(145deg, #dc3545, #c82333);
+    box-shadow: 0 1px 3px rgba(220, 53, 69, 0.4);
+}
+
+/* Checked states */
+.toggle-switch:checked+.toggle-button .toggle-slider {
+    transform: translateX(calc(100% + 2px));
+}
+
+.toggle-switch:checked+.toggle-button .toggle-text.left {
+    color: #6c757d;
+}
+
+.toggle-switch:checked+.toggle-button .toggle-text.right {
+    color: #ffffff;
+}
+
+.toggle-switch:checked+.toggle-button .toggle-slider {
+    background: linear-gradient(145deg, #28a745, #1e7e34);
+    box-shadow: 0 1px 3px rgba(40, 167, 69, 0.4);
+}
+
+.toggle-switch:checked+.toggle-button.toggle-narrow .toggle-slider {
+    background: linear-gradient(145deg, #fd7e14, #e8630c);
+    box-shadow: 0 1px 3px rgba(253, 126, 20, 0.4);
+}
+
+.toggle-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* SVG Container */
+.svg-container {
+    position: relative;
+    height: 70vh;
+    background: transparent !important;
+    overflow: hidden;
+}
+
+.svg-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.svg-wrapper.dragging {
+    cursor: grabbing;
+}
+
+.svg-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-origin: center center;
+}
+
+.svg-content svg {
+    max-width: 100%;
+    max-height: 100%;
+    user-select: none;
+    background: transparent !important;
+    fill: none !important;
+}
+
+.svg-content svg path,
+.svg-content svg circle,
+.svg-content svg rect,
+.svg-content svg ellipse,
+.svg-content svg line,
+.svg-content svg polyline,
+.svg-content svg polygon {
+    transition: all 0.3s ease !important;
+    pointer-events: none;
+}
+
+/* Override pointer-events for overlay elements */
+.svg-content svg .no-export {
+    pointer-events: all !important;
+}
+
+.svg-content svg .path-overlay {
+    fill: none !important;
+    stroke: transparent !important;
+    stroke-width: 8 !important;
+    pointer-events: all !important;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.svg-content svg path.hover-active,
+.svg-content svg circle.hover-active,
+.svg-content svg rect.hover-active,
+.svg-content svg ellipse.hover-active,
+.svg-content svg line.hover-active,
+.svg-content svg polyline.hover-active,
+.svg-content svg polygon.hover-active {
+    stroke: #8fa4f3 !important;
+    stroke-width: 2 !important;
+    filter: drop-shadow(0 0 3px rgba(143, 164, 243, 0.5)) !important;
+}
+
+.svg-content svg path.selected,
+.svg-content svg circle.selected,
+.svg-content svg rect.selected,
+.svg-content svg ellipse.selected,
+.svg-content svg line.selected,
+.svg-content svg polyline.selected,
+.svg-content svg polygon.selected {
+    stroke: #667eea !important;
+    stroke-width: 4 !important;
+    filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.9)) drop-shadow(0 0 24px rgba(102, 126, 234, 0.5)) brightness(1.15);
+    transform: scale(1.03);
+    animation: selectedPulse 2s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.9)) drop-shadow(0 0 24px rgba(102, 126, 234, 0.5)) brightness(1.15);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 16px rgba(102, 126, 234, 1)) drop-shadow(0 0 32px rgba(102, 126, 234, 0.7)) brightness(1.25);
+    }
+}
+
+/* SVG Boundary Outline */
+.svg-boundary-outline {
+    fill: none !important;
+    stroke: rgba(50, 205, 50, 0.4) !important;
+    stroke-width: 2 !important;
+    stroke-dasharray: 6, 3 !important;
+    pointer-events: none !important;
+    transition: stroke 0.2s ease !important;
+}
+
+.svg-boundary-outline.boundary-highlight {
+    stroke: rgba(50, 205, 50, 0.8) !important;
+    stroke-width: 2 !important;
+}
+
+/* Boundary overlay - visible wider hit area for boundary interaction */
+.boundary-overlay {
+    pointer-events: all !important;
+    cursor: pointer !important;
+    /* Let JavaScript handle the visual styling for debugging */
+}
+
+/* Gutter Overlay */
+.gutter-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(192, 192, 192, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(192, 192, 192, 0.4) 1px, transparent 1px);
+    background-size: 10px 10px;
+}
+
+.gutter-intersection {
+    border-radius: 1px;
+    box-sizing: border-box;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 100;
+}
+
+/* Zoom button specific styles (inherits from .floating-btn) */
+.zoom-btn {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.2;
+    text-align: center;
+    padding-top: 2px;
+    /* Adjust text position down slightly */
+}
+
+/* Specific positioning for plus and minus symbols */
+#zoomOut {
+    margin-top: -1px;
+    /* Move minus symbol 1px up for better alignment */
+}
+
+/* Remove redundant zoom-btn hover/active since they inherit from floating-btn */
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+    max-width: 650px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    padding: 20px 20px 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.path-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    /* Uses utility classes: .border-light .transition-fast */
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Placeholder styling */
+.form-group input::placeholder,
+.gutter-input-container input::placeholder,
+.toolbar-right input[type="text"]::placeholder {
+    color: #adb5bd;
+    opacity: 0.7;
+}
+
+.input-with-unit {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.input-with-unit input {
+    padding-right: 35px !important;
+    width: 100%;
+}
+
+.input-unit {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    pointer-events: none;
+    background: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Cut Type Slider */
+.cut-type-slider {
+    position: relative;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.cut-type-options {
+    display: flex;
+    position: relative;
+    z-index: 2;
+}
+
+.cut-type-option {
+    flex: 1;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+    text-align: center;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+.cut-type-option:hover {
+    color: #495057;
+}
+
+.cut-type-option.active {
+    color: white;
+}
+
+.cut-type-indicator {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    height: calc(100% - 8px);
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+    z-index: 1;
+}
+
+/* Tooltip for shaper attributes */
+.shaper-tooltip {
+    position: absolute;
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-weight: 500;
+    line-height: 1.5;
+    max-width: 280px;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.shaper-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.shaper-tooltip .tooltip-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 6px;
+}
+
+.shaper-tooltip .tooltip-attribute {
+    margin: 4px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shaper-tooltip .attr-name {
+    color: #bdc3c7;
+    font-weight: 600;
+}
+
+.shaper-tooltip .attr-value {
+    color: #ffffff;
+    font-weight: 700;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.shaper-tooltip .no-attributes {
+    color: #95a5a6;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.shaper-tooltip .tooltip-section {
+    margin-bottom: 12px;
+}
+
+.shaper-tooltip .tooltip-section:last-child {
+    margin-bottom: 0;
+}
+
+.shaper-tooltip .section-title {
+    font-weight: 700;
+    color: #ecf0f1;
+    font-size: 12px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid rgba(236, 240, 241, 0.3);
+    padding-bottom: 4px;
+}
+
+.shaper-tooltip .tooltip-measurement {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 13px;
+}
+
+.shaper-tooltip .measurement-name {
+    color: #bdc3c7;
+    font-weight: 600;
+}
+
+.shaper-tooltip .measurement-value {
+    color: #f39c12;
+    font-weight: 700;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Floating Action Buttons */
+.floating-buttons {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.floating-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    position: relative;
+    line-height: 1.2;
+    text-align: center;
+    padding-top: 1px;
+    /* Slight adjustment for text positioning */
+    /* Using utility classes */
+}
+
+.floating-btn:hover {
+    transform: scale(1.1);
+}
+
+.bg-light-grey:hover {
+    background: #d0d0d0 !important;
+}
+
+.shadow-sm:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.floating-btn:active {
+    transform: scale(0.95);
+}
+
+.floating-btn-icon {
+    width: 16px;
+    height: 16px;
+    fill: #000;
+    stroke: none;
+}
+
+/* Specific styling for import icon */
+.floating-btn-icon.import-icon {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    /* Override default fill since the SVG has its own fill */
+}
+
+.floating-btn-icon.import-icon path {
+    fill: #000;
+    /* Black fill for import icon paths */
+}
+
+/* Specific styling for export icon */
+.floating-btn-icon.export-icon {
+    fill: none;
+    /* Override default fill since the SVG has its own fill */
+}
+
+/* Reusable Tooltip Classes */
+.tooltip-base::before {
+    content: attr(title);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1001;
+}
+
+.tooltip-base:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip-base::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.tooltip-base:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Tooltip Right Direction */
+.tooltip-right::before {
+    left: 50px;
+}
+
+.tooltip-right::after {
+    left: 40px;
+    border-right: 8px solid rgba(0, 0, 0, 0.8);
+}
+
+/* Tooltip Left Direction */
+.tooltip-left::before {
+    right: 50px;
+}
+
+.tooltip-left::after {
+    right: 40px;
+    border-left: 8px solid rgba(0, 0, 0, 0.8);
+}
+
+.floating-btn-icon.export-icon path {
+    fill: #000;
+    /* Black fill for export icon paths */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 2rem;
+    }
+
+    .upload-area {
+        padding: 40px 20px;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-right {
+        justify-content: center;
+    }
+
+    .svg-container {
+        height: 50vh;
+    }
+
+    .zoom-controls {
+        position: relative;
+        margin: 10px auto;
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .modal-content {
+        margin: 20px;
+        width: calc(100% - 40px);
+    }
+
+    /* Adjust floating buttons for mobile */
+    .floating-buttons {
+        left: 10px;
+        gap: 10px;
+    }
+
+    .floating-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .floating-btn-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .floating-btn-icon.import-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .floating-btn::before {
+        left: 46px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .floating-btn::after {
+        left: 36px;
+    }
+
+    /* Mobile tooltip styles */
+    .tooltip-right::before {
+        left: 46px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .tooltip-right::after {
+        left: 36px;
+    }
+
+    .tooltip-left::before {
+        right: 46px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .tooltip-left::after {
+        right: 36px;
+    }
+}
