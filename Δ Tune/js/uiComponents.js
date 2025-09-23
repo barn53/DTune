@@ -38,9 +38,12 @@ class UIComponents {
         this.modal.style.display = 'flex';
     }
 
-    closeModal() {
+    closeModal(clearSelection = true) {
         this.modal.style.display = 'none';
-        this.elementManager.selectPath(null);
+        
+        if (clearSelection) {
+            this.elementManager.selectPath(null);
+        }
 
         // Clear form
         document.getElementById('cutDepth').value = '';
@@ -328,12 +331,49 @@ class UIComponents {
     // Refresh tooltip if currently visible (for immediate updates after saving)
     refreshTooltipIfVisible() {
         // Check if tooltip is currently visible
-        if (this.tooltip && this.tooltip.style.display !== 'none') {
+        if (this.tooltip && this.tooltip.style.display !== 'none' && this.tooltip.classList.contains('visible')) {
             const currentPath = this.elementManager.getHoveredPath() || this.elementManager.getSelectedPath();
             if (currentPath) {
-                // Update tooltip content immediately
+                // Update tooltip content immediately without hiding/showing animation
                 const mousePos = { x: this.lastMouseX || 0, y: this.lastMouseY || 0 };
-                this.showTooltip(currentPath, mousePos.x, mousePos.y);
+                
+                // Get fresh tooltip content
+                let content = '<div class="tooltip-title">Element Info</div>';
+
+                // Add measurements section
+                const measurements = this.elementManager.getElementMeasurements(currentPath);
+                if (measurements.length > 0) {
+                    content += '<div class="tooltip-section"><div class="section-title">Measurements</div>';
+                    measurements.forEach(measurement => {
+                        content += `
+                            <div class="tooltip-measurement">
+                                <span class="measurement-name">${measurement.name}:</span>
+                                <span class="measurement-value">${measurement.value}</span>
+                            </div>`;
+                    });
+                    content += '</div>';
+                }
+
+                // Add shaper attributes section with fresh data
+                content += '<div class="tooltip-section"><div class="section-title">Shaper Attributes</div>';
+                const attributes = this.getShaperAttributes(currentPath);
+
+                if (attributes.length === 0) {
+                    content += '<div class="no-attributes">No shaper attributes defined<br>- click to change</div>';
+                } else {
+                    attributes.forEach(attr => {
+                        content += `
+                            <div class="tooltip-attribute">
+                                <span class="attr-name">${attr.name}:</span>
+                                <span class="attr-value">${attr.value}</span>
+                            </div>`;
+                    });
+                }
+                content += '</div>';
+
+                // Update tooltip content and position without hiding/showing
+                this.tooltip.innerHTML = content;
+                this.updateTooltipPosition(mousePos.x, mousePos.y);
             }
         }
     }
@@ -346,14 +386,19 @@ class UIComponents {
         // Check for proper shaper:* namespaced attributes
         const shaperAttrs = ['cutDepth', 'cutOffset', 'toolDia', 'cutType'];
 
-        // First, check if any numeric attributes are set
+        // First, check if any numeric attributes are set (check both namespaced and raw attributes)
         const hasAnyNumericAttribute = ['cutDepth', 'cutOffset', 'toolDia'].some(attrName => {
-            const value = path.getAttributeNS(shaperNamespace, attrName);
-            return value && value.trim() !== '';
+            // Check namespaced attribute
+            const namespacedValue = path.getAttributeNS(shaperNamespace, attrName);
+            // Check raw attribute
+            const rawValue = path.getAttribute(`shaper-${attrName}-raw-mm`);
+            return (namespacedValue && namespacedValue.trim() !== '') || (rawValue && rawValue.trim() !== '');
         });
 
-        // Also check if cutType is set
-        const hasCutType = path.getAttributeNS(shaperNamespace, 'cutType') && path.getAttributeNS(shaperNamespace, 'cutType').trim() !== '';
+        // Also check if cutType is set (check both namespaced and raw)
+        const namespacedCutType = path.getAttributeNS(shaperNamespace, 'cutType');
+        const rawCutType = path.getAttribute('shaper-cutType-raw');
+        const hasCutType = (namespacedCutType && namespacedCutType.trim() !== '') || (rawCutType && rawCutType.trim() !== '');
 
         // If no attributes are set at all, return empty array (will show "no attributes" message)
         if (!hasAnyNumericAttribute && !hasCutType) {
