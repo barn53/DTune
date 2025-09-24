@@ -114,6 +114,11 @@ body {
 .pill-style:hover {
     background: #d0d0d0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: scale(1.1);
+    }
+    
+    .pill-style:active {
+        transform: scale(0.95);
 }
 
 .container {
@@ -317,25 +322,27 @@ header p {
 
 /* Label-Pill Component System */
 .label-pill-group {
-    display: inline-block;
-    vertical-align: baseline;
-    position: relative;
-    top: 0px;
-    /* Perfect alignment - no offset needed */
-    /* Compensate for parent flex center alignment */
+    display: inline-flex;
+        align-items: center;
+        vertical-align: middle;
 }
 
 .label-pill-label {
-    font-weight: 500;
-    font-size: 14px;
-    line-height: 32px;
-    /* Match pill height for perfect alignment */
-    margin: 0;
-    margin-right: 10px;
-    display: inline-block;
-    vertical-align: baseline;
+    vertical-align: middle;
+        margin-bottom: 0;
 }
 
+.label-pill-label {
+    margin-right: 14px;
+}
+
+/* Remove label hover/focus styles completely */
+.label-pill-label:hover,
+.label-pill-label:focus {
+    background: none !important;
+    color: inherit !important;
+    cursor: default;
+}
 .pill-baseline {
     /* Pill styling with baseline alignment for toolbar text elements */
     width: 75px;
@@ -448,39 +455,94 @@ header p {
     width: 60px;
     padding: 4px 8px;
     font-size: 14px;
+    background: white !important;
+        /* Don't inherit grey from pill-style hover */
+        transition: all 0.2s ease;
     /* Uses utility classes: .border-light .rounded-sm */
 }
 
+/* Proper wrapper scaling approach - common UI pattern */
+.toolbar-right input[type="text"] {
+    transform: none !important;
+    /* Never scale the input itself */
+}
+
+/* Scale the gutter container wrapper, not the input */
+.gutter-input-container:hover {
+    transform: scale(1.1);
+    background: #f0f0f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.gutter-input-container:focus-within {
+    transform: scale(1.1);
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
 .gutter-input-container {
     position: relative;
-    display: inline-block;
+    min-width: 120px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        vertical-align: middle;
+        border-radius: 20px;
+        background: #e8e8e8;
+        transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1), background 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        margin-top: 2px;
+        /* moved down an extra pixel */
+    }
+    
+    .gutter-input-container:hover,
+    .gutter-input-container:focus-within {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .gutter-input-container input {
-    width: 120px !important;
-    padding: 0 32px 0 12px;
+    width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 0 38px 0 12px !important;
+        height: 32px;
+        line-height: 32px;
     font-size: 14px;
-    border: none;
-    background: white;
-    text-align: center;
-    /* Uses .pill-style utility class for height and alignment */
-}
-
-.gutter-input-container input:focus {
-    outline: none;
-    background: #d0d0d0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: white !important;
+        border: none !important;
+        outline: none !important;
+        text-align: right;
+        transition: background 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: none !important;
+        position: relative;
+        z-index: 1;
+        transform: none !important;
+        vertical-align: middle;
+        flex: 1 1 auto;
+        overflow-x: auto;
+        white-space: nowrap;
 }
 
 .unit-suffix {
     position: absolute;
-    right: 6px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 11px;
+    font-size: 12px;
     color: #6c757d;
-    font-weight: 500;
+    font-weight: 600;
     pointer-events: none;
+    background: transparent;
+        padding-left: 2px;
+        padding-right: 2px;
+        border-radius: 3px;
+        z-index: 2;
+        display: block !important;
+        opacity: 1 !important;
+        text-align: left;
+        width: 22px;
 }
 
 /* Unified Toggle System */
@@ -504,7 +566,8 @@ header p {
     width: 80px;
     cursor: pointer;
     overflow: hidden;
-    transform: translateY(2px);
+    transform: translateY(1px);
+        /* was 2px, move up 1px */
     /* Uses .pill-style utility class for height, display, and alignment */
 }
 
@@ -512,6 +575,10 @@ header p {
     width: 70px;
 }
 
+.toggle-button:hover {
+    transform: translateY(1px) scale(1.1);
+    /* keep consistent on hover */
+}
 .toggle-text {
     position: absolute;
     top: 0;
@@ -599,7 +666,7 @@ header p {
 }
 
 .toggle-button:active {
-    transform: translateY(1px);
+    transform: translateY(2px) scale(0.95);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -1109,10 +1176,20 @@ header p {
 
 .floating-btn:hover {
     transform: scale(1.1);
+    background: #007bff !important;
+        color: white !important;
+    }
+    
+    .floating-btn:hover .floating-btn-icon {
+        filter: brightness(0) invert(1);
+    }
+    
+    .floating-btn:hover .floating-btn-icon path {
+        fill: white !important;
 }
 
 .bg-light-grey:hover {
-    background: #d0d0d0 !important;
+    background: #007bff !important;
 }
 
 .shadow-sm:hover {

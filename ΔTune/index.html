@@ -43,7 +43,7 @@
                     <div class="label-pill-group flex-center-y">
                         <label for="gutterSize" class="label-pill-label text-secondary">Size:</label>
                         <div class="gutter-input-container">
-                            <input type="text" id="gutterSize" value="10" placeholder="10" class="pill-style">
+                            <input type="text" id="gutterSize" value="10" placeholder="10" class="pill-style" maxlength="7">
                             <span id="gutterUnitLabel" class="unit-suffix">mm</span>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                     <div class="label-pill-group flex-center-y">
                         <label for="zoomLevel" class="label-pill-label text-secondary">Zoom:</label>
                         <div class="gutter-input-container">
-                            <input type="text" id="zoomLevel" value="100" placeholder="100" class="pill-style">
+                            <input type="text" id="zoomLevel" value="100" placeholder="100" class="pill-style" maxlength="5">
                             <span id="zoomUnitLabel" class="unit-suffix">%</span>
                         </div>
                     </div>
@@ -197,6 +197,17 @@
     <script src="js/fileManager.js"></script>
     <script src="js/attributeSystem.js"></script>
     <script src="js/svgShaperEditor.js"></script>
+    <script>
+        // Only allow digits, dot, and comma in size and zoom inputs
+        function filterNumericInput(e) {
+            const allowed = /[0-9.,]/;
+            if (!allowed.test(e.key) && e.key.length === 1) {
+                e.preventDefault();
+            }
+        }
+        document.getElementById('gutterSize').addEventListener('keypress', filterNumericInput);
+        document.getElementById('zoomLevel').addEventListener('keypress', filterNumericInput);
+    </script>
 </body>
 
 </html>
