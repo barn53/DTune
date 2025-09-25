@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVG Shaper Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -81,7 +85,10 @@
                     <div class="gutter-overlay" id="gutterOverlay" style="display: none;"></div>
                     <div class="svg-content" id="svgContent"></div>
                 </div>
-                <span id="currentFileName" class="current-file-name-overlay" style="display: none;"></span>
+                <span id="currentFileName" class="current-file-name-overlay" style="display: none;">
+                    <span class="filename-spacer" aria-hidden="true"></span>
+                    <span class="filename-text"></span>
+                </span>
 
                 <!-- Floating Action Buttons -->
                 <div class="floating-buttons">

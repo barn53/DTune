@@ -6,7 +6,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: #333;
@@ -276,30 +276,67 @@ header p {
 
 .current-file-name-overlay {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    padding: 4px 8px;
-    background: rgba(20, 20, 20, 0.8);
-    color: #ddd;
-    font-size: 11px;
-    font-weight: 400;
-    border-radius: 3px;
+    top: 12px;
+        left: 16px;
+        right: auto;
+        bottom: auto;
+        padding: 4px 12px 4px 10px;
+        background: transparent;
+        /* transparent background */
+        color: #000;
+        /* black text */
+        font-size: 20px;
+        /* larger text to harmonize with bigger icon */
+        line-height: 1.2;
+        /* reset from fixed 36px for better multiline spacing */
+        font-weight: 600;
+        border-radius: 4px;
     pointer-events: none;
     z-index: 1000;
-    max-width: 250px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    backdrop-filter: blur(2px);
-    display: none;
+    max-width: 520px;
+        /* allow longer filenames */
+        display: inline-flex;
+        /* align icon + text nicely */
+        align-items: center;
+        /* center icon vs total text block */
+        gap: 0;
+        /* gap removed; spacer controls distance */
+    }
+
+                                                                .current-file-name-overlay::before {
+        content: '';
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            background: url('icons/shaperDelta.svg') center center / contain no-repeat;
+            flex: 0 0 36px;
+            align-self: center;
+            /* override previous flex-start */
+            margin-top: 0;
+            /* reset */
+        }
+        
+        .current-file-name-overlay .filename-spacer {
+            /* reduced spacing */
+            width: 16px;
+            /* was 28px */
+        }
+        
+        .current-file-name-overlay .filename-text {
+            display: inline-block;
+            max-width: 460px;
+            white-space: normal;
+            /* allow wrapping */
+            overflow: visible;
+            /* show full wrapped lines */
+            text-overflow: clip;
+            /* no ellipsis for multiline */
+            word-break: break-word;
+            /* break long tokens */
+            line-height: 1.2;
 }
 
-.current-file-name-overlay::before {
-    content: "📄 ";
-    margin-right: 4px;
-    font-size: 10px;
-}
-
+/* Toolbar right section */
 .toolbar-right {
     gap: 25px;
     font-size: 14px;
@@ -477,7 +514,7 @@ header p {
         vertical-align: middle;
         border-radius: 20px;
         background: #e8e8e8;
-    transition: transform .18s cubic-bezier(.4, 0, .2, 1), box-shadow .18s cubic-bezier(.4, 0, .2, 1), background .18s cubic-bezier(.4, 0, .2, 1);
+    transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s cubic-bezier(.4, 0, .2, 1), background .2s cubic-bezier(.4, 0, .2, 1);
         overflow: hidden;
     margin-top: 2px;
         /* vertical offset */
@@ -507,7 +544,7 @@ header p {
         border: none !important;
         outline: none !important;
         text-align: right;
-        transition: background 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: none !important;
         position: relative;
         z-index: 1;

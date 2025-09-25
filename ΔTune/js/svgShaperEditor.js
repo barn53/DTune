@@ -599,9 +599,15 @@ class SVGShaperEditor {
 
     updateFileNameDisplay() {
         if (this.currentFileNameDisplay) {
+            const textSpan = this.currentFileNameDisplay.querySelector('.filename-text');
             if (this.currentFileName) {
-                this.currentFileNameDisplay.textContent = this.currentFileName;
-                this.currentFileNameDisplay.style.display = 'block';
+                if (textSpan) {
+                    textSpan.textContent = this.currentFileName;
+                } else {
+                // fallback legacy
+                    this.currentFileNameDisplay.textContent = this.currentFileName;
+                }
+                this.currentFileNameDisplay.style.display = 'inline-flex';
             } else {
                 this.currentFileNameDisplay.style.display = 'none';
             }
