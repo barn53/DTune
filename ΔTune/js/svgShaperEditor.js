@@ -711,10 +711,17 @@ class SVGShaperEditor {
 
             // Only update if we have a reasonable pixel value
             if (gutterPixels > 0.1) {
-                this.gutterOverlay.style.backgroundSize = `${gutterPixels}px ${gutterPixels}px`;
-                this.gutterOverlay.style.backgroundPosition = `0px 0px`;
+                this.gutterOverlay.dataset.baseCell = gutterPixels; // store unscaled cell size
+                // IMPORTANT: Do NOT set background-size here; that caused a snap on zoom
+                // The viewport.updateInfiniteGrid() computes scaled size each frame.
+                // this.gutterOverlay.style.backgroundSize = `${gutterPixels}px ${gutterPixels}px`; (removed)
 
-                // Add intersection markers
+                // Immediately refresh infinite grid so manual gutter size changes take effect without waiting for next transform
+                if (this.viewport && typeof this.viewport.updateInfiniteGrid === 'function') {
+                    this.viewport.updateInfiniteGrid();
+                }
+
+                // Add intersection markers (optional - could prune later for performance)
                 this.addGutterIntersectionMarkers(gutterPixels, boundaryOffset);
             }
         }

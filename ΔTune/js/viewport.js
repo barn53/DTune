@@ -111,24 +111,6 @@ class Viewport {
         }
     }
 
-    // Mouse pan controls
-    handleMouseDown(event) {
-        // Don't start panning if clicking on interactive overlays (but allow panning on regular SVG elements)
-        if (event.target.classList.contains('path-overlay') ||
-            event.target.classList.contains('boundary-overlay')) {
-            return;
-        }
-
-        this.isDragging = true;
-        this.lastMouseX = event.clientX;
-        this.lastMouseY = event.clientY;
-
-        if (this.svgContainer) {
-            this.svgContainer.classList.add('dragging');
-        }
-        event.preventDefault();
-    }
-
     handleMouseMove(event) {
         if (!this.isDragging) return;
 
@@ -167,13 +149,58 @@ class Viewport {
         const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
         svgContent.style.transform = transform;
 
-        // Apply the same transform to the gutter overlay so it moves with the SVG
-        if (gutterOverlay) {
-            gutterOverlay.style.transform = transform;
-        }
+        // Do NOT transform gutter overlay – we simulate infinite grid instead
+        this.updateInfiniteGrid();
 
         // Update stroke widths to maintain constant pixel size
         this.updateStrokeWidths();
+    }
+
+    updateInfiniteGrid() {
+        const gutterOverlay = document.getElementById('gutterOverlay');
+        if (!gutterOverlay || gutterOverlay.style.display === 'none') return;
+
+        // Base cell size stored on overlay (set when gutter size changes)
+        const baseCell = parseFloat(gutterOverlay.dataset.baseCell || '0');
+        if (!baseCell || baseCell <= 0) return;
+
+        // Cell size scales linearly with zoom (no smoothing to prevent transient shrink)
+        const cell = baseCell * this.zoom;
+        if (cell < 2) return; // too small to render meaningfully
+        gutterOverlay.style.backgroundSize = `${cell}px ${cell}px`;
+
+        const boundaryOutline = document.querySelector('.svg-boundary-outline');
+        if (!boundaryOutline) return; // no boundary yet
+
+        const boundaryRect = boundaryOutline.getBoundingClientRect();
+        const overlayRect = gutterOverlay.getBoundingClientRect();
+        const boundaryX = boundaryRect.left - overlayRect.left;
+        const boundaryY = boundaryRect.top - overlayRect.top;
+
+        const offsetX = ((-boundaryX) % cell + cell) % cell;
+        const offsetY = ((-boundaryY) % cell + cell) % cell;
+        gutterOverlay.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+
+        // Ensure origin marker exists
+        let originMarker = gutterOverlay.querySelector('.gutter-intersection');
+        if (!originMarker) {
+            originMarker = document.createElement('div');
+            originMarker.className = 'gutter-intersection';
+            Object.assign(originMarker.style, {
+                position: 'absolute',
+                width: '8px',
+                height: '8px',
+                background: 'rgba(255,0,0,0.9)',
+                border: '2px solid #0000ff',
+                borderRadius: '2px',
+                pointerEvents: 'none',
+                zIndex: '10'
+            });
+            gutterOverlay.appendChild(originMarker);
+        }
+        const markerSize = originMarker.offsetWidth || 8;
+        originMarker.style.left = `${boundaryX - markerSize / 2}px`;
+        originMarker.style.top = `${boundaryY - markerSize / 2}px`;
     }
 
     updateStrokeWidths() {
