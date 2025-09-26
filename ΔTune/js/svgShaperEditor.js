@@ -6,7 +6,10 @@ class SVGShaperEditor {
         // Initialize all subsystems
         this.measurementSystem = new MeasurementSystem();
         this.fileManager = new FileManager(this.measurementSystem);
-        this.elementManager = new ElementManager(this.measurementSystem);
+        // --- NEW: Create a map to hold pre-analyzed element data ---
+        this.elementDataMap = new Map();
+        // --- UPDATED: Pass the data map to the ElementManager ---
+        this.elementManager = new ElementManager(this.measurementSystem, this.fileManager, this.elementDataMap);
         this.viewport = new Viewport();
         this.uiComponents = new UIComponents(this.measurementSystem, this.elementManager);
         this.attributeSystem = new AttributeSystem(this.measurementSystem, this.fileManager, this.elementManager);
@@ -76,6 +79,14 @@ class SVGShaperEditor {
             this.currentFileName = fileName;
             this.updateFileNameDisplay();
             this.showEditor();
+
+            // --- NEW: Analyze the SVG and populate the data map ---
+            // This is the one-time measurement of all elements
+            this.elementDataMap.clear(); // Clear old data
+            const newMap = this.measurementSystem.analyzeSVG(svgElement);
+            newMap.forEach((value, key) => this.elementDataMap.set(key, value));
+
+
             this.displaySVG(svgElement);
 
             // Only reset viewport when loading a new file (not from localStorage)
@@ -164,7 +175,10 @@ class SVGShaperEditor {
             lastOpenedFile: this.fileManager.svgData ? {
                 svgData: this.fileManager.svgData,
                 fileName: this.currentFileName || 'untitled.svg'
-            } : null
+            } : null,
+            // --- Debugging ---
+            debug_displayCloneSVG: this.svgContent.innerHTML,
+            debug_lastMeasurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML
         };
 
         localStorage.setItem('shaperEditorSettings', JSON.stringify(settings));
@@ -393,17 +407,17 @@ class SVGShaperEditor {
         this.svgContent.innerHTML = '';
 
         // Clone and append the SVG element
-        const svgClone = this.svgHelper.cloneSVGElement(svgElement, this.svgContent);
+        const displayClone = this.svgHelper.cloneSVGElement(svgElement, this.svgContent);
 
         // Add boundary outline to show SVG boundaries
-        this.addBoundaryOutline(svgClone);
+        this.addBoundaryOutline(displayClone);
 
         // Set up viewport
-        this.viewport.setSVGElements(this.svgWrapper, svgClone);
+        this.viewport.setSVGElements(this.svgWrapper, displayClone);
         this.viewport.resetViewport();
 
         // Add overlays and click handlers
-        this.addOverlaysToDisplayedSVG(svgClone);
+        this.addOverlaysToDisplayedSVG(displayClone);
 
         // Auto-fit the SVG after a short delay
         setTimeout(() => {
@@ -839,6 +853,13 @@ class SVGShaperEditor {
         this.convertGutterSize(oldUnits, newUnits);
         this.convertDialogValues(oldUnits, newUnits);
         this.attributeSystem.convertAttributeValues(oldUnits, newUnits);
+
+        // --- NEW: Re-analyze SVG with new units ---
+        if (this.fileManager.masterSVGElement) {
+            this.elementDataMap.clear();
+            const newMap = this.measurementSystem.analyzeSVG(this.fileManager.masterSVGElement);
+            newMap.forEach((value, key) => this.elementDataMap.set(key, value));
+        }
 
         // Clear conversion flag
         this.isConverting = false;

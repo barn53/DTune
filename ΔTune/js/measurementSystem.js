@@ -8,6 +8,9 @@ class MeasurementSystem {
         this.detectedUnits = null;
         this.dpi = 96; // Standard web DPI
         this.mmPerInch = 25.4;
+        // --- REMOVED: Calibration logic is no longer needed ---
+        // --- Debugging ---
+        this.lastMeasurementCloneHTML = null;
     }
 
     // Getter and setter for units to track all changes
@@ -105,21 +108,16 @@ class MeasurementSystem {
             normalizedValue = valueStr.replace(',', '.');
         } else if (valueStr.includes('.') && valueStr.includes(',')) {
             // If both are present, assume the last one is decimal separator
-            // e.g., "1,234.56" or "1.234,56"
             const lastCommaIndex = valueStr.lastIndexOf(',');
             const lastDotIndex = valueStr.lastIndexOf('.');
 
             if (lastCommaIndex > lastDotIndex) {
-                // Comma is the decimal separator, remove dots (thousands separators)
                 normalizedValue = valueStr.replace(/\./g, '').replace(',', '.');
             } else {
-                // Dot is the decimal separator, remove commas (thousands separators)
                 normalizedValue = valueStr.replace(/,/g, '');
             }
         }
-        // If only dots are present, keep as is (already normalized)
 
-        // Extract numeric value and unit
         const match = normalizedValue.match(/^([+-]?\d*\.?\d+)\s*([a-zA-Z]*)$/);
         if (!match) return null;
 
@@ -128,12 +126,10 @@ class MeasurementSystem {
 
         if (isNaN(numValue)) return null;
 
-        // If target unit specified, convert to it
         if (targetUnit && unit && unit !== targetUnit) {
             return this.convertBetweenUnits(numValue, unit, targetUnit);
         }
 
-        // If no target unit specified but input has a unit different from current system, convert to current system
         if (!targetUnit && unit && unit !== this.units && (unit === 'mm' || unit === 'in')) {
             return this.convertBetweenUnits(numValue, unit, this.units);
         }
@@ -145,13 +141,10 @@ class MeasurementSystem {
         if (!valueWithUnits || valueWithUnits === '') {
             return '';
         }
-
         const parsedValue = this.parseValueWithUnits(valueWithUnits, this.units);
         if (parsedValue !== null) {
             return this.formatGridNumber(parsedValue);
         }
-
-        // Try to strip units and parse
         const stripped = this.stripUnitsFromValue(valueWithUnits);
         return isNaN(stripped) ? '' : this.formatGridNumber(stripped);
     }
@@ -159,8 +152,6 @@ class MeasurementSystem {
     // Unit conversion between different measurement systems
     convertBetweenUnits(value, fromUnit, toUnit) {
         if (fromUnit === toUnit) return value;
-
-        // Convert to pixels first (common base)
         let pixels;
         switch (fromUnit) {
             case 'mm':
@@ -173,10 +164,8 @@ class MeasurementSystem {
                 pixels = value;
                 break;
             default:
-                return value; // Unknown unit, return as-is
+                return value;
         }
-
-        // Convert from pixels to target unit
         switch (toUnit) {
             case 'mm':
                 return pixels * this.mmPerInch / this.dpi;
@@ -185,7 +174,7 @@ class MeasurementSystem {
             case 'px':
                 return pixels;
             default:
-                return value; // Unknown unit, return as-is
+                return value;
         }
     }
 
@@ -197,61 +186,127 @@ class MeasurementSystem {
         return this.convertBetweenUnits(value, this.units, 'px');
     }
 
+    // --- REMOVED: `calibrateUserUnitScale` and `userLengthToDisplayUnits` are gone ---
+
     // Unit detection from SVG content
     detectUnits(svgElement) {
-        // This method analyzes SVG content to detect units
-        const unitCounts = {
-            'mm': 0,
-            'in': 0,
-            'px': 0
-        };
-
+        const unitCounts = { 'mm': 0, 'in': 0, 'px': 0 };
         if (svgElement) {
-            // Check viewBox and dimensions
             const viewBox = svgElement.getAttribute('viewBox');
             const width = svgElement.getAttribute('width');
             const height = svgElement.getAttribute('height');
-
             this.countUnitInString(viewBox, unitCounts);
             this.countUnitInString(width, unitCounts);
             this.countUnitInString(height, unitCounts);
-
-            // Check all elements for unit-bearing attributes
             const allElements = svgElement.querySelectorAll('*');
             allElements.forEach(element => {
                 const attributes = ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'stroke-width'];
                 attributes.forEach(attr => {
                     const value = element.getAttribute(attr);
-                    if (value) {
-                        this.countUnitInString(value, unitCounts);
-                    }
+                    if (value) this.countUnitInString(value, unitCounts);
                 });
             });
         }
-
-        // Return the most common unit or default
         const maxCount = Math.max(...Object.values(unitCounts));
         if (maxCount === 0) {
-            this.detectedUnits = 'mm'; // Default
+            this.detectedUnits = 'mm';
         } else {
             this.detectedUnits = Object.keys(unitCounts).find(unit => unitCounts[unit] === maxCount);
         }
-
-        // Detect units from SVG but preserve user preferences
         this.detectedUnits = this.detectedUnits || 'mm';
         return this.detectedUnits;
     }
 
     countUnitInString(str, unitCounts) {
         if (!str) return;
-
         const mmMatches = str.match(/\bmm\b/g);
         const inMatches = str.match(/\bin\b/g);
         const pxMatches = str.match(/\bpx\b/g);
-
         if (mmMatches) unitCounts.mm += mmMatches.length;
         if (inMatches) unitCounts.in += inMatches.length;
         if (pxMatches) unitCounts.px += pxMatches.length;
+    }
+
+    // --- Visual Measurement using getBoundingClientRect ---
+    getVisualDimensions(elementToMeasure, masterSVGElement) {
+        if (!elementToMeasure || !masterSVGElement || !elementToMeasure.dataset.appId) {
+            return { width: 0, height: 0 };
+        }
+        const appId = elementToMeasure.dataset.appId;
+        const tempContainer = document.createElement('div');
+        tempContainer.style.all = 'initial';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '-9999px';
+        try {
+            const measurementClone = masterSVGElement.cloneNode(true);
+            const viewBox = measurementClone.getAttribute('viewBox');
+            if (viewBox) {
+                const [, , vbWidth, vbHeight] = viewBox.split(/[ ,]+/);
+                measurementClone.style.width = `${vbWidth}px`;
+                measurementClone.style.height = `${vbHeight}px`;
+            }
+            tempContainer.appendChild(measurementClone);
+            document.body.appendChild(tempContainer);
+            const elementInClone = measurementClone.querySelector(`[data-app-id="${appId}"]`);
+            if (elementInClone) {
+                const bbox = elementInClone.getBoundingClientRect();
+                this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+                return { width: bbox.width, height: bbox.height };
+            }
+            this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+            return { width: 0, height: 0 };
+        } finally {
+            if (tempContainer.firstChild) {
+                this.lastMeasurementCloneHTML = tempContainer.firstChild.outerHTML;
+            }
+            if (tempContainer.parentNode) {
+                tempContainer.parentNode.removeChild(tempContainer);
+            }
+        }
+    }
+
+    // --- SIMPLIFIED: Full SVG Analysis ---
+    analyzeSVG(masterSVGElement) {
+        const elementDataMap = new Map();
+        if (!masterSVGElement) {
+            return elementDataMap;
+        }
+
+        const elementsToAnalyze = masterSVGElement.querySelectorAll('[data-app-id]');
+
+        elementsToAnalyze.forEach(element => {
+            const appId = element.dataset.appId;
+            if (!appId) return;
+
+            // 1. Get precise visual dimensions in pixels for ALL elements
+            const visualPx = this.getVisualDimensions(element, masterSVGElement);
+
+            // 2. Convert pixel dimensions to the current display units
+            const width = this.pixelsToUnits(visualPx.width);
+            const height = this.pixelsToUnits(visualPx.height);
+
+            const tagName = element.tagName.toLowerCase();
+            const elementData = {
+                tagName: tagName,
+                width: width,
+                height: height
+            };
+
+            // 3. Special handling for circles (still useful)
+            if (tagName === 'circle' || (tagName === 'ellipse' && Math.abs(width - height) < 0.1)) {
+                elementData.diameter = (width + height) / 2;
+                elementData.radius = elementData.diameter / 2;
+                elementData.isCircle = true;
+            }
+
+            // --- REMOVED: Special handling for <line> is gone. It's now treated like any other shape. ---
+
+            // 4. Store the collected data in the map
+            elementDataMap.set(appId, elementData);
+        });
+
+        return elementDataMap;
     }
 }
 

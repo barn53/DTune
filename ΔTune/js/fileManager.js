@@ -4,8 +4,9 @@
 class FileManager {
     constructor(measurementSystem) {
         this.measurementSystem = measurementSystem;
-        this.svgData = null;
-        this.svgElement = null;
+        this.svgData = null; // This will hold the string representation of the master model
+        this.svgElement = null; // Legacy, will be phased out or repurposed
+        this.masterSVGElement = null; // The "source of truth" DOM element with app IDs
         this.onSVGLoaded = null; // Callback for when SVG is loaded
 
         // Initialize SVG helper for clean operations
@@ -15,6 +16,19 @@ class FileManager {
     // Set callback for SVG loading events
     setLoadCallback(callback) {
         this.onSVGLoaded = callback;
+    }
+
+    // --- Private method to add unique IDs to graphical elements ---
+    _addAppIds(svgElement) {
+        // Use a more specific selector to avoid adding IDs to group elements if not desired
+        const relevantElements = svgElement.querySelectorAll('path, rect, circle, ellipse, line, polygon, polyline');
+        relevantElements.forEach(el => {
+            // Use a custom data-attribute to avoid conflicts with existing IDs
+            if (!el.dataset.appId) {
+                el.dataset.appId = `app-id-${Math.random().toString(36).slice(2, 11)}`;
+            }
+        });
+        return svgElement;
     }
 
     // File selection handling
@@ -64,7 +78,7 @@ class FileManager {
         reader.readAsText(file);
     }
 
-    // Parse SVG content
+    // Parse SVG content and establish the master data model
     parseSVG(svgString, fileName = 'untitled.svg') {
         // Parse the SVG string and create DOM element
         const parser = new DOMParser();
@@ -76,28 +90,38 @@ class FileManager {
             throw new Error('Invalid SVG file');
         }
 
-        this.svgElement = this.svgHelper.getSVGRoot(doc.documentElement);
-        this.svgData = svgString;
+        // 1. Get the root SVG element
+        const rootElement = this.svgHelper.getSVGRoot(doc.documentElement);
+
+        // 2. Add our internal application IDs to all graphical elements
+        this._addAppIds(rootElement);
+
+        // 3. This element with app IDs is now our master data model
+        this.masterSVGElement = rootElement;
+        this.svgElement = this.masterSVGElement; // For legacy compatibility for now
         this.fileName = fileName;
 
-        // Create raw mm values from existing shaper attributes
+        // Create raw mm values from existing shaper attributes on the master model
         this.createRawValuesFromShaperAttributes();
 
-        // Detect measurement units from the SVG
-        this.measurementSystem.detectUnits(this.svgElement);
+        // 4. Serialize the master model to a string for storage and export
+        this.svgData = new XMLSerializer().serializeToString(this.masterSVGElement);
 
-        // Notify that SVG is loaded
+        // Detect measurement units from the SVG
+        this.measurementSystem.detectUnits(this.masterSVGElement);
+
+        // Notify that SVG is loaded, passing the master model
         if (this.onSVGLoaded) {
-            this.onSVGLoaded(this.svgElement, this.svgData, this.fileName);
+            this.onSVGLoaded(this.masterSVGElement, this.svgData, this.fileName);
         }
     }
 
     // Create internal raw values from shaper namespaced attributes
     createRawValuesFromShaperAttributes() {
-        if (!this.svgElement) return;
+        if (!this.masterSVGElement) return;
 
         // Find all elements with namespaced shaper attributes
-        const allElements = this.svgElement.querySelectorAll('*');
+        const allElements = this.masterSVGElement.querySelectorAll('*');
 
         allElements.forEach(element => {
             // Handle measurement attributes
@@ -121,26 +145,33 @@ class FileManager {
         });
     }
 
-    // Get current SVG data
+    // Get current SVG data (from master model)
     getSVGData() {
+        // Always serialize the master model to ensure it's up-to-date
+        if (this.masterSVGElement) {
+            this.svgData = new XMLSerializer().serializeToString(this.masterSVGElement);
+        }
         return this.svgData;
     }
 
     getSVGElement() {
-        return this.svgElement;
+        return this.masterSVGElement;
     }
 
-    // Update SVG data after modifications - use displayed SVG which has the user's edits
+    // Update SVG data after modifications - THIS LOGIC WILL CHANGE
+    // For now, it just re-serializes the master model.
     updateSVGData() {
-        // Use SVGHelper to get clean SVG string from displayed SVG
-        // Pass this FileManager instance for proper export preparation
-        const cleanSVGString = this.svgHelper.getCleanDisplayedSVGString(this);
-
-        if (cleanSVGString) {
-            this.svgData = cleanSVGString;
+        if (this.masterSVGElement) {
+            // The "update" now happens on the master model directly.
+            // We just need to re-serialize it for saving.
+            this.svgData = new XMLSerializer().serializeToString(this.masterSVGElement);
         }
-    }    // Prepare a single element for export
+    }
+
+    // Prepare a single element for export
     prepareElementForExport(element) {
+        // This function will likely be deprecated, as the master model is always ready for export.
+        // For now, we keep the logic but it might not be called.
         // Remove temporary classes
         ShaperUtils.removeTempClasses(element);
 
@@ -175,23 +206,39 @@ class FileManager {
         // Handle cutType attribute
         const cutTypeRaw = element.getAttribute(ShaperConstants.getRawAttributeName('cutType'));
         ShaperUtils.setNamespacedAttribute(element, 'cutType', cutTypeRaw);
-    }    // Export SVG with current modifications
+    }
+
+    // Export SVG with current modifications
     exportSVG() {
-        if (!this.svgData) {
+        // The master model is always the source of truth, so we get its latest state.
+        const currentSVGData = this.getSVGData();
+        if (!currentSVGData) {
             alert('No SVG file loaded to export.');
             return;
         }
 
-        // Update SVG data to include current modifications
-        this.updateSVGData();
+        // Create a clone of the master model to prepare for export without affecting the live model
+        const exportNode = this.masterSVGElement.cloneNode(true);
 
-        // Create blob and download - no conversion needed since we use proper namespace throughout
-        const blob = new Blob([this.svgData], { type: 'image/svg+xml' });
+        // Clean all elements in the cloned node for export
+        exportNode.querySelectorAll('[data-app-id]').forEach(el => {
+            // Set namespaced attributes from raw values
+            this.updateShaperAttributesForExport(el);
+            // Remove all raw attributes
+            ShaperUtils.removeAllRawAttributes(el);
+            // IMPORTANT: Remove the internal app-id for the final export
+            el.removeAttribute('data-app-id');
+        });
+
+        const finalSVGString = new XMLSerializer().serializeToString(exportNode);
+
+        // Create blob and download
+        const blob = new Blob([finalSVGString], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
 
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'shaper-file.svg';
+        a.download = this.fileName || 'shaper-file.svg';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -203,11 +250,12 @@ class FileManager {
     clearSVG() {
         this.svgData = null;
         this.svgElement = null;
+        this.masterSVGElement = null;
     }
 
     // Check if SVG is loaded
     hasLoadedSVG() {
-        return this.svgElement !== null;
+        return this.masterSVGElement !== null;
     }
 }
 

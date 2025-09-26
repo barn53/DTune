@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>SVG.js size in mm</title>
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2/dist/svg.min.js"></script>
+</head>
+
+<body>
+    <div id="container"></div>
+
+    <script>
+        const draw = SVG().addTo('#container').size(400, 400)
+
+        // Example shape with transforms
+        const rect = draw.rect(100, 50).move(20, 30).fill('lightblue')
+        rect.transform({ scale: 1.5, rotate: 30 })
+
+        // --- Helper function to convert px → mm using SVGLength ---
+        function pxToMm(px, svgElement) {
+            const length = svgElement.createSVGLength()
+            length.value = px
+            length.convertToSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_MM)
+            return length.valueInSpecifiedUnits
+        }
+
+        // --- Helper function to get element size in mm ---
+        function getElementSizeMm(element) {
+            const svgRoot = element.root() // get the root SVG
+            const rbox = element.rbox(svgRoot) // bounding box including transforms
+            return {
+                width: pxToMm(rbox.width, svgRoot),
+                height: pxToMm(rbox.height, svgRoot)
+            }
+        }
+
+        // --- Helper function to get SVG canvas size in mm ---
+        function getCanvasSizeMm(svg) {
+            const svgRoot = svg.node
+            return {
+                width: pxToMm(svgRoot.width.baseVal.value, svgRoot),
+                height: pxToMm(svgRoot.height.baseVal.value, svgRoot)
+            }
+        }
+
+        // Example usage
+        const rectSizeMm = getElementSizeMm(rect)
+        console.log('Rectangle size (mm):', rectSizeMm)
+
+        const canvasSizeMm = getCanvasSizeMm(draw)
+        console.log('SVG canvas size (mm):', canvasSizeMm)
+
+        // Optional: show canvas bounding box visually
+        draw.rect(draw.width(), draw.height())
+            .fill('none')
+            .stroke({ width: 2, color: 'red' })
+    </script>
+</body>
+
+</html>

@@ -315,13 +315,13 @@ header p {
             margin-top: 0;
             /* reset */
         }
-        
+
         .current-file-name-overlay .filename-spacer {
             /* reduced spacing */
             width: 16px;
             /* was 28px */
         }
-        
+
         .current-file-name-overlay .filename-text {
             display: inline-block;
             max-width: 460px;
