@@ -6,3 +6,29 @@ https://drive.google.com/drive/folders/1pvJVRe5vLpYSD1foBF278DEPBIQKKNOp?usp=sha
 
 
 
+Prompt
+
+Ok, das hat keinen Sinn, wir gehen einen komplett neuen Weg!
+
+Wie wäre es mit:
+
+Grober Überblick:
+- Konsequente Trennung vom geladenen SVG und dem darzustellenden SVG!
+- In dieser App geladene SVGs werden nie in Größe, Pfaden oder Elementen verändert
+  ausschließlich werden vorhandenen Elementen bestimmte Attribute aus dem shaper:*
+  Namespace zugewiesen. alles andere soll original bleiben
+- das darzutellende SVG wird für die Anzeige vorbereitet.
+  - am besten die Darstellung normieren - alles in px Maßen
+  - Ermitteln der Größe der SVG bounding-box in px
+
+
+
+
+NOCH keine Änderungen machen!
+
+Zuerst diese Fragen beantworten:
+- Unterscheidet sich das von der akuellen implementierung?
+- Wie ist deine Einschätzung? Macht es Sinn?
+- Ist die Gefahr leiner wiedwer in einer Sackgasse zu landen?
+
+
