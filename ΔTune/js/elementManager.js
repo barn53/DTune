@@ -54,9 +54,9 @@ class ElementManager {
 
         if (dimensions.isCircle) {
             const { diameterPx, radiusPx } = dimensions;
-            const diameter = this.measurementSystem.pixelsToUnits(diameterPx);
-            const radius = this.measurementSystem.pixelsToUnits(radiusPx);
-            return `Circle: ⌀${this.measurementSystem.formatGridNumber(diameter)}${this.measurementSystem.units}; Radius: ${this.measurementSystem.formatGridNumber(radius)}${this.measurementSystem.units}`;
+            const diameter = this.measurementSystem.convertPixelsToCurrentUnit(diameterPx);
+            const radius = this.measurementSystem.convertPixelsToCurrentUnit(radiusPx);
+            return `Circle: ⌀${this.measurementSystem.formatDisplayNumber(diameter)}${this.measurementSystem.units}; Radius: ${this.measurementSystem.formatDisplayNumber(radius)}${this.measurementSystem.units}`;
         }
 
         // --- REVISED: 'line' gets special handling again, but calculated from BBox ---
@@ -68,11 +68,11 @@ class ElementManager {
             case 'path':
                 {
                     const { widthPx, heightPx } = dimensions;
-                    const width = this.measurementSystem.pixelsToUnits(widthPx);
-                    const height = this.measurementSystem.pixelsToUnits(heightPx);
+                    const width = this.measurementSystem.convertPixelsToCurrentUnit(widthPx);
+                    const height = this.measurementSystem.convertPixelsToCurrentUnit(heightPx);
                     const shapeName = tagName.charAt(0).toUpperCase() + tagName.slice(1);
                     if (width > 0 || height > 0) {
-                        return `${shapeName} - W: ${this.measurementSystem.formatGridNumber(width)}${this.measurementSystem.units}; H: ${this.measurementSystem.formatGridNumber(height)}${this.measurementSystem.units}`;
+                        return `${shapeName} - W: ${this.measurementSystem.formatDisplayNumber(width)}${this.measurementSystem.units}; H: ${this.measurementSystem.formatDisplayNumber(height)}${this.measurementSystem.units}`;
                     } else {
                         return `${shapeName} (complex geometry)`;
                     }
@@ -82,7 +82,7 @@ class ElementManager {
                     const { width, height } = dimensions;
                     const length = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
                     const angle = Math.atan2(height, width) * (180 / Math.PI);
-                    return `Line - Length: ${this.measurementSystem.formatGridNumber(length)}${this.measurementSystem.units}; Angle: ${this.measurementSystem.formatAngle(angle)}°`;
+                    return `Line - Length: ${this.measurementSystem.formatDisplayNumber(length)}${this.measurementSystem.units}; Angle: ${this.measurementSystem.formatAngle(angle)}°`;
                 }
             default:
                 return `${tagName.charAt(0).toUpperCase() + tagName.slice(1)} element`;
@@ -99,11 +99,11 @@ class ElementManager {
 
         if (dimensions.isCircle) {
             const { diameterPx, radiusPx } = dimensions;
-            const diameter = this.measurementSystem.pixelsToUnits(diameterPx);
-            const radius = this.measurementSystem.pixelsToUnits(radiusPx);
+            const diameter = this.measurementSystem.convertPixelsToCurrentUnit(diameterPx);
+            const radius = this.measurementSystem.convertPixelsToCurrentUnit(radiusPx);
             measurements.push(
-                { name: 'Diameter', value: `${this.measurementSystem.formatGridNumber(diameter)}${this.measurementSystem.units}` },
-                { name: 'Radius', value: `${this.measurementSystem.formatGridNumber(radius)}${this.measurementSystem.units}` }
+                { name: 'Diameter', value: `${this.measurementSystem.formatDisplayNumber(diameter)}${this.measurementSystem.units}` },
+                { name: 'Radius', value: `${this.measurementSystem.formatDisplayNumber(radius)}${this.measurementSystem.units}` }
             );
             return measurements;
         }
@@ -118,12 +118,12 @@ class ElementManager {
                 {
                     const { widthPx, heightPx } = dimensions;
                     if (widthPx > 0) {
-                        const width = this.measurementSystem.pixelsToUnits(widthPx);
-                        measurements.push({ name: 'Width', value: `${this.measurementSystem.formatGridNumber(width)}${this.measurementSystem.units}` });
+                        const width = this.measurementSystem.convertPixelsToCurrentUnit(widthPx);
+                        measurements.push({ name: 'Width', value: `${this.measurementSystem.formatDisplayNumber(width)}${this.measurementSystem.units}` });
                     }
                     if (heightPx > 0) {
-                        const height = this.measurementSystem.pixelsToUnits(heightPx);
-                        measurements.push({ name: 'Height', value: `${this.measurementSystem.formatGridNumber(height)}${this.measurementSystem.units}` });
+                        const height = this.measurementSystem.convertPixelsToCurrentUnit(heightPx);
+                        measurements.push({ name: 'Height', value: `${this.measurementSystem.formatDisplayNumber(height)}${this.measurementSystem.units}` });
                     }
                     break;
                 }
@@ -131,10 +131,10 @@ class ElementManager {
                 {
                     const { widthPx, heightPx } = dimensions;
                     const lengthPx = Math.sqrt(Math.pow(widthPx, 2) + Math.pow(heightPx, 2));
-                    const length = this.measurementSystem.pixelsToUnits(lengthPx);
+                    const length = this.measurementSystem.convertPixelsToCurrentUnit(lengthPx);
                     const angle = Math.atan2(heightPx, widthPx) * (180 / Math.PI);
                     measurements.push(
-                        { name: 'Length', value: `${this.measurementSystem.formatGridNumber(length)}${this.measurementSystem.units}` },
+                        { name: 'Length', value: `${this.measurementSystem.formatDisplayNumber(length)}${this.measurementSystem.units}` },
                         { name: 'Angle', value: `${this.measurementSystem.formatAngle(angle)}°` }
                     );
                     break;

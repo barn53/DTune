@@ -74,6 +74,9 @@ class SVGShaperEditor {
     }
 
     setupModuleConnections() {
+        // Connect elementManager to fileManager for export functionality
+        this.fileManager.setElementManager(this.elementManager);
+
         // Connect file manager to display system
         this.fileManager.setLoadCallback((svgElement, svgData, fileName) => {
             this.currentFileName = fileName;
@@ -82,9 +85,24 @@ class SVGShaperEditor {
 
             // --- NEW: Analyze the SVG and populate the data map ---
             // This is the one-time measurement of all elements
-            this.elementDataMap.clear(); // Clear old data
-            const newMap = this.measurementSystem.analyzeSVG(svgElement);
-            newMap.forEach((value, key) => this.elementDataMap.set(key, value));
+            if (!this.isLoadingFromLocalStorage) {
+            // Only clear and re-analyze when loading a new file, not from localStorage
+                this.elementDataMap.clear(); // Clear old data
+                const newMap = this.measurementSystem.analyzeSVG(svgElement);
+                newMap.forEach((value, key) => this.elementDataMap.set(key, value));
+            } else {
+                // When loading from localStorage, merge new measurements with existing shaper attributes
+                const newMap = this.measurementSystem.analyzeSVG(svgElement);
+                newMap.forEach((newData, appId) => {
+                    const existingData = this.elementDataMap.get(appId);
+                    if (existingData && existingData.shaperAttributes) {
+                        // Keep the shaper attributes from localStorage, update measurements
+                        newData.shaperAttributes = existingData.shaperAttributes;
+                        console.log(`Preserved shaper attributes for ${appId}:`, existingData.shaperAttributes);
+                    }
+                    this.elementDataMap.set(appId, newData);
+                });
+            }
 
 
             this.displaySVG(svgElement);
@@ -178,23 +196,23 @@ class SVGShaperEditor {
                 elementId: appId,
                 data: data
             })),
-            lastOpenedFile: this.fileManager.svgData ? {
-                svgData: this.fileManager.svgData,
+            originalSVG: this.fileManager.svg ? {
+                svg: this.fileManager.svg,
                 fileName: this.currentFileName || 'untitled.svg'
             } : null,
             // --- Debugging ---
             displayCloneSVG: this.svgContent.innerHTML,
-            measurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML
+            measurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML,
+            // Debug: Current boundary dimensions
+            boundaryDebug: this.getBoundaryDebugInfo()
         };
 
         localStorage.setItem('shaperEditorSettings', JSON.stringify(settings));
     }
 
     loadFromLocalStorage() {
-        console.log('loadFromLocalStorage called'); // Debug log
         try {
             const savedSettings = localStorage.getItem('shaperEditorSettings');
-            console.log('Raw localStorage data:', savedSettings); // Debug log
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
                 console.log('Parsed settings:', settings); // Debug log
@@ -245,21 +263,32 @@ class SVGShaperEditor {
 
                     // Convert from raw mm to current unit and display
                     const displayValue = this.measurementSystem.convertBetweenUnits(gutterSizeRawMm, 'mm', this.measurementSystem.units);
-                    this.gutterSize.value = this.measurementSystem.formatGridNumber(displayValue);
+                    this.gutterSize.value = this.measurementSystem.formatDisplayNumber(displayValue);
                 }
 
                 // Update gutter display with loaded values
                 this.updateGutterSize();
 
-                // Restore last opened file if available
-                if (settings.lastOpenedFile && settings.lastOpenedFile.svgData) {
+                // Restore elementData if available
+                if (settings.elementData && Array.isArray(settings.elementData)) {
+                    console.log('Restoring elementData from localStorage:', settings.elementData.length, 'elements');
+                    this.elementDataMap.clear();
+                    settings.elementData.forEach(item => {
+                        if (item.elementId && item.data) {
+                            this.elementDataMap.set(item.elementId, item.data);
+                        }
+                    });
+                }
+
+                // Restore original SVG if available
+                if (settings.originalSVG && settings.originalSVG.svg) {
                     try {
                         // Set flag to indicate we're loading from localStorage
                         this.isLoadingFromLocalStorage = true;
 
-                        this.currentFileName = settings.lastOpenedFile.fileName || 'untitled.svg';
+                        this.currentFileName = settings.originalSVG.fileName || 'untitled.svg';
                         this.updateFileNameDisplay();
-                        this.fileManager.parseSVG(settings.lastOpenedFile.svgData, this.currentFileName);
+                        this.fileManager.parseSVG(settings.originalSVG.svg, this.currentFileName);
 
                         // Restore viewport state after the file is loaded
                         // Use setTimeout to ensure this happens after the load callback
@@ -577,8 +606,6 @@ class SVGShaperEditor {
             svgElement.setAttribute('viewBox', `${vx - strokeOffset} ${vy - strokeOffset} ${vw + strokeOffset * 2} ${vh + strokeOffset * 2}`);
         }
 
-        console.log('Created precise donut hit area');
-
         // Insert the hit area as the LAST child of the SVG
         svgElement.appendChild(hitArea);
 
@@ -624,7 +651,7 @@ class SVGShaperEditor {
                 if (textSpan) {
                     textSpan.textContent = this.currentFileName;
                 } else {
-                // fallback legacy
+                    // fallback legacy
                     this.currentFileNameDisplay.textContent = this.currentFileName;
                 }
                 this.currentFileNameDisplay.style.display = 'inline-flex';
@@ -695,7 +722,7 @@ class SVGShaperEditor {
         if (!isNaN(rawValueMm)) {
             // Convert raw mm value to current units for display
             const convertedValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', this.measurementSystem.units);
-            const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
+            const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
 
             input.value = formattedValue;
         }
@@ -879,7 +906,7 @@ class SVGShaperEditor {
             if (!isNaN(rawValueMm)) {
                 // Convert raw mm value to current units and reformat with new decimal separator
                 const currentValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', this.measurementSystem.units);
-                this.gutterSize.value = this.measurementSystem.formatGridNumber(currentValue);
+                this.gutterSize.value = this.measurementSystem.formatDisplayNumber(currentValue);
             }
         }
 
@@ -1004,9 +1031,55 @@ class SVGShaperEditor {
 
         // Convert from raw mm value to target unit
         const convertedValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', toUnit);
-        const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
+        const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
 
         input.value = formattedValue;
+    }
+
+    // Get boundary debug information for localStorage debugging
+    getBoundaryDebugInfo() {
+        try {
+            const svgElement = this.svgContent.querySelector('svg');
+            if (!svgElement) {
+                return { error: 'No SVG element found' };
+            }
+
+            // Get boundary using measuring clone
+            const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement);
+
+            // Convert to both mm and inches for debugging
+            const widthMm = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'mm');
+            const heightMm = this.measurementSystem.convertBetweenUnits(boundingBox.height, 'px', 'mm');
+            const widthIn = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'in');
+            const heightIn = this.measurementSystem.convertBetweenUnits(boundingBox.height, 'px', 'in');
+
+            // Get SVG attributes for comparison
+            const viewBox = svgElement.getAttribute('viewBox');
+            const svgWidth = svgElement.getAttribute('width');
+            const svgHeight = svgElement.getAttribute('height');
+
+            return {
+                measuringClone: {
+                    pixelWidth: boundingBox.width,
+                    pixelHeight: boundingBox.height,
+                    widthMm: widthMm,
+                    heightMm: heightMm,
+                    widthIn: widthIn,
+                    heightIn: heightIn
+                },
+                svgAttributes: {
+                    viewBox: viewBox,
+                    width: svgWidth,
+                    height: svgHeight
+                },
+                detectedUnits: this.measurementSystem.detectedUnits,
+                currentUnits: this.measurementSystem.units,
+                dpi: this.measurementSystem.dpi,
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            return { error: error.message, timestamp: new Date().toISOString() };
+        }
     }
 }
 

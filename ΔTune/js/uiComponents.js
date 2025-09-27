@@ -68,10 +68,11 @@ class UIComponents {
             const value = shaperAttrs[attrName];
 
             if (value && value.trim() !== '') {
-                // Parse the stored value with its unit and convert to current units
-                const convertedValue = this.measurementSystem.parseValueWithUnits(value, this.measurementSystem.units);
-                if (convertedValue !== null) {
-                    const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
+                // Value is stored in pixels, convert to current units
+                const pixelValue = parseFloat(value);
+                if (!isNaN(pixelValue)) {
+                    const convertedValue = this.measurementSystem.convertPixelsToCurrentUnit(pixelValue);
+                    const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
                     input.value = formattedValue;
                 } else {
                     input.value = '';
@@ -199,31 +200,23 @@ class UIComponents {
     showBoundaryTooltip(boundaryPath, mouseX, mouseY) {
         if (!this.tooltip) return;
 
-        // Get SVG dimensions for boundary info
+        // Use measuring clone to get accurate boundary dimensions
         const svgElement = boundaryPath.closest('svg');
-        const viewBox = svgElement.getAttribute('viewBox');
-        let width, height;
+        const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement);
 
-        if (viewBox) {
-            [, , width, height] = viewBox.split(/[\s,]+/).map(parseFloat);
-        } else {
-            width = parseFloat(svgElement.getAttribute('width')) || 400;
-            height = parseFloat(svgElement.getAttribute('height')) || 300;
-        }
-
-        // SVG viewBox dimensions are in user units - treat them as pixel values for conversion
-        const displayWidth = this.measurementSystem.pixelsToUnits(width);
-        const displayHeight = this.measurementSystem.pixelsToUnits(height); let content = '<div class="tooltip-title">SVG Canvas Boundary</div>';
+        // Convert from measuring clone pixels to current display units
+        const displayWidth = this.measurementSystem.convertPixelsToCurrentUnit(boundingBox.width);
+        const displayHeight = this.measurementSystem.convertPixelsToCurrentUnit(boundingBox.height); let content = '<div class="tooltip-title">SVG Canvas Boundary</div>';
         content += '<div class="tooltip-section">';
         content += '<div class="section-title">Canvas Dimensions</div>';
         content += `
             <div class="tooltip-measurement">
                 <span class="measurement-name">Width:</span>
-                <span class="measurement-value">${this.measurementSystem.formatGridNumber(displayWidth)}${this.measurementSystem.units}</span>
+                <span class="measurement-value">${this.measurementSystem.formatDisplayNumber(displayWidth)}${this.measurementSystem.units}</span>
             </div>
             <div class="tooltip-measurement">
                 <span class="measurement-name">Height:</span>
-                <span class="measurement-value">${this.measurementSystem.formatGridNumber(displayHeight)}${this.measurementSystem.units}</span>
+                <span class="measurement-value">${this.measurementSystem.formatDisplayNumber(displayHeight)}${this.measurementSystem.units}</span>
             </div>`;
         content += '</div>';
 
@@ -342,11 +335,11 @@ class UIComponents {
     }    // Shaper attributes helper
     getShaperAttributes(path) {
         const attributes = [];
-        
+
         // Get shaper attributes from elementData instead of DOM
         const dimensions = this.elementManager.getElementDimensions(path);
         const shaperAttrs = dimensions.shaperAttributes || {};
-        
+
         // Check if we have any shaper attributes stored in elementData
         const hasAnyNumericAttribute = ['shaper:cutDepth', 'shaper:cutOffset', 'shaper:toolDia'].some(attrName => {
             return shaperAttrs[attrName] && shaperAttrs[attrName].trim() !== '';
@@ -360,8 +353,8 @@ class UIComponents {
         }
 
         // Process all shaper attributes from elementData
-        const shaperAttrNames = ['shaper:cutDepth', 'shaper:cutOffset', 'shaper:toolDia', 'shaper:cutType'];
-        
+        const shaperAttrNames = ['shaper:cutType', 'shaper:cutDepth', 'shaper:cutOffset', 'shaper:toolDia'];
+
         shaperAttrNames.forEach(attrName => {
             const value = shaperAttrs[attrName];
             let displayValue;
@@ -376,10 +369,11 @@ class UIComponents {
                 if (attrName === 'shaper:cutType') {
                     displayValue = value;
                 } else {
-                    // For measurement values, parse value with its original unit and convert to current units
-                    const convertedValue = this.measurementSystem.parseValueWithUnits(value, this.measurementSystem.units);
-                    if (convertedValue !== null) {
-                        const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
+                    // For measurement values, stored value is in pixels, convert to current units
+                    const pixelValue = parseFloat(value);
+                    if (!isNaN(pixelValue)) {
+                        const convertedValue = this.measurementSystem.convertPixelsToCurrentUnit(pixelValue);
+                        const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
                         displayValue = `${formattedValue}${this.measurementSystem.units}`;
                     } else {
                         displayValue = value; // Show as-is if not parseable

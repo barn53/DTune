@@ -38,7 +38,7 @@ class MeasurementSystem {
     }
 
     // Number formatting with decimal separator support
-    formatGridNumber(value) {
+    formatDisplayNumber(value) {
         // Format number to show up to 3 decimal places, ensuring at least 1 decimal place
         const fixed3 = parseFloat(value).toFixed(3);
 
@@ -143,10 +143,10 @@ class MeasurementSystem {
         }
         const parsedValue = this.parseValueWithUnits(valueWithUnits, this.units);
         if (parsedValue !== null) {
-            return this.formatGridNumber(parsedValue);
+            return this.formatDisplayNumber(parsedValue);
         }
         const stripped = this.stripUnitsFromValue(valueWithUnits);
-        return isNaN(stripped) ? '' : this.formatGridNumber(stripped);
+        return isNaN(stripped) ? '' : this.formatDisplayNumber(stripped);
     }
 
     // Unit conversion between different measurement systems
@@ -178,7 +178,7 @@ class MeasurementSystem {
         }
     }
 
-    pixelsToUnits(pixels) {
+    convertPixelsToCurrentUnit(pixels) {
         return this.convertBetweenUnits(pixels, 'px', this.units);
     }
 
@@ -300,11 +300,24 @@ class MeasurementSystem {
                 elementData.isCircle = true;
             }
 
-            // 4. Extract shaper attributes from the element
+            // 4. Extract shaper attributes from the element and convert to pixels
             const shaperAttributes = {};
             Array.from(element.attributes).forEach(attr => {
                 if (attr.name.startsWith('shaper:')) {
-                    shaperAttributes[attr.name] = attr.value;
+                    const attrValue = attr.value;
+                    if (attr.name === 'shaper:cutType') {
+                        // cutType is stored as-is (no unit conversion)
+                        shaperAttributes[attr.name] = attrValue;
+                    } else {
+                        // Measurement attributes: convert from original units to pixels
+                        const pixelValue = this.parseValueWithUnits(attrValue);
+                        if (pixelValue !== null) {
+                            const pixelsFromUnits = this.unitsToPixels(pixelValue);
+                            shaperAttributes[attr.name] = pixelsFromUnits.toString();
+                        } else {
+                            shaperAttributes[attr.name] = attrValue; // Keep as-is if not parseable
+                        }
+                    }
                 }
             });
             elementData.shaperAttributes = shaperAttributes;
@@ -314,7 +327,125 @@ class MeasurementSystem {
         });
 
         return elementDataMap;
-    }    /**
+    }
+
+    // DEBUG: Compare SVG vs Element measurements
+    measureSVGBoundaryWithClone(svgElement) {
+        // First, try to detect if SVG has real unit information
+        const realDimensions = this.detectRealSVGDimensions(svgElement);
+        if (realDimensions) {
+            this.lastMeasurementCloneHTML = `Real dimensions detected: ${realDimensions.width}${realDimensions.widthUnit} × ${realDimensions.height}${realDimensions.heightUnit}`;
+
+            // Convert to pixels using the detected units
+            const widthPx = this.convertBetweenUnits(realDimensions.width, realDimensions.widthUnit, 'px');
+            const heightPx = this.convertBetweenUnits(realDimensions.height, realDimensions.heightUnit, 'px');
+
+            return {
+                width: widthPx,
+                height: heightPx,
+                method: 'realDimensions',
+                originalWidth: `${realDimensions.width}${realDimensions.widthUnit}`,
+                originalHeight: `${realDimensions.height}${realDimensions.heightUnit}`
+            };
+        }
+
+        // Use EXACTLY the same method as getVisualDimensions
+        const tempContainer = document.createElement('div');
+        tempContainer.style.all = 'initial';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '-9999px';
+
+        try {
+            const measurementClone = svgElement.cloneNode(true);
+            const viewBox = measurementClone.getAttribute('viewBox');
+            if (viewBox) {
+                const [, , vbWidth, vbHeight] = viewBox.split(/[ ,]+/);
+                measurementClone.style.width = `${vbWidth}px`;
+                measurementClone.style.height = `${vbHeight}px`;
+            }
+            tempContainer.appendChild(measurementClone);
+            document.body.appendChild(tempContainer);
+
+            // Get the SVG's own bounding rect (like elements do)
+            const svgBbox = measurementClone.getBoundingClientRect();
+
+            // DEBUG: Also measure first element for comparison
+            const firstElement = measurementClone.querySelector('[data-app-id]');
+            let elementBbox = null;
+            let elementRealSize = null;
+            
+            if (firstElement) {
+                elementBbox = firstElement.getBoundingClientRect();
+                
+                // Get the element's "real" dimensions using getVisualDimensions logic
+                elementRealSize = this.getVisualDimensions(firstElement, svgElement);
+            }
+
+            this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+
+            return {
+                width: svgBbox.width,
+                height: svgBbox.height,
+                method: 'getBoundingClientRect_SameAsElements',
+                viewBox: viewBox,
+                appliedStyle: `${measurementClone.style.width} × ${measurementClone.style.height}`,
+                // DEBUG: Compare SVG vs Element measurements
+                debugComparison: {
+                    svgBoundingRect: {
+                        width: svgBbox.width,
+                        height: svgBbox.height
+                    },
+                    firstElementBoundingRect: elementBbox,
+                    firstElementRealSize: elementRealSize,
+                    // Calculate ratio between element measurements
+                    possibleCorrection: elementRealSize && elementBbox ? {
+                        widthRatio: elementRealSize.width / elementBbox.width,
+                        heightRatio: elementRealSize.height / elementBbox.height,
+                        correctedSvgWidth: svgBbox.width * (elementRealSize.width / elementBbox.width),
+                        correctedSvgHeight: svgBbox.height * (elementRealSize.height / elementBbox.height)
+                    } : null
+                }
+            };
+        } finally {
+            if (tempContainer.parentNode) {
+                tempContainer.parentNode.removeChild(tempContainer);
+            }
+        }
+    }
+
+    // Try to detect real SVG dimensions from width/height attributes with units
+    detectRealSVGDimensions(svgElement) {
+        const width = svgElement.getAttribute('width');
+        const height = svgElement.getAttribute('height');
+
+        // Skip percentage or viewport units
+        if (!width || !height || width.includes('%') || height.includes('%')) {
+            return null;
+        }
+
+        // Parse width with units
+        const widthMatch = width.match(/^([0-9.]+)\s*(mm|in|px|pt|pc|cm)?$/);
+        const heightMatch = height.match(/^([0-9.]+)\s*(mm|in|px|pt|pc|cm)?$/);
+
+        if (widthMatch && heightMatch) {
+            const widthValue = parseFloat(widthMatch[1]);
+            const heightValue = parseFloat(heightMatch[1]);
+            const widthUnit = widthMatch[2] || 'px'; // default to px if no unit
+            const heightUnit = heightMatch[2] || 'px';
+
+            return {
+                width: widthValue,
+                height: heightValue,
+                widthUnit: widthUnit,
+                heightUnit: heightUnit
+            };
+        }
+
+        return null;
+    }
+
+    /**
      * Analyzes an entire SVG to get dimensions of all its elements.
      * This is a simplified version that focuses on getting the job done
      * without the extra features like caching or advanced unit detection.

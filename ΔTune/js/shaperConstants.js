@@ -20,6 +20,11 @@ class ShaperConstants {
         return `${this.NAMESPACE_PREFIX}:${attr}`;
     }
 
+    // Legacy method for raw attribute names (deprecated but needed temporarily)
+    static getRawAttributeName(attr) {
+        return `${this.NAMESPACE_PREFIX}-${attr}-raw`;
+    }
+
     // Input validation patterns
     static EMPTY_VALUES = ['', '0', '0.0', '0,0'];
 

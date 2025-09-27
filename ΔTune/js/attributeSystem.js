@@ -41,10 +41,10 @@ class AttributeSystem {
         // Save measurement attributes using raw values
         this.saveMeasurementAttributes(selectedPath);
 
-        // Sync attributes to original SVG for export consistency
-        this.syncAttributesToOriginalSVG(selectedPath);
+        // Note: Shaper attributes are kept only in elementData for tooltips and editor
+        // They will be added to SVG only during export, not to the master SVG
 
-        // Update SVG data for export
+        // Update SVG data for export (no shaper attributes sync needed)
         this.fileManager.updateSVGData();
         console.log('AttributeSystem.saveAttributes completed'); // Debug log
     }
@@ -53,46 +53,44 @@ class AttributeSystem {
     saveCutTypeAttribute(element) {
         const cutType = document.getElementById('cutType').value.trim();
 
+        // Update elementData for this element
+        const dimensions = this.elementManager.getElementDimensions(element);
+        if (!dimensions.shaperAttributes) {
+            dimensions.shaperAttributes = {};
+        }
+
         if (ShaperConstants.isEmptyValue(cutType) || cutType === 'none') {
-            element.removeAttribute(ShaperConstants.getRawAttributeName('cutType'));
+            delete dimensions.shaperAttributes['shaper:cutType'];
         } else {
-            element.setAttribute(ShaperConstants.getRawAttributeName('cutType'), cutType);
+            dimensions.shaperAttributes['shaper:cutType'] = cutType;
         }
     }
 
-    // Save measurement attributes using raw mm values
+    // Save measurement attributes using pixel values
     saveMeasurementAttributes(element) {
-        if (!this.editor) return;
+        // Get elementData for this element
+        const dimensions = this.elementManager.getElementDimensions(element);
+        if (!dimensions.shaperAttributes) {
+            dimensions.shaperAttributes = {};
+        }
 
         ShaperConstants.MEASUREMENT_ATTRIBUTES.forEach(attr => {
             const input = document.getElementById(attr);
             const inputValue = input.value.trim();
 
+            const attrName = `shaper:${attr}`;
+
             if (ShaperConstants.isEmptyValue(inputValue)) {
-                element.removeAttribute(ShaperConstants.getRawAttributeName(attr));
+                delete dimensions.shaperAttributes[attrName];
             } else {
-                const rawValue = this.editor.getRawValue(input);
-                ShaperUtils.setRawAttribute(element, attr, rawValue);
+                // Convert input value (in current units) to pixels for storage
+                const numValue = this.measurementSystem.stripUnitsFromValue(inputValue);
+                if (!isNaN(numValue)) {
+                    const pixelValue = this.measurementSystem.unitsToPixels(numValue);
+                    dimensions.shaperAttributes[attrName] = pixelValue.toString();
+                }
             }
         });
-    }
-
-    // Sync attributes from displayed element back to original SVG in file manager
-    syncAttributesToOriginalSVG(displayedElement) {
-        console.log('syncAttributesToOriginalSVG called with:', displayedElement); // Debug log
-        const originalSVG = this.fileManager.getSVGElement();
-        console.log('Original SVG:', originalSVG); // Debug log
-        if (!originalSVG || !displayedElement) {
-            console.log('Missing originalSVG or displayedElement'); // Debug log
-            return;
-        }
-
-        const correspondingElement = ShaperUtils.findCorrespondingElement(displayedElement, originalSVG);
-        console.log('Corresponding element found:', correspondingElement); // Debug log
-        if (correspondingElement) {
-            ShaperUtils.syncAllShaperAttributes(displayedElement, correspondingElement);
-            console.log('Attributes synced'); // Debug log
-        }
     }
 
     // Convert attribute values when units change (raw values stay the same, only display changes)
@@ -106,22 +104,36 @@ class AttributeSystem {
     // Refresh dialog values after unit conversion
     refreshDialogValues() {
         const selectedPath = this.getSelectedPath();
-        if (!selectedPath || !this.editor) return;
+        if (!selectedPath) return;
+
+        // Get shaper attributes from elementData
+        const dimensions = this.elementManager.getElementDimensions(selectedPath);
+        const shaperAttrs = dimensions.shaperAttributes || {};
 
         ShaperConstants.MEASUREMENT_ATTRIBUTES.forEach(attr => {
             const input = document.getElementById(attr);
-            const rawValueMm = ShaperUtils.getRawAttributeValue(selectedPath, attr);
+            const attrName = `shaper:${attr}`;
+            const pixelValue = shaperAttrs[attrName];
 
-            if (rawValueMm !== null && !isNaN(rawValueMm) && input) {
-                // Convert raw mm to current display units
-                const convertedValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', this.measurementSystem.units);
-                const displayValue = this.measurementSystem.formatGridNumber(convertedValue);
-                input.value = displayValue;
-
-                // Update stored raw value in input
-                this.editor.setRawValue(input, rawValueMm);
+            if (pixelValue && pixelValue.trim() !== '' && input) {
+                const numPixels = parseFloat(pixelValue);
+                if (!isNaN(numPixels)) {
+                    // Convert pixel value to current display units
+                    const unitValue = this.measurementSystem.convertPixelsToCurrentUnit(numPixels);
+                    const displayValue = this.measurementSystem.formatDisplayNumber(unitValue);
+                    input.value = displayValue;
+                }
+            } else if (input) {
+                input.value = '';
             }
         });
+
+        // Handle cutType
+        const cutType = shaperAttrs['shaper:cutType'] || '';
+        const cutTypeInput = document.getElementById('cutType');
+        if (cutTypeInput) {
+            cutTypeInput.value = cutType;
+        }
     }
 
     // Get the currently selected path
@@ -174,25 +186,38 @@ class AttributeSystem {
         };
 
         elementsWithShaper.forEach(element => {
-            const attrs = this.getShaperAttributes(element);
+            // Get attributes from elementData instead of DOM
+            const dimensions = this.elementManager.getElementDimensions(element);
+            const shaperAttrs = dimensions.shaperAttributes || {};
 
-            if (attrs.cutType) {
-                summary.cutTypes.add(attrs.cutType);
+            const cutType = shaperAttrs['shaper:cutType'];
+            if (cutType) {
+                summary.cutTypes.add(cutType);
             }
 
             ['cutDepth', 'cutOffset'].forEach(attr => {
-                if (attrs[attr]) {
-                    const value = this.measurementSystem.parseValueWithUnits(attrs[attr], 'mm');
-                    if (value !== null) {
+                const attrName = `shaper:${attr}`;
+                const pixelValue = shaperAttrs[attrName];
+                if (pixelValue && pixelValue.trim() !== '') {
+                    const numPixels = parseFloat(pixelValue);
+                    if (!isNaN(numPixels)) {
+                        // Convert to millimeters for summary comparison
+                        const mmValue = this.measurementSystem.convertBetweenUnits(numPixels, 'px', 'mm');
                         const range = attr === 'cutDepth' ? summary.depthRange : summary.offsetRange;
-                        if (range.min === null || value < range.min) range.min = value;
-                        if (range.max === null || value > range.max) range.max = value;
+                        if (range.min === null || mmValue < range.min) range.min = mmValue;
+                        if (range.max === null || mmValue > range.max) range.max = mmValue;
                     }
                 }
             });
 
-            if (attrs.toolDia) {
-                summary.toolDiameters.add(attrs.toolDia);
+            const toolDia = shaperAttrs['shaper:toolDia'];
+            if (toolDia && toolDia.trim() !== '') {
+                const numPixels = parseFloat(toolDia);
+                if (!isNaN(numPixels)) {
+                    const mmValue = this.measurementSystem.convertBetweenUnits(numPixels, 'px', 'mm');
+                    const formattedValue = this.measurementSystem.formatDisplayNumber(mmValue);
+                    summary.toolDiameters.add(`${formattedValue}mm`);
+                }
             }
         });
 
