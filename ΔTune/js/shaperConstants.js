@@ -15,13 +15,6 @@ class ShaperConstants {
     // All shaper attributes
     static ALL_ATTRIBUTES = [...this.MEASUREMENT_ATTRIBUTES, ...this.SIMPLE_ATTRIBUTES];
 
-    // Raw attribute names for internal storage
-    static getRawAttributeName(attr) {
-        return this.SIMPLE_ATTRIBUTES.includes(attr)
-            ? `shaper-${attr}-raw`
-            : `shaper-${attr}-raw-mm`;
-    }
-
     // Namespaced attribute names for export
     static getNamespacedAttributeName(attr) {
         return `${this.NAMESPACE_PREFIX}:${attr}`;

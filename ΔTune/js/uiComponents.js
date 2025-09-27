@@ -54,24 +54,27 @@ class UIComponents {
             this.selectedPathInfo.textContent = this.elementManager.getElementDescription(path);
         }
 
-        // Get raw attributes (no namespaced attributes during editing)
-        const cutType = path.getAttribute('shaper-cutType-raw') || '';
+        // Get shaper attributes from elementData
+        const dimensions = this.elementManager.getElementDimensions(path);
+        const shaperAttrs = dimensions.shaperAttributes || {};
 
-        // Parse raw values and populate form
+        // Get cutType
+        const cutType = shaperAttrs['shaper:cutType'] || '';
+
+        // Populate measurement input fields from elementData
         ['cutDepth', 'cutOffset', 'toolDia'].forEach(inputId => {
             const input = document.getElementById(inputId);
+            const attrName = `shaper:${inputId}`;
+            const value = shaperAttrs[attrName];
 
-            // Use raw mm value for precise display
-            const rawValueMm = path.getAttribute(`shaper-${inputId}-raw-mm`);
-            if (rawValueMm && !isNaN(parseFloat(rawValueMm))) {
-                // Convert from raw mm to current units with high precision
-                const convertedValue = this.measurementSystem.convertBetweenUnits(parseFloat(rawValueMm), 'mm', this.measurementSystem.units);
-                const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
-                input.value = formattedValue;
-
-                // Store the raw value in the input element for future conversions
-                if (this.editor) {
-                    this.editor.setRawValue(input, parseFloat(rawValueMm));
+            if (value && value.trim() !== '') {
+                // Parse the stored value with its unit and convert to current units
+                const convertedValue = this.measurementSystem.parseValueWithUnits(value, this.measurementSystem.units);
+                if (convertedValue !== null) {
+                    const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
+                    input.value = formattedValue;
+                } else {
+                    input.value = '';
                 }
             } else {
                 input.value = '';
@@ -146,8 +149,10 @@ class UIComponents {
             this.tooltipHideTimeout = null;
         }
 
-        // Create tooltip content
-        let content = '<div class="tooltip-title">Element Info</div>';
+        // Create tooltip content with app-id
+        const appId = path.dataset.appId || 'unknown';
+        const shortId = appId.replace('app-id-', ''); // Remove prefix, keep only the suffix
+        let content = `<div class="tooltip-title">Element Info (${shortId})</div>`;
 
         // Add measurements section
         const measurements = this.elementManager.getElementMeasurements(path);
@@ -206,11 +211,9 @@ class UIComponents {
             height = parseFloat(svgElement.getAttribute('height')) || 300;
         }
 
-        // Convert to current units
-        const displayWidth = this.measurementSystem.convertBetweenUnits(width, 'mm', this.measurementSystem.units);
-        const displayHeight = this.measurementSystem.convertBetweenUnits(height, 'mm', this.measurementSystem.units);
-
-        let content = '<div class="tooltip-title">SVG Canvas Boundary</div>';
+        // SVG viewBox dimensions are in user units - treat them as pixel values for conversion
+        const displayWidth = this.measurementSystem.pixelsToUnits(width);
+        const displayHeight = this.measurementSystem.pixelsToUnits(height); let content = '<div class="tooltip-title">SVG Canvas Boundary</div>';
         content += '<div class="tooltip-section">';
         content += '<div class="section-title">Canvas Dimensions</div>';
         content += `
@@ -339,64 +342,63 @@ class UIComponents {
     }    // Shaper attributes helper
     getShaperAttributes(path) {
         const attributes = [];
-        const shaperNamespace = 'http://www.shapertools.com/namespaces/shaper';
-
-        // Check for proper shaper:* namespaced attributes
-        const shaperAttrs = ['cutDepth', 'cutOffset', 'toolDia', 'cutType'];
-
-        // First, check if any numeric attributes are set (check both namespaced and raw attributes)
-        const hasAnyNumericAttribute = ['cutDepth', 'cutOffset', 'toolDia'].some(attrName => {
-            // Check namespaced attribute
-            const namespacedValue = path.getAttributeNS(shaperNamespace, attrName);
-            // Check raw attribute
-            const rawValue = path.getAttribute(`shaper-${attrName}-raw-mm`);
-            return (namespacedValue && namespacedValue.trim() !== '') || (rawValue && rawValue.trim() !== '');
+        
+        // Get shaper attributes from elementData instead of DOM
+        const dimensions = this.elementManager.getElementDimensions(path);
+        const shaperAttrs = dimensions.shaperAttributes || {};
+        
+        // Check if we have any shaper attributes stored in elementData
+        const hasAnyNumericAttribute = ['shaper:cutDepth', 'shaper:cutOffset', 'shaper:toolDia'].some(attrName => {
+            return shaperAttrs[attrName] && shaperAttrs[attrName].trim() !== '';
         });
 
-        // Also check if cutType is set (check both namespaced and raw)
-        const namespacedCutType = path.getAttributeNS(shaperNamespace, 'cutType');
-        const rawCutType = path.getAttribute('shaper-cutType-raw');
-        const hasCutType = (namespacedCutType && namespacedCutType.trim() !== '') || (rawCutType && rawCutType.trim() !== '');
+        const hasCutType = shaperAttrs['shaper:cutType'] && shaperAttrs['shaper:cutType'].trim() !== '';
 
         // If no attributes are set at all, return empty array (will show "no attributes" message)
         if (!hasAnyNumericAttribute && !hasCutType) {
             return attributes;
         }
 
-        // If at least one attribute is set, show all attributes
-        shaperAttrs.forEach(attrName => {
+        // Process all shaper attributes from elementData
+        const shaperAttrNames = ['shaper:cutDepth', 'shaper:cutOffset', 'shaper:toolDia', 'shaper:cutType'];
+        
+        shaperAttrNames.forEach(attrName => {
+            const value = shaperAttrs[attrName];
             let displayValue;
+            let displayName;
 
-            // For measurement values, only use raw values (single source of truth)
-            if (attrName !== 'cutType') {
-                const rawValueMm = path.getAttribute(`shaper-${attrName}-raw-mm`);
-                if (rawValueMm !== null && !isNaN(parseFloat(rawValueMm))) {
-                    // Convert from raw mm to current units (including zero values)
-                    const convertedValue = this.measurementSystem.convertBetweenUnits(parseFloat(rawValueMm), 'mm', this.measurementSystem.units);
-                    const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
-                    displayValue = `${formattedValue}${this.measurementSystem.units}`;
+            // Extract display name (remove "shaper:" prefix)
+            displayName = attrName.replace('shaper:', '');
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+
+            if (value && value.trim() !== '') {
+                // For cutType, show value as-is
+                if (attrName === 'shaper:cutType') {
+                    displayValue = value;
                 } else {
-                    // No raw attribute exists, show as not set
-                    displayValue = 'not set';
+                    // For measurement values, parse value with its original unit and convert to current units
+                    const convertedValue = this.measurementSystem.parseValueWithUnits(value, this.measurementSystem.units);
+                    if (convertedValue !== null) {
+                        const formattedValue = this.measurementSystem.formatGridNumber(convertedValue);
+                        displayValue = `${formattedValue}${this.measurementSystem.units}`;
+                    } else {
+                        displayValue = value; // Show as-is if not parseable
+                    }
                 }
             } else {
-                // For cutType, use the raw cutType attribute
-                const cutTypeValue = path.getAttribute('shaper-cutType-raw');
-                if (cutTypeValue !== null && cutTypeValue.trim() !== '') {
-                    displayValue = cutTypeValue;
-                } else {
-                    displayValue = 'not set';
-                }
+                displayValue = 'not set';
             }
 
             attributes.push({
-                name: attrName,
+                name: displayName,
                 value: displayValue
             });
         });
 
         return attributes;
-    }    // Keyboard shortcuts
+    }
+
+    // Keyboard shortcuts
     handleKeyDown(event) {
         // Escape key closes modal
         if (event.key === 'Escape') {

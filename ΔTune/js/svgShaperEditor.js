@@ -172,13 +172,19 @@ class SVGShaperEditor {
             zoom: this.viewport.getZoom(),
             panX: this.viewport.getPan().x,
             panY: this.viewport.getPan().y,
+            // Save measurement data for debugging
+            dpi: this.measurementSystem.dpi,
+            elementData: Array.from(this.elementDataMap.entries()).map(([appId, data]) => ({
+                elementId: appId,
+                data: data
+            })),
             lastOpenedFile: this.fileManager.svgData ? {
                 svgData: this.fileManager.svgData,
                 fileName: this.currentFileName || 'untitled.svg'
             } : null,
             // --- Debugging ---
-            debug_displayCloneSVG: this.svgContent.innerHTML,
-            debug_lastMeasurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML
+            displayCloneSVG: this.svgContent.innerHTML,
+            measurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML
         };
 
         localStorage.setItem('shaperEditorSettings', JSON.stringify(settings));
@@ -853,13 +859,6 @@ class SVGShaperEditor {
         this.convertGutterSize(oldUnits, newUnits);
         this.convertDialogValues(oldUnits, newUnits);
         this.attributeSystem.convertAttributeValues(oldUnits, newUnits);
-
-        // --- NEW: Re-analyze SVG with new units ---
-        if (this.fileManager.masterSVGElement) {
-            this.elementDataMap.clear();
-            const newMap = this.measurementSystem.analyzeSVG(this.fileManager.masterSVGElement);
-            newMap.forEach((value, key) => this.elementDataMap.set(key, value));
-        }
 
         // Clear conversion flag
         this.isConverting = false;

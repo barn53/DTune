@@ -1,7 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:shaper="http://www.shapertools.com/namespaces/shaper" width="400"
-    height="300" viewBox="-10 -10 420 320">
-
-    <rect x="200" y="20" width="30" height="30" fill="none" stroke="darkorange" stroke-width="1" shaper:cutDepth="3.5mm"
-        class="" shaper:cutType="outside" />
-
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:serif="http://www.serif.com/" width="100%" height="100%" viewBox="-10 -10 587 587" version="1.1" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"><path d="M 0 0 L 567 0 L 567 567 L 0 567 Z" class="svg-boundary-outline no-export" stroke-width="3.1581828133552268"></path>
+    <g transform="matrix(0.325821,0,0,0.393701,11.4037,9.84252)">
+        <rect x="81" y="71" width="116" height="96" style="fill:none;stroke:black;stroke-width:3.69px;" data-app-id="app-id-us7xqnjw9"></rect><rect x="81" y="71" width="116" height="96" fill="transparent" stroke="transparent" stroke-width="10" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></rect>
+    </g>
+    <g transform="matrix(0.325821,0,0,0.393701,464.947,463.386)">
+        <rect x="81" y="71" width="116" height="96" style="fill:none;stroke:black;stroke-width:3.69px;" data-app-id="app-id-3598mdulw"></rect><rect x="81" y="71" width="116" height="96" fill="transparent" stroke="transparent" stroke-width="10" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></rect>
+    </g>
+    <g transform="matrix(0.258872,0,0,0.337458,205.803,215.298)">
+        <ellipse cx="300" cy="202" rx="73" ry="56" style="fill:none;stroke:black;stroke-width:4.43px;" data-app-id="app-id-zmrmanula"></ellipse><ellipse cx="300" cy="202" rx="73" ry="56" fill="transparent" stroke="transparent" stroke-width="10" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></ellipse>
+    </g>
+    <g transform="matrix(0.566032,-0.367585,0.367585,0.566032,327.229,6.32777)">
+        <rect x="139" y="193" width="56" height="56" style="fill:none;stroke:black;stroke-width:1.98px;" data-app-id="app-id-iwig7jz9p"></rect><rect x="139" y="193" width="56" height="56" fill="transparent" stroke="transparent" stroke-width="10" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></rect>
+    </g>
+    <path d="M76.973,205C76.973,205 91.794,157.005 134,167C176.206,176.995 122.192,315.702 188,241C253.808,166.298 275.952,170.11 250,207" style="fill:none;stroke:black;stroke-width:1.33px;" data-app-id="app-id-x1tyiv5aw"></path><path d="M76.973,205C76.973,205 91.794,157.005 134,167C176.206,176.995 122.192,315.702 188,241C253.808,166.298 275.952,170.11 250,207" fill="transparent" stroke="transparent" stroke-width="15.790914066776134" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></path>
+    <g transform="matrix(1,0,0,1,-63.0705,-40.7193)">
+        <path d="M112.07,379.719L320.561,379.719" style="fill:none;stroke:black;stroke-width:1px;" data-app-id="app-id-pcxhtqjxx"></path><path d="M112.07,379.719L320.561,379.719" fill="transparent" stroke="transparent" stroke-width="15.790914066776134" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></path>
+    </g>
+    <path d="M368.679,128.973L368.679,229.207" style="fill:none;stroke:black;stroke-width:1px;" data-app-id="app-id-w3vvxqiis"></path><path d="M368.679,128.973L368.679,229.207" fill="transparent" stroke="transparent" stroke-width="15.790914066776134" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></path>
+    <g transform="matrix(1,0,0,1,118.203,18.6093)">
+        <path d="M250.475,420.391L359.795,420.391" style="fill:none;stroke:black;stroke-width:1px;" data-app-id="app-id-r30d42e6a"></path><path d="M250.475,420.391L359.795,420.391" fill="transparent" stroke="transparent" stroke-width="15.790914066776134" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></path>
+    </g>
+    <g transform="matrix(0.838671,-0.544639,0.544639,0.838671,-236.992,149.133)">
+        <path d="M108.61,510.255L323.276,510.255" style="fill:none;stroke:black;stroke-width:1px;" data-app-id="app-id-rawewwbqj"></path><path d="M108.61,510.255L323.276,510.255" fill="transparent" stroke="transparent" stroke-width="15.790914066776134" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></path>
+    </g>
+    <ellipse cx="396" cy="331.5" rx="45" ry="26.5" style="fill:none;stroke:black;stroke-width:1px;" data-app-id="app-id-wx8pom1xv"></ellipse><ellipse cx="396" cy="331.5" rx="45" ry="26.5" fill="transparent" stroke="transparent" stroke-width="10" pointer-events="all" cursor="pointer" class="path-overlay no-export" style="pointer-events: all !important;"></ellipse>
+<path d="M -5 -5 L 572 -5 L 572 572 L -5 572 Z M 0 0 L 567 0 L 567 567 L 0 567 Z" fill="transparent" fill-rule="evenodd" cursor="pointer" class="boundary-overlay no-export" stroke-width="15.790914066776134"></path></svg>

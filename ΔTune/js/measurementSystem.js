@@ -282,32 +282,43 @@ class MeasurementSystem {
             // 1. Get precise visual dimensions in pixels for ALL elements
             const visualPx = this.getVisualDimensions(element, masterSVGElement);
 
-            // 2. Convert pixel dimensions to the current display units
-            const width = this.pixelsToUnits(visualPx.width);
-            const height = this.pixelsToUnits(visualPx.height);
+            // 2. Store pixel dimensions as base data (will be converted on display)
+            const widthPx = visualPx.width;
+            const heightPx = visualPx.height;
 
             const tagName = element.tagName.toLowerCase();
             const elementData = {
                 tagName: tagName,
-                width: width,
-                height: height
+                widthPx: widthPx,
+                heightPx: heightPx
             };
 
-            // 3. Special handling for circles (still useful)
-            if (tagName === 'circle' || (tagName === 'ellipse' && Math.abs(width - height) < 0.1)) {
-                elementData.diameter = (width + height) / 2;
-                elementData.radius = elementData.diameter / 2;
+            // 3. Special handling for circles (store pixel-based diameter/radius)
+            if (tagName === 'circle' || (tagName === 'ellipse' && Math.abs(widthPx - heightPx) < 0.1)) {
+                elementData.diameterPx = (widthPx + heightPx) / 2;
+                elementData.radiusPx = elementData.diameterPx / 2;
                 elementData.isCircle = true;
             }
 
-            // --- REMOVED: Special handling for <line> is gone. It's now treated like any other shape. ---
+            // 4. Extract shaper attributes from the element
+            const shaperAttributes = {};
+            Array.from(element.attributes).forEach(attr => {
+                if (attr.name.startsWith('shaper:')) {
+                    shaperAttributes[attr.name] = attr.value;
+                }
+            });
+            elementData.shaperAttributes = shaperAttributes;
 
-            // 4. Store the collected data in the map
+            // 5. Store the collected data in the map (use appId as key for safe mapping)
             elementDataMap.set(appId, elementData);
         });
 
         return elementDataMap;
-    }
+    }    /**
+     * Analyzes an entire SVG to get dimensions of all its elements.
+     * This is a simplified version that focuses on getting the job done
+     * without the extra features like caching or advanced unit detection.
+     */
 }
 
 // Export for use in other modules
