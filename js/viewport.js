@@ -535,5 +535,6 @@ class Viewport {
     }
 }
 
+
 // Export for use in other modules
 window.Viewport = Viewport;
