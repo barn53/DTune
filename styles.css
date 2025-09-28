@@ -7,9 +7,12 @@
 
 body {
     font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: transparent;
     min-height: 100vh;
     color: #333;
+    margin: 0;
+        padding: 0;
+        overflow: hidden;
 }
 
 /* Utility Classes */
@@ -92,11 +95,11 @@ body {
 }
 
 .text-secondary {
-    color: #666;
+    color: #333;
 }
 
 .text-muted {
-    color: #495057;
+    color: #333;
 }
 
 /* Complete pill styling - background + shadow + border-radius + transition + height */
@@ -122,17 +125,14 @@ body {
 }
 
 .container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
+    width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        background: transparent;
 }
 
-/* Header */
-header {
-    text-align: center;
-    margin-bottom: 40px;
-    color: white;
-}
+
 
 header h1 {
     font-size: 2.5rem;
@@ -147,7 +147,8 @@ header p {
 
 /* Upload Section */
 .upload-section {
-    min-height: 60vh;
+    width: 100vw;
+        height: 100vh;
     /* Uses .flex-center utility */
 }
 
@@ -256,91 +257,76 @@ header p {
 
 /* Editor Section */
 .editor-section {
+    width: 100vw;
+        height: 100vh;
+        position: relative;
     background: white;
-    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
 }
 
 /* Toolbar */
-.toolbar {
-    background: #f8f9fa;
-    padding: 15px 20px;
-    border-bottom: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-}
 
-.current-file-name-overlay {
+/* Neue Pill-Titelbar über die ganze Breite */
+.pill-titlebar {
     position: absolute;
     top: 12px;
-        left: 16px;
-        right: auto;
-        bottom: auto;
-        padding: 4px 12px 4px 10px;
-        background: transparent;
-        /* transparent background */
-        color: #000;
-        /* black text */
-        font-size: 20px;
-        /* larger text to harmonize with bigger icon */
-        line-height: 1.2;
-        /* reset from fixed 36px for better multiline spacing */
-        font-weight: 600;
-        border-radius: 4px;
-    pointer-events: none;
+    left: 16px;
+    right: 16px;
+        padding: 12px 24px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px) saturate(140%);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
     z-index: 1000;
-    max-width: 520px;
-        /* allow longer filenames */
-        display: inline-flex;
-        /* align icon + text nicely */
-        align-items: center;
-        /* center icon vs total text block */
-        gap: 0;
-        /* gap removed; spacer controls distance */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    min-height: 56px;
     }
 
-                                                                .current-file-name-overlay::before {
-        content: '';
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            background: url('icons/shaperDelta.svg') center center / contain no-repeat;
-            flex: 0 0 36px;
-            align-self: center;
-            /* override previous flex-start */
-            margin-top: 0;
-            /* reset */
-        }
-
-        .current-file-name-overlay .filename-spacer {
-            /* reduced spacing */
-            width: 16px;
-            /* was 28px */
-        }
-
-        .current-file-name-overlay .filename-text {
-            display: inline-block;
-            max-width: 460px;
-            white-space: normal;
-            /* allow wrapping */
-            overflow: visible;
-            /* show full wrapped lines */
-            text-overflow: clip;
-            /* no ellipsis for multiline */
-            word-break: break-word;
-            /* break long tokens */
-            line-height: 1.2;
+/* Fallback für Browser ohne backdrop-filter Support */
+@supports not ((backdrop-filter: blur(0)) or (-webkit-backdrop-filter: blur(0))) {
+    .pill-titlebar {
+        background: rgba(255, 255, 255, 0.85);
+    }
 }
 
-/* Toolbar right section */
-.toolbar-right {
-    gap: 25px;
-    font-size: 14px;
-    /* Uses .flex-center-y utility */
+/* Dateiname links in der Titelbar */
+.titlebar-filename {
+    display: flex;
+    align-items: center;
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.titlebar-filename::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+        height: 32px;
+    background: url('icons/shaperDelta.svg') center center / contain no-repeat;
+    flex: 0 0 32px;
+        margin-right: 12px;
+}
+
+.titlebar-filename .filename-text {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Controls rechts in der Titelbar */
+.titlebar-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
 }
 
 /* Zoom level display in toolbar */
@@ -366,11 +352,13 @@ header p {
 
 .label-pill-label {
     vertical-align: middle;
-        margin-bottom: 0;
+    margin-bottom: 0;
+    color: #333;
 }
 
 .label-pill-label {
     margin-right: 14px;
+    color: #333;
 }
 
 /* Remove label hover/focus styles completely */
@@ -507,18 +495,18 @@ header p {
 /* Pill input container */
 .gutter-input-container {
     position: relative;
-    min-width: 120px;
+    width: 105px;
+        /* Nochmals 10px breiter */
     height: 32px;
-        display: inline-flex;
+    display: inline-flex;
         align-items: center;
         vertical-align: middle;
         border-radius: 20px;
         background: #e8e8e8;
     transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s cubic-bezier(.4, 0, .2, 1), background .2s cubic-bezier(.4, 0, .2, 1);
-        overflow: hidden;
+    overflow: hidden;
     margin-top: 2px;
-        /* vertical offset */
-    }
+}
 /* Interaction states */
 .gutter-input-container:hover {
     transform: scale(1.05);
@@ -712,8 +700,13 @@ header p {
 
 /* SVG Container */
 .svg-container {
-    position: relative;
-    height: 70vh;
+    position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
     background: transparent !important;
     overflow: hidden;
 }
@@ -736,9 +729,10 @@ header p {
     left: 0;
     width: 100%;
     height: 100%;
-    /* Entfernt Flex-Zentrierung, damit (0,0) des Containers mit (viewBox minX,minY) verknüpft werden kann */
     display: block;
     transform-origin: 0 0; /* Skalierung ab SVG-Ursprung */
+    z-index: 1;
+        /* Niedriger z-index, damit Gitter darüber liegt */
 }
 
 .svg-content svg {
@@ -846,6 +840,8 @@ header p {
         linear-gradient(rgba(192, 192, 192, 0.4) 1px, transparent 1px),
         linear-gradient(90deg, rgba(192, 192, 192, 0.4) 1px, transparent 1px);
     background-size: 10px 10px;
+    z-index: 500;
+        /* Hoch genug um über SVG-Content zu sein */
 }
 
 .gutter-intersection {
@@ -856,7 +852,8 @@ header p {
 /* Zoom Controls */
 .zoom-controls {
     position: absolute;
-    top: 20px;
+    top: 130px;
+        /* Weitere 50px nach unten */
     right: 20px;
     display: flex;
     flex-direction: column;
@@ -1187,8 +1184,8 @@ header p {
 .floating-buttons {
     position: absolute;
     left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 130px;
+        /* Gleiche Höhe wie zoom-controls */
     display: flex;
     flex-direction: column;
     gap: 15px;
