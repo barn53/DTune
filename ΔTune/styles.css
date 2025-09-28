@@ -736,10 +736,9 @@ header p {
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transform-origin: center center;
+    /* Entfernt Flex-Zentrierung, damit (0,0) des Containers mit (viewBox minX,minY) verknüpft werden kann */
+    display: block;
+    transform-origin: 0 0; /* Skalierung ab SVG-Ursprung */
 }
 
 .svg-content svg {

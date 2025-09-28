@@ -11,31 +11,47 @@ class Viewport {
         this.lastMouseY = 0;
         this.svgContainer = null;
         this.svgElement = null;
-        this.onViewportChange = null; // Callback for when viewport state changes
+        this.onViewportChange = null; // callback
+        this.onViewportDragEnd = null; // callback
 
-        // Touch/Trackpad gesture tracking
+        // Touch / gesture tracking
         this.touchStartDistance = 0;
         this.touchStartZoom = 1;
         this.touchStartPanX = 0;
         this.touchStartPanY = 0;
         this.isTrackpadPanning = false;
 
-        // Initialize SVG helper for SVG operations
+        // Helper
         this.svgHelper = new SVGHelper();
+
+        // Logical anchor (top-left of drawing = viewBox minX/minY)
+        this.anchorLogicalX = 0;
+        this.anchorLogicalY = 0;
     }
 
+    // Reintroduced after accidental removal
     setSVGElements(container, svgElement) {
         this.svgContainer = container;
         this.svgElement = svgElement;
+
+        // Extract viewBox minX/minY as anchor (if available)
+        if (this.svgElement) {
+            const vb = this.svgElement.getAttribute('viewBox');
+            if (vb) {
+                const parts = vb.trim().split(/\s+/).map(Number);
+                if (parts.length === 4 && parts.every(v => !isNaN(v))) {
+                    this.anchorLogicalX = parts[0];
+                    this.anchorLogicalY = parts[1];
+                }
+            }
+        }
     }
 
-    // Zoom controls
     zoomIn() {
         this.zoom = Math.min(this.zoom * 1.2, 10);
         this.updateTransform();
         this.updateZoomLevel();
         this.notifyViewportChange();
-        // Update gutter if callback is available
         if (this.onZoomChange) {
             this.onZoomChange();
         }
@@ -46,7 +62,6 @@ class Viewport {
         this.updateTransform();
         this.updateZoomLevel();
         this.notifyViewportChange();
-        // Update gutter if callback is available
         if (this.onZoomChange) {
             this.onZoomChange();
         }
@@ -311,6 +326,11 @@ class Viewport {
 
         if (!svgContent) return;
 
+        // Sicherstellen, dass Skalierung immer vom Ursprung (0,0) ausgeht
+        if (svgContent.style.transformOrigin !== '0px 0px') {
+            svgContent.style.transformOrigin = '0 0';
+        }
+
         const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
         svgContent.style.transform = transform;
 
@@ -325,28 +345,24 @@ class Viewport {
         const gutterOverlay = document.getElementById('gutterOverlay');
         if (!gutterOverlay || gutterOverlay.style.display === 'none') return;
 
-        // Base cell size stored on overlay (set when gutter size changes)
         const baseCell = parseFloat(gutterOverlay.dataset.baseCell || '0');
         if (!baseCell || baseCell <= 0) return;
 
-        // Cell size scales linearly with zoom (no smoothing to prevent transient shrink)
-        const cell = baseCell * this.zoom;
-        if (cell < 2) return; // too small to render meaningfully
+        const zoom = this.zoom;
+        const cell = baseCell * zoom;
+        if (cell < 2) return; // too small to render
         gutterOverlay.style.backgroundSize = `${cell}px ${cell}px`;
 
-        const boundaryOutline = document.querySelector('.svg-boundary-outline');
-        if (!boundaryOutline) return; // no boundary yet
+        // CSS transform order (right-to-left): translate(pan) scale(zoom) => screen = zoom * logical + pan
+        const anchorScreenX = zoom * this.anchorLogicalX + this.panX;
+        const anchorScreenY = zoom * this.anchorLogicalY + this.panY;
 
-        const boundaryRect = boundaryOutline.getBoundingClientRect();
-        const overlayRect = gutterOverlay.getBoundingClientRect();
-        const boundaryX = boundaryRect.left - overlayRect.left;
-        const boundaryY = boundaryRect.top - overlayRect.top;
-
-        const offsetX = ((-boundaryX) % cell + cell) % cell;
-        const offsetY = ((-boundaryY) % cell + cell) % cell;
+        // Align grid so a vertical/horizontal line passes exactly through anchor (use positive remainder of anchorScreen)
+        const offsetX = ((anchorScreenX % cell) + cell) % cell;
+        const offsetY = ((anchorScreenY % cell) + cell) % cell;
         gutterOverlay.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
 
-        // Ensure origin marker exists
+        // Origin marker at anchor (centered)
         let originMarker = gutterOverlay.querySelector('.gutter-intersection');
         if (!originMarker) {
             originMarker = document.createElement('div');
@@ -362,9 +378,14 @@ class Viewport {
             });
             gutterOverlay.appendChild(originMarker);
         }
-        const markerSize = originMarker.offsetWidth || 8;
-        originMarker.style.left = `${boundaryX - markerSize / 2}px`;
-        originMarker.style.top = `${boundaryY - markerSize / 2}px`;
+        const markerSize = originMarker.offsetWidth || 6;
+        originMarker.style.left = `${anchorScreenX - markerSize / 2}px`;
+        originMarker.style.top = `${anchorScreenY - markerSize / 2}px`;
+
+        // Live-Update der Anchor-Werte im Debug Overlay (ohne komplettes Recalc aller Messungen)
+        if (window.shaperEditor && typeof window.shaperEditor.refreshGridDebugAnchors === 'function') {
+            window.shaperEditor.refreshGridDebugAnchors(anchorScreenX, anchorScreenY);
+        }
     }
 
     updateStrokeWidths() {

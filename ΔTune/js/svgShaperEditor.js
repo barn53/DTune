@@ -829,10 +829,10 @@ class SVGShaperEditor {
         if (this.viewport && typeof this.viewport.updateInfiniteGrid === 'function') {
             this.viewport.updateInfiniteGrid();
         }
-        this.addGutterIntersectionMarkers(baseCellPx, this.getBoundaryOffset());
+        // Ursprung/Marker NICHT mehr extern überschreiben – Marker wird ausschließlich im Viewport.updateInfiniteGrid() positioniert.
 
         // 7. Debug Overlay (ohne viewBox / mismatch, da irrelevant laut Nutzer)
-        this._updateGridDebugOverlay({
+        const debugData = {
             gutterRawMm,
             baseCellPx,
             boundaryPx,
@@ -843,8 +843,14 @@ class SVGShaperEditor {
             zoom: this.viewport ? this.viewport.getZoom() : 1,
             units: this.measurementSystem.units,
             dpi: this.measurementSystem.dpi,
-            method: measurementMethod || 'n/a'
-        });
+            method: measurementMethod || 'n/a',
+            anchorLogicalX: this.viewport ? this.viewport.anchorLogicalX : 0,
+            anchorLogicalY: this.viewport ? this.viewport.anchorLogicalY : 0,
+            anchorScreenX: this.viewport ? (this.viewport.getZoom() * (this.viewport.anchorLogicalX || 0) + (this.viewport.getPan().x || 0)) : 0,
+            anchorScreenY: this.viewport ? (this.viewport.getZoom() * (this.viewport.anchorLogicalY || 0) + (this.viewport.getPan().y || 0)) : 0
+        };
+        this.lastGridDebugData = debugData;
+        this._updateGridDebugOverlay(debugData);
     }
 
     // === GRID DEBUG OVERLAY ===
@@ -923,6 +929,11 @@ class SVGShaperEditor {
             `units(display):   ${data.units || '-'}`,
             `dpi:              ${data.dpi}`,
             `measureMethod:    ${data.method}`,
+            '',
+            `anchorLogicalX:   ${fmt(data.anchorLogicalX, 3)}`,
+            `anchorLogicalY:   ${fmt(data.anchorLogicalY, 3)}`,
+            `anchorScreenX:    ${fmt(data.anchorScreenX, 2)}`,
+            `anchorScreenY:    ${fmt(data.anchorScreenY, 2)}`,
             `timestamp:        ${new Date().toISOString().split('T')[1].replace('Z', '')}`
         ];
 
@@ -948,6 +959,19 @@ class SVGShaperEditor {
         // Keine Persistenz – bewusst nichts speichern
         // Optional kleines Feedback
         this.showNotification(this.debugOverlayEnabled ? 'Debug Overlay ON' : 'Debug Overlay OFF', 'info');
+    }
+
+    // Schnelles Aktualisieren nur der Anchor/Zoom/Pan abhängigen Werte ohne komplette Neuberechnung
+    refreshGridDebugAnchors(anchorScreenX, anchorScreenY) {
+        if (!this.debugOverlayEnabled) return;
+        if (!this.lastGridDebugData) return;
+        // Clone previous data to avoid mutating reference while someone copies
+        const d = Object.assign({}, this.lastGridDebugData);
+        d.zoom = this.viewport ? this.viewport.getZoom() : d.zoom;
+        d.anchorScreenX = anchorScreenX;
+        d.anchorScreenY = anchorScreenY;
+        // Pan ändert anchorLogical nicht – bleibt unverändert
+        this._updateGridDebugOverlay(d);
     }
 
     getBoundaryOffset() {
@@ -989,33 +1013,7 @@ class SVGShaperEditor {
         return { x: pixelsX, y: pixelsY };
     }
 
-    addGutterIntersectionMarkers(gutterPixels, boundaryOffset) {
-        // Remove existing markers
-        const existingMarkers = this.gutterOverlay.querySelectorAll('.gutter-intersection');
-        existingMarkers.forEach(marker => marker.remove());
-
-        // Position marker at (0,0) - simplified from complex calculations
-        const boundaryX = 0;
-        const boundaryY = 0;
-        const markerSize = 6;
-
-        // Create and position marker
-        const marker = document.createElement('div');
-        marker.className = 'gutter-intersection';
-        Object.assign(marker.style, {
-            position: 'absolute',
-            left: `${boundaryX}px`,
-            top: `${boundaryY}px`,
-            width: `${markerSize}px`,
-            height: `${markerSize}px`,
-            backgroundColor: '#1673ff',
-            border: 'none',
-            pointerEvents: 'none',
-            zIndex: '10'
-        });
-
-        this.gutterOverlay.appendChild(marker);
-    }
+    // addGutterIntersectionMarkers() entfernt – Marker wird nur noch vom Viewport gesteuert.
 
     updateUnitDisplay() {
         // Update unit labels throughout the interface
