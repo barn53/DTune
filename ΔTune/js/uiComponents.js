@@ -202,7 +202,8 @@ class UIComponents {
 
         // Use measuring clone to get accurate boundary dimensions
         const svgElement = boundaryPath.closest('svg');
-        const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement);
+        const fileManager = this.editor ? this.editor.fileManager : null;
+        const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement, fileManager);
 
         // Convert from measuring clone pixels to current display units
         const displayWidth = this.measurementSystem.convertPixelsToCurrentUnit(boundingBox.width);

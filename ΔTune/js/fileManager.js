@@ -249,6 +249,25 @@ class FileManager {
     hasLoadedSVG() {
         return this.masterSVGElement !== null;
     }
+
+    // Get a clean SVG clone for measurement purposes
+    // This always returns the original SVG without UI elements
+    getCleanSVGClone() {
+        if (!this.svg) {
+            return null;
+        }
+
+        // Parse from the original SVG string (not the modified DOM)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(this.svg, 'image/svg+xml');
+        const cleanSvg = doc.documentElement;
+
+        // Remove any UI elements that might have been added
+        const uiElements = cleanSvg.querySelectorAll('.no-export, .svg-boundary-outline, .boundary-overlay, .path-overlay');
+        uiElements.forEach(el => el.remove());
+
+        return cleanSvg;
+    }
 }
 
 // Export for use in other modules

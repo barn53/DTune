@@ -811,7 +811,9 @@ class SVGShaperEditor {
         const pixelsY = svgOffsetY + boundaryY;
 
         return { x: pixelsX, y: pixelsY };
-    } addGutterIntersectionMarkers(gutterPixels, boundaryOffset) {
+    }
+
+    addGutterIntersectionMarkers(gutterPixels, boundaryOffset) {
         // Remove existing markers
         const existingMarkers = this.gutterOverlay.querySelectorAll('.gutter-intersection');
         existingMarkers.forEach(marker => marker.remove());
@@ -1044,8 +1046,8 @@ class SVGShaperEditor {
                 return { error: 'No SVG element found' };
             }
 
-            // Get boundary using measuring clone
-            const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement);
+            // Get boundary using measuring clone with fileManager for clean original
+            const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement, this.fileManager);
 
             // Convert to both mm and inches for debugging
             const widthMm = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'mm');
@@ -1075,6 +1077,9 @@ class SVGShaperEditor {
                 detectedUnits: this.measurementSystem.detectedUnits,
                 currentUnits: this.measurementSystem.units,
                 dpi: this.measurementSystem.dpi,
+                // ADD: Debug comparison from measureSVGBoundaryWithClone
+                debugComparison: boundingBox.debugComparison || null,
+                measurementMethod: boundingBox.method || 'unknown',
                 timestamp: new Date().toISOString()
             };
         } catch (error) {

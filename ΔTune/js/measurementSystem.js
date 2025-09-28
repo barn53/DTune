@@ -329,9 +329,17 @@ class MeasurementSystem {
         return elementDataMap;
     }
 
-    // DEBUG: Compare SVG vs Element measurements
-    measureSVGBoundaryWithClone(svgElement) {
-        // First, try to detect if SVG has real unit information
+    // Get SVG boundary measurements using clean clone from fileManager
+    measureSVGBoundaryWithClone(svgElement, fileManager = null) {
+        // If we have a fileManager, use its clean clone - this is the preferred method
+        if (fileManager && fileManager.getCleanSVGClone) {
+            const cleanSvg = fileManager.getCleanSVGClone();
+            if (cleanSvg) {
+                return this._measureCleanSVG(cleanSvg, 'fileManager_cleanClone');
+            }
+        }
+
+    // Fallback: Try to detect real dimensions from current SVG
         const realDimensions = this.detectRealSVGDimensions(svgElement);
         if (realDimensions) {
             this.lastMeasurementCloneHTML = `Real dimensions detected: ${realDimensions.width}${realDimensions.widthUnit} × ${realDimensions.height}${realDimensions.heightUnit}`;
@@ -349,7 +357,12 @@ class MeasurementSystem {
             };
         }
 
-        // Use EXACTLY the same method as getVisualDimensions
+        // Final fallback: Manual cleanup of current SVG
+        return this._measureCleanSVG(svgElement, 'manual_cleanup');
+    }
+
+    // Internal method to measure a clean SVG
+    _measureCleanSVG(svgElement, method) {
         const tempContainer = document.createElement('div');
         tempContainer.style.all = 'initial';
         tempContainer.style.position = 'absolute';
@@ -357,55 +370,33 @@ class MeasurementSystem {
         tempContainer.style.top = '-9999px';
 
         try {
-            const measurementClone = svgElement.cloneNode(true);
-            const viewBox = measurementClone.getAttribute('viewBox');
-            if (viewBox) {
-                const [, , vbWidth, vbHeight] = viewBox.split(/[ ,]+/);
-                measurementClone.style.width = `${vbWidth}px`;
-                measurementClone.style.height = `${vbHeight}px`;
-            }
-            tempContainer.appendChild(measurementClone);
+            // Clone the SVG
+            tempContainer.innerHTML = svgElement.outerHTML;
             document.body.appendChild(tempContainer);
 
-            // Get the SVG's own bounding rect (like elements do)
-            const svgBbox = measurementClone.getBoundingClientRect();
+            const measurementClone = tempContainer.querySelector('svg');
 
-            // DEBUG: Also measure first element for comparison
-            const firstElement = measurementClone.querySelector('[data-app-id]');
-            let elementBbox = null;
-            let elementRealSize = null;
-            
-            if (firstElement) {
-                elementBbox = firstElement.getBoundingClientRect();
-                
-                // Get the element's "real" dimensions using getVisualDimensions logic
-                elementRealSize = this.getVisualDimensions(firstElement, svgElement);
+            // Remove UI elements
+            const uiElements = measurementClone.querySelectorAll('.no-export, .svg-boundary-outline, .boundary-overlay, .path-overlay');
+            uiElements.forEach(el => el.remove());
+
+            // Set up proper sizing based on ViewBox
+            const viewBox = measurementClone.getAttribute('viewBox');
+            if (viewBox) {
+                const [, , width, height] = viewBox.split(/[ ,]+/).map(Number);
+                measurementClone.style.width = `${width}px`;
+                measurementClone.style.height = `${height}px`;
             }
 
+            // Measure the SVG
+            const svgBbox = measurementClone.getBoundingClientRect();
             this.lastMeasurementCloneHTML = measurementClone.outerHTML;
 
             return {
                 width: svgBbox.width,
                 height: svgBbox.height,
-                method: 'getBoundingClientRect_SameAsElements',
-                viewBox: viewBox,
-                appliedStyle: `${measurementClone.style.width} × ${measurementClone.style.height}`,
-                // DEBUG: Compare SVG vs Element measurements
-                debugComparison: {
-                    svgBoundingRect: {
-                        width: svgBbox.width,
-                        height: svgBbox.height
-                    },
-                    firstElementBoundingRect: elementBbox,
-                    firstElementRealSize: elementRealSize,
-                    // Calculate ratio between element measurements
-                    possibleCorrection: elementRealSize && elementBbox ? {
-                        widthRatio: elementRealSize.width / elementBbox.width,
-                        heightRatio: elementRealSize.height / elementBbox.height,
-                        correctedSvgWidth: svgBbox.width * (elementRealSize.width / elementBbox.width),
-                        correctedSvgHeight: svgBbox.height * (elementRealSize.height / elementBbox.height)
-                    } : null
-                }
+                method: method,
+                viewBox: viewBox
             };
         } finally {
             if (tempContainer.parentNode) {
