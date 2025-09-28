@@ -1,20 +1,37 @@
 
+Gitter skalierung istwieder durcheinander gekommen!
+Scheiße - wann ist das passiert?
 Gitter gestrichelt
 
 
-shaper attribute path outlines.
+
+
+shaper attribute path outlines, je nach cutType.
+cut type macht setzt auch die linien farbe, füllung entsprechend shaper vorgaben. (evtl. nur für den export)
+svg linien einheitlich keine faben vom original übernehmen anzeigen.
+auch die linien dicke sollte einheitlich sein.
 
 
 Keyboard Shortcuts (Zoom: +/-, Pan: Pfeiltasten, Export: Ctrl+E)
 
 
 
-attribut modal schöner
+attribut-modal schöner machen:
 mini svg vom element im attribute editor statt sperriger zu technischer überschrift
 Wie kontext menü oder sogar tool tips.
 icons verwenden für tie attribute.
 Großschrift
 Auswahl werte für die input Felder
 save to all im editor
+ganzer hintergrund blurred
+
+
+
+Datei laden bei leerem local storage:
+Gleich editor anzeigen dann dragdrop feld über dem viewport anzeigen
+designwie attribut dialog.
+
+
+Titelbar eingabe texte Size: Zoom: sind nur weiß kontrast einbauen,damit man sieht das ist wasaktives.
 
 
