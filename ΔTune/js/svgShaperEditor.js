@@ -148,6 +148,27 @@ class SVGShaperEditor {
             this.saveViewportOnly();
         };
 
+        // Connect context menu actions
+        this.uiComponents.onExportSVG = () => {
+            this.fileManager.exportSVG();
+        };
+
+        this.uiComponents.onCopyToClipboard = () => {
+            this.copyToClipboard();
+        };
+
+        this.uiComponents.onZoomToFit = () => {
+            this.viewport.zoomToFit();
+        };
+
+        this.uiComponents.onCenterView = () => {
+            this.viewport.centerView();
+        };
+
+        this.uiComponents.onZoom100 = () => {
+            this.viewport.zoomTo100();
+        };
+
         // Load saved data from localStorage
         this.loadFromLocalStorage();
     }
@@ -1090,6 +1111,99 @@ class SVGShaperEditor {
         } catch (error) {
             return { error: error.message, timestamp: new Date().toISOString() };
         }
+    }
+
+    // Copy SVG to clipboard
+    async copyToClipboard() {
+        try {
+            // Use the same logic as exportSVG() to ensure consistent results
+            const currentSVGData = this.fileManager.getSVGData();
+            if (!currentSVGData) {
+                throw new Error('No SVG file loaded to copy');
+            }
+
+            // Create a clone of the master model to prepare for export
+            const exportNode = this.fileManager.masterSVGElement.cloneNode(true);
+
+            // Clean all elements in the cloned node for export (same as exportSVG)
+            exportNode.querySelectorAll('[data-app-id]').forEach(el => {
+                // Set namespaced attributes from raw values
+                this.fileManager.updateShaperAttributesForExport(el);
+                // Remove all raw attributes
+                ShaperUtils.removeAllRawAttributes(el);
+                // Remove the internal app-id for the final export
+                el.removeAttribute('data-app-id');
+            });
+
+            // Create SVG string
+            const svgString = new XMLSerializer().serializeToString(exportNode);
+
+            // Try to use the modern Clipboard API
+            if (navigator.clipboard && window.ClipboardItem) {
+                // Create a blob with SVG content
+                const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+                const textBlob = new Blob([svgString], { type: 'text/plain' });
+
+                const clipboardItem = new ClipboardItem({
+                    'image/svg+xml': svgBlob,
+                    'text/plain': textBlob
+                });
+
+                await navigator.clipboard.write([clipboardItem]);
+                this.showNotification('SVG copied to clipboard!', 'success');
+            } else {
+                // Fallback for older browsers - copy as text
+                await navigator.clipboard.writeText(svgString);
+                this.showNotification('SVG code copied to clipboard!', 'success');
+            }
+        } catch (error) {
+            console.error('Failed to copy to clipboard:', error);
+            this.showNotification('Failed to copy to clipboard. Please use the export button instead.', 'error');
+        }
+    }
+
+    // Show notification (simple implementation)
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            z-index: 10001;
+            max-width: 300px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: opacity 0.3s ease;
+        `;
+
+        // Set color based on type
+        switch (type) {
+            case 'success':
+                notification.style.backgroundColor = '#4CAF50';
+                break;
+            case 'error':
+                notification.style.backgroundColor = '#f44336';
+                break;
+            default:
+                notification.style.backgroundColor = '#2196F3';
+        }
+
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 }
 

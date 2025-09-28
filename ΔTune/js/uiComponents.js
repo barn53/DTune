@@ -15,6 +15,10 @@ class UIComponents {
         this.cutTypeInput = null;
         this.selectedPathInfo = null;
 
+        // Context menu
+        this.contextMenu = null;
+        this.contextMenuVisible = false;
+
         this.optionWidth = 0;
     }
 
@@ -26,6 +30,9 @@ class UIComponents {
 
         // Create tooltip
         this.createTooltip();
+
+        // Create custom context menu
+        this.createContextMenu();
 
         // Initialize cut type slider
         this.initializeCutTypeSlider();
@@ -423,6 +430,187 @@ class UIComponents {
     setMousePosition(x, y) {
         this.lastMouseX = x;
         this.lastMouseY = y;
+    }
+
+    // ===== CUSTOM CONTEXT MENU =====
+
+    createContextMenu() {
+        // Create backdrop with blur effect
+        this.contextMenuBackdrop = document.createElement('div');
+        this.contextMenuBackdrop.className = 'context-menu-backdrop';
+
+        // Create context menu container
+        this.contextMenu = document.createElement('div');
+        this.contextMenu.id = 'customContextMenu';
+        this.contextMenu.className = 'custom-context-menu';
+
+        // Create menu items with SVG icons
+        const menuItems = [
+            {
+                label: 'Export SVG',
+                action: 'export',
+                icon: 'icons/export.svg'
+            },
+            {
+                label: 'Copy to Clipboard',
+                action: 'copy',
+                icon: 'icons/clipboard.svg'
+            },
+            {
+                separator: true
+            },
+            {
+                label: 'Zoom to Fit',
+                action: 'zoomFit',
+                icon: 'icons/fit-to-screen.svg'
+            },
+            {
+                label: 'Center View',
+                action: 'center',
+                icon: 'icons/center.svg'
+            },
+            {
+                label: 'Zoom 100%',
+                action: 'zoom100',
+                icon: 'icons/center.svg' // Reuse center icon for now
+            }
+        ];
+
+        menuItems.forEach(item => {
+            if (item.separator) {
+                const separator = document.createElement('div');
+                separator.className = 'context-menu-separator';
+                this.contextMenu.appendChild(separator);
+            } else {
+                // Create pill-style button like toolbar buttons
+                const menuItem = document.createElement('button');
+                menuItem.className = 'context-menu-item';
+                menuItem.dataset.action = item.action;
+
+                // Create icon and label
+                const iconImg = document.createElement('img');
+                iconImg.className = 'context-menu-icon';
+                iconImg.src = item.icon;
+
+                const label = document.createElement('span');
+                label.textContent = item.label;
+
+                menuItem.appendChild(iconImg);
+                menuItem.appendChild(label);
+
+                // No inline styles - all handled by CSS classes
+
+                // Click handler
+                menuItem.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleContextMenuAction(item.action);
+                    this.hideContextMenu();
+                });
+
+                this.contextMenu.appendChild(menuItem);
+            }
+        });
+
+        // Add backdrop and menu to body
+        document.body.appendChild(this.contextMenuBackdrop);
+        document.body.appendChild(this.contextMenu);
+
+        // Setup event listeners
+        this.setupContextMenuEvents();
+    }
+
+    setupContextMenuEvents() {
+        // Disable ALL default context menus in the entire app
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            // Check if the target or any parent has the 'no-context-menu' class
+            let element = e.target;
+            while (element) {
+                if (element.classList && element.classList.contains('no-context-menu')) {
+                    // Don't show context menu on elements with this class
+                    return;
+                }
+                element = element.parentElement;
+            }
+
+            // Only show custom context menu on the SVG viewport area
+            const svgContainer = document.getElementById('svgContainer');
+            const editorSection = document.getElementById('editorSection');
+
+            if ((svgContainer && svgContainer.contains(e.target)) ||
+                (editorSection && editorSection.contains(e.target))) {
+                this.showContextMenu(e.clientX, e.clientY);
+            }
+            // For all other areas, just prevent default without showing menu
+        });        // Hide context menu on click elsewhere
+        document.addEventListener('click', () => {
+            this.hideContextMenu();
+        });
+
+        // Hide context menu on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.hideContextMenu();
+            }
+        });
+    }
+
+    showContextMenu(x, y) {
+        if (!this.contextMenu || !this.contextMenuBackdrop) {
+            return;
+        }
+
+        // Show backdrop first
+        this.contextMenuBackdrop.style.display = 'block';
+
+        // Position and show the menu
+        this.contextMenu.style.left = `${x}px`;
+        this.contextMenu.style.top = `${y}px`;
+        this.contextMenu.style.display = 'block';
+        this.contextMenuVisible = true;
+
+        // Adjust position if menu goes off screen
+        const rect = this.contextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        if (rect.right > viewportWidth) {
+            this.contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
+        }
+        if (rect.bottom > viewportHeight) {
+            this.contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
+        }
+    }
+
+    hideContextMenu() {
+        if (this.contextMenu && this.contextMenuBackdrop) {
+            this.contextMenu.style.display = 'none';
+            this.contextMenuBackdrop.style.display = 'none';
+            this.contextMenuVisible = false;
+        }
+    }
+
+    handleContextMenuAction(action) {
+        // These methods need to be connected to the main application
+        // This will be set up in svgShaperEditor.js setupModuleConnections()
+        switch (action) {
+            case 'export':
+                if (this.onExportSVG) this.onExportSVG();
+                break;
+            case 'copy':
+                if (this.onCopyToClipboard) this.onCopyToClipboard();
+                break;
+            case 'zoomFit':
+                if (this.onZoomToFit) this.onZoomToFit();
+                break;
+            case 'center':
+                if (this.onCenterView) this.onCenterView();
+                break;
+            case 'zoom100':
+                if (this.onZoom100) this.onZoom100();
+                break;
+        }
     }
 }
 

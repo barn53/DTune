@@ -25,14 +25,14 @@
                 <h3>Upload SVG File</h3>
                 <p>Drag and drop your SVG file here or click to browse</p>
                 <input type="file" id="fileInput" accept=".svg" hidden>
-                <button class="upload-btn" id="uploadBtn">
+                <button class="upload-btn no-context-menu" id="uploadBtn">
                     Choose File
                 </button>
             </div>
         </div>
 
         <div class="editor-section" id="editorSection" style="display: none;">
-            <div class="toolbar">
+            <div class="toolbar no-context-menu">
                 <div class="toolbar-right flex-center-y">
                     <div class="label-pill-group flex-center-y">
                         <span class="label-pill-label text-muted toggle-label-align">Grid:</span>
@@ -91,37 +91,37 @@
                 </span>
 
                 <!-- Floating Action Buttons -->
-                <div class="floating-buttons">
+                <div class="floating-buttons no-context-menu">
                     <button id="floatingImportBtn"
-                        class="floating-btn tooltip-base tooltip-right rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn tooltip-base tooltip-right rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Import SVG File">
                         <img src="icons/import.svg" alt="Import" class="floating-btn-icon import-icon" width="24"
                             height="24">
                     </button>
                     <button id="floatingExportBtn"
-                        class="floating-btn tooltip-base tooltip-right rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn tooltip-base tooltip-right rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Export SVG File">
                         <img src="icons/export.svg" alt="Export" class="floating-btn-icon export-icon" width="16"
                             height="16">
                     </button>
                 </div>
-                <div class="zoom-controls">
+                <div class="zoom-controls no-context-menu">
                     <button id="zoomIn"
-                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Zoom In">+</button>
                     <button id="zoomOut"
-                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Zoom Out">–</button>
                     <button id="zoom100"
-                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Reset to 100%">1:1</button>
                     <button id="centerView"
-                        class="floating-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Center View">
                         <img src="icons/center.svg" alt="Center" class="floating-btn-icon" width="16" height="16">
                     </button>
                     <button id="zoomFit"
-                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base"
+                        class="floating-btn zoom-btn tooltip-base tooltip-left rounded-full bg-light-grey shadow-sm transition-base no-context-menu"
                         title="Fit to Screen">
                         <img src="icons/fit-to-screen.svg" alt="Fit to Screen" class="floating-btn-icon" width="16"
                             height="16">
@@ -131,7 +131,7 @@
         </div>
 
         <!-- Attribute Editing Modal -->
-        <div class="modal" id="attributeModal" style="display: none;">
+        <div class="modal no-context-menu" id="attributeModal" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>Edit Shaper Attributes</h3>

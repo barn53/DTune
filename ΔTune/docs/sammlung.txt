@@ -1,43 +1,13 @@
-
-Test Verzeichnis für Synchronisierung
-https://drive.google.com/drive/folders/1pvJVRe5vLpYSD1foBF278DEPBIQKKNOp?usp=sharing
+titel mit dateinamen in transparenter pille, die den hintergrung blurt!
 
 
+mini svg vom element im attribute editor statt sperriger zu technischer überschrift
 
+shaper attribute path outlines.
 
+save to all im editor
 
-Prompt
-
-Ok, das hat keinen Sinn, wir gehen einen komplett neuen Weg!
-
-sehr gut.
-eine kern idee ist, der eingelesene davon datei allen grafischen und nur den grafischen eine zufällige id zuzuweisen. dann einen klon zu erstellen der im unsichtbaren bereich gerendert wird , und damit die tasächlichen maße zu ermitteln und so können alle maße und koordinaten in allen einheiten abgeleitet werden.
-
-mit diesen informationen wird der zweite klon vom original abgeleitet. dieser wird nur zum anzeigen benutzt.
-
-in diesen anzeige klon werden dann die zusätzlichen generischen elemente wie boundary box, outlines for highlighting the paths and so on eingebaut.
-
-die shaper attributes werden über den click auf einen path outline im Dialog geöffnet. Die gespeicherten attribute können dann direkt im angezeigten klon und über die id auch im original abgelegt werden.
-
-der export gestaltet sich dann einfach über das unbearbeitete original, das alle werte beibehält und nur die neuen shaper:* attribute zusätzlich erhält.
-
-So bleibt das original maximal erhalten und die visualisierung ist eigenständig, kann mit outlines und eigenschaften versehen werden ohne dass sie wieder gefiltert werden müssen
+Keyboard Shortcuts (Zoom: +/-, Pan: Pfeiltasten, Export: Ctrl+E)
 
 
 
-NOCH keine Änderungen machen!
-
-Zuerst diese Fragen beantworten:
-- Unterscheidet sich das von der akuellen implementierung?
-- Wie ist deine Einschätzung? Macht es Sinn?
-- Ist die Gefahr kleiner wieder in einer Sackgasse zu landen?
-
-Dann:
-- kannst du das in die Applikation als Architektur einbauen
-- Sind alle aktuellen Features abbidbar?
-
-Wenn wir es übernehem, dann bitte Schritt für Schritt. Sehr kleine Schritte!
-
-
-
-Und KEINE Änderungen im Verzeichnis KI Test!!
