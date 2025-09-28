@@ -1,0 +1,74 @@
+name: Simple Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ release ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: release
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install minifiers
+      run: npm install -g html-minifier-terser terser clean-css-cli
+
+    - name: Minify files
+      run: |
+        # Create webapp directory
+        mkdir webapp
+
+        # Minify and copy main files
+        html-minifier-terser index.html --collapse-whitespace --remove-comments --minify-css --minify-js > webapp/index.html
+        cleancss styles.css > webapp/styles.css
+
+        # Create js directory and minify JS files
+        mkdir webapp/js
+        for file in js/*.js; do
+          terser "$file" --compress --mangle > "webapp/js/$(basename "$file")"
+        done
+
+        # Copy static assets
+        cp -r icons webapp/
+
+        # Copy other HTML files if they exist
+        find . -name "*.html" -not -name "index.html" -not -path "./webapp/*" | while read file; do
+          html-minifier-terser "$file" --collapse-whitespace --remove-comments --minify-css --minify-js > "webapp/$(basename "$file")"
+        done
+
+    - name: Deploy to webapp branch
+      run: |
+        cd webapp
+        git init
+        git config user.name 'GitHub Actions'
+        git config user.email 'actions@github.com'
+        git add .
+        git commit -m "Deploy from 'release' branch"
+        git branch -M webapp
+        git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git push -f origin webapp
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './webapp'
+
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
