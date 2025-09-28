@@ -1,13 +1,20 @@
-titel mit dateinamen in transparenter pille, die den hintergrung blurt!
 
+Gitter gestrichelt
 
-mini svg vom element im attribute editor statt sperriger zu technischer überschrift
 
 shaper attribute path outlines.
 
-save to all im editor
 
 Keyboard Shortcuts (Zoom: +/-, Pan: Pfeiltasten, Export: Ctrl+E)
 
+
+
+attribut modal schöner
+mini svg vom element im attribute editor statt sperriger zu technischer überschrift
+Wie kontext menü oder sogar tool tips.
+icons verwenden für tie attribute.
+Großschrift
+Auswahl werte für die input Felder
+save to all im editor
 
 
