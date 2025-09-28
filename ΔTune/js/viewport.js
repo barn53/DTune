@@ -353,11 +353,10 @@ class Viewport {
             originMarker.className = 'gutter-intersection';
             Object.assign(originMarker.style, {
                 position: 'absolute',
-                width: '8px',
-                height: '8px',
-                background: 'rgba(255,0,0,0.9)',
-                border: '2px solid #0000ff',
-                borderRadius: '2px',
+                width: '6px',
+                height: '6px',
+                background: '#1673ff',
+                border: 'none',
                 pointerEvents: 'none',
                 zIndex: '10'
             });

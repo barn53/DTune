@@ -31,6 +31,9 @@ class SVGShaperEditor {
 
         // Flag to track if we're loading from localStorage
         this.isLoadingFromLocalStorage = false;
+
+        // Debug overlay visibility state (immer default AN beim Laden; keine Persistenz)
+        this.debugOverlayEnabled = true;
     }
 
     initializeElements() {
@@ -242,6 +245,11 @@ class SVGShaperEditor {
                     this.gutterToggle.checked = settings.gutterEnabled;
                     this.gutterOverlay.style.display = settings.gutterEnabled ? 'block' : 'none';
                 }
+
+                // Debug Overlay: Keine Persistenz mehr – immer aktiv beim Start
+                this.debugOverlayEnabled = true;
+                const existing = document.getElementById('gridDebugOverlay');
+                if (existing) existing.style.display = 'block';
 
                 // Apply units with toggle synchronization
                 this.applySetting(
@@ -455,6 +463,26 @@ class SVGShaperEditor {
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.uiComponents.handleKeyDown(e));
+        // Global shortcut listener (in separater Listener um bestehende Logik nicht zu stören)
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'g') {
+                e.preventDefault();
+                this.toggleDebugOverlayVisibility();
+            }
+            // Zoom to Fit: Cmd/Ctrl + 0 (falls Browser nicht vorher abfängt)
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '0' || e.code === 'Digit0')) {
+                // Nicht auslösen, wenn gerade in einem Eingabefeld gearbeitet wird
+                const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+                // Manche Browser nutzen Cmd/Ctrl+0 für Page-Zoom-Reset; wir versuchen zu übernehmen
+                e.preventDefault();
+                if (this.viewport && typeof this.viewport.zoomToFit === 'function') {
+                    this.viewport.zoomToFit();
+                    this.updateGutterSize();
+                    this.showNotification('Zoom to Fit', 'info');
+                }
+            }
+        });
     }
 
     displaySVG(svgElement) {
@@ -623,14 +651,10 @@ class SVGShaperEditor {
             class: `boundary-overlay ${ShaperConstants.CSS_CLASSES.NO_EXPORT}`
         });
 
-        // Temporarily expand the SVG viewBox to accommodate the stroke extending outside
+        // WICHTIG: Kein künstliches Vergrößern des viewBox mehr – das führte zu Differenz boundaryPx (original) vs viewBoxWidth (erweitert)
+        // Stattdessen akzeptieren wir, dass der äußere Teil des Donut außerhalb des viewBox abgeschnitten wird.
+        // Falls vollständige Klickfläche bis ganz außen nötig wäre, könnten wir stattdessen eine separate transparente Ebene außerhalb des SVG benutzen.
         const svgElement = boundaryPath.parentNode;
-        const currentViewBox = svgElement.getAttribute('viewBox');
-        if (currentViewBox) {
-            const [vx, vy, vw, vh] = currentViewBox.split(' ').map(Number);
-            const strokeOffset = 10; // Half the stroke width
-            svgElement.setAttribute('viewBox', `${vx - strokeOffset} ${vy - strokeOffset} ${vw + strokeOffset * 2} ${vh + strokeOffset * 2}`);
-        }
 
         // Insert the hit area as the LAST child of the SVG
         svgElement.appendChild(hitArea);
@@ -755,49 +779,175 @@ class SVGShaperEditor {
     }
 
     updateGutterSize() {
-        if (this.gutterToggle.checked) {
-            let gutterValue;
+        if (!this.gutterToggle.checked) return;
+        if (!this.gutterSize || !this.gutterOverlay) return;
 
-            // First try to use the raw value if available (stored in mm)
-            const rawValueMm = this.getRawValue(this.gutterSize);
-
-            if (!isNaN(rawValueMm)) {
-                // Convert from raw mm to current units
-                gutterValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', this.measurementSystem.units);
+        // 1. Rohwert in mm (Single Source of Truth)
+        let gutterRawMm = this.getRawValue(this.gutterSize);
+        if (isNaN(gutterRawMm) || gutterRawMm <= 0) {
+            const parsed = this.measurementSystem.parseValueWithUnits(this.gutterSize.value);
+            if (!isNaN(parsed) && parsed > 0) {
+                // parsed ist in aktuellen Anzeige-Einheiten -> nach mm
+                gutterRawMm = this.measurementSystem.convertBetweenUnits(parsed, this.measurementSystem.units, 'mm');
             } else {
-                // Fallback: parse display value and initialize raw value
-                const rawDisplayValue = this.gutterSize.value;
-                gutterValue = this.measurementSystem.parseValueWithUnits(rawDisplayValue) || 10;
-
-                // Initialize raw value from display for future use
-                if (!isNaN(gutterValue) && gutterValue > 0) {
-                    this.updateRawValueFromDisplay(this.gutterSize, this.measurementSystem.units);
-                }
+                gutterRawMm = 10; // Default
             }
+            this.setRawValue(this.gutterSize, gutterRawMm);
+        }
 
-            // Convert to pixels based on unit system
-            const unitsToPixels = this.measurementSystem.unitsToPixels(gutterValue);
-            const gutterPixels = unitsToPixels;
+        // 2. Umrechnung mm -> px (96dpi fest)  (1mm = 96/25.4 px)
+        const baseCellPx = this.measurementSystem.convertBetweenUnits(gutterRawMm, 'mm', 'px');
+        if (!(baseCellPx > 0)) {
+            this._updateGridDebugOverlay({ error: 'baseCellPx <= 0', gutterRawMm });
+            return;
+        }
+        this.gutterOverlay.dataset.baseCell = baseCellPx.toString();
 
-            // Get boundary position to align gutter
-            const boundaryOffset = this.getBoundaryOffset();
-
-            // Only update if we have a reasonable pixel value
-            if (gutterPixels > 0.1) {
-                this.gutterOverlay.dataset.baseCell = gutterPixels; // store unscaled cell size
-                // IMPORTANT: Do NOT set background-size here; that caused a snap on zoom
-                // The viewport.updateInfiniteGrid() computes scaled size each frame.
-                // this.gutterOverlay.style.backgroundSize = `${gutterPixels}px ${gutterPixels}px`; (removed)
-
-                // Immediately refresh infinite grid so manual gutter size changes take effect without waiting for next transform
-                if (this.viewport && typeof this.viewport.updateInfiniteGrid === 'function') {
-                    this.viewport.updateInfiniteGrid();
-                }
-
-                // Add intersection markers (optional - could prune later for performance)
-                this.addGutterIntersectionMarkers(gutterPixels, boundaryOffset);
+        // 3. Boundary messen (Mess-Clone; 1uu = 1px)
+        const displayedSVG = this.svgContent.querySelector('svg');
+        let boundaryPx = null;
+        let measurementMethod = null;
+        if (displayedSVG) {
+            const m = this.measurementSystem.measureSVGBoundaryWithClone(displayedSVG, this.fileManager);
+            if (m && m.width) {
+                boundaryPx = m.width;
+                measurementMethod = m.method;
             }
         }
+
+        // 4. Erwartete und tatsächliche Zellanzahl (reine Boundary-Messung maßgeblich)
+        let expectedCells = null;
+        let actualCells = null;
+        let totalLogicalMm = null; // aus boundaryPx
+        if (boundaryPx) {
+            totalLogicalMm = this.measurementSystem.convertBetweenUnits(boundaryPx, 'px', 'mm');
+            expectedCells = totalLogicalMm / gutterRawMm;
+            actualCells = boundaryPx / baseCellPx; // mathematisch gleich, Debug Check
+        }
+
+        // 6. Grid sofort erneuern
+        if (this.viewport && typeof this.viewport.updateInfiniteGrid === 'function') {
+            this.viewport.updateInfiniteGrid();
+        }
+        this.addGutterIntersectionMarkers(baseCellPx, this.getBoundaryOffset());
+
+        // 7. Debug Overlay (ohne viewBox / mismatch, da irrelevant laut Nutzer)
+        this._updateGridDebugOverlay({
+            gutterRawMm,
+            baseCellPx,
+            boundaryPx,
+            expectedCells,
+            actualCells,
+            totalLogicalMm,
+            pxPerMm: baseCellPx / gutterRawMm, // sollte konstant 3.7795...
+            zoom: this.viewport ? this.viewport.getZoom() : 1,
+            units: this.measurementSystem.units,
+            dpi: this.measurementSystem.dpi,
+            method: measurementMethod || 'n/a'
+        });
+    }
+
+    // === GRID DEBUG OVERLAY ===
+    _updateGridDebugOverlay(data) {
+        // Respect visibility flag
+        if (!this.debugOverlayEnabled) {
+            const existingHidden = document.getElementById('gridDebugOverlay');
+            if (existingHidden) existingHidden.style.display = 'none';
+            return; // Keine Updates solange deaktiviert
+        }
+        let overlay = document.getElementById('gridDebugOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'gridDebugOverlay';
+            overlay.style.cssText = [
+                'position:absolute',
+                'bottom:8px',
+                'right:8px',
+                'z-index:4000',
+                'background:rgba(10,14,20,0.85)',
+                'backdrop-filter:blur(4px)',
+                'color:#e6f1ff',
+                'font:11px/1.35 monospace',
+                'padding:10px 12px 14px 12px',
+                'border:1px solid #2a3b4d',
+                'border-radius:8px',
+                'max-width:300px',
+                'white-space:pre-wrap',
+                'user-select:text',
+                'pointer-events:auto'
+            ].join(';');
+            const container = this.editorSection || document.body;
+            container.appendChild(overlay);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'COPY';
+            copyBtn.type = 'button';
+            copyBtn.style.cssText = [
+                'position:absolute', 'top:4px', 'left:4px', 'padding:2px 6px', 'font:10px monospace', 'border:1px solid #3a4a5a', 'background:#1e2a3a', 'color:#fff', 'border-radius:4px', 'cursor:pointer']
+                .join(';');
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const raw = overlay.dataset.rawText || overlay.textContent || '';
+                navigator.clipboard.writeText(raw).then(() => {
+                    copyBtn.textContent = '✓';
+                    setTimeout(() => copyBtn.textContent = 'COPY', 1100);
+                }).catch(() => {
+                    copyBtn.textContent = 'ERR';
+                    setTimeout(() => copyBtn.textContent = 'COPY', 1500);
+                });
+            });
+            overlay.appendChild(copyBtn);
+        }
+
+        const fmt = (v, d = 3) => (v === null || v === undefined || isNaN(v) ? '-' : parseFloat(v).toFixed(d));
+
+        if (data.error) {
+            overlay.dataset.rawText = `[GRID]\nERROR: ${data.error}`;
+            overlay.innerHTML = overlay.innerHTML.split('</button>').shift() + '</button>' + `<pre style="margin:18px 0 0">[GRID]\nERROR: ${data.error}</pre>`;
+            return;
+        }
+
+        const lines = [
+            'GRID DEBUG',
+            `gutterRawMm:      ${fmt(data.gutterRawMm)}`,
+            `baseCellPx:       ${fmt(data.baseCellPx)}`,
+            `pxPerMm(const):  ${fmt(data.pxPerMm, 4)}`,
+            `zoom:            ${fmt(data.zoom, 2)}`,
+            '',
+            `boundaryWidthPx:  ${fmt(data.boundaryPx)}`,
+            `totalWidthMm:     ${fmt(data.totalLogicalMm)}`,
+            '',
+            `expectedCells:    ${fmt(data.expectedCells, 3)}`,
+            `actualCells:      ${fmt(data.actualCells, 3)}`,
+            '',
+            `units(display):   ${data.units || '-'}`,
+            `dpi:              ${data.dpi}`,
+            `measureMethod:    ${data.method}`,
+            `timestamp:        ${new Date().toISOString().split('T')[1].replace('Z', '')}`
+        ];
+
+        overlay.dataset.rawText = lines.join('\n');
+        const copyBtn = overlay.querySelector('button');
+        Array.from(overlay.childNodes).forEach(n => { if (n !== copyBtn) overlay.removeChild(n); });
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'margin:18px 0 0;padding:0;font:inherit;';
+        pre.textContent = lines.join('\n');
+        overlay.appendChild(pre);
+        overlay.style.display = 'block';
+    }
+
+    toggleDebugOverlayVisibility() {
+        this.debugOverlayEnabled = !this.debugOverlayEnabled;
+        const overlay = document.getElementById('gridDebugOverlay');
+        if (overlay) {
+            overlay.style.display = this.debugOverlayEnabled ? 'block' : 'none';
+        } else if (this.debugOverlayEnabled) {
+            // Force refresh to create overlay if turning on
+            this.updateGutterSize();
+        }
+        // Keine Persistenz – bewusst nichts speichern
+        // Optional kleines Feedback
+        this.showNotification(this.debugOverlayEnabled ? 'Debug Overlay ON' : 'Debug Overlay OFF', 'info');
     }
 
     getBoundaryOffset() {
@@ -858,8 +1008,8 @@ class SVGShaperEditor {
             top: `${boundaryY}px`,
             width: `${markerSize}px`,
             height: `${markerSize}px`,
-            backgroundColor: 'rgba(255, 0, 0, 0.8)',
-            border: '2px solid blue',
+            backgroundColor: '#1673ff',
+            border: 'none',
             pointerEvents: 'none',
             zIndex: '10'
         });
