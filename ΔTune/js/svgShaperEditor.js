@@ -98,7 +98,6 @@ class SVGShaperEditor {
                     if (existingData && existingData.shaperAttributes) {
                         // Keep the shaper attributes from localStorage, update measurements
                         newData.shaperAttributes = existingData.shaperAttributes;
-                        console.log(`Preserved shaper attributes for ${appId}:`, existingData.shaperAttributes);
                     }
                     this.elementDataMap.set(appId, newData);
                 });
@@ -529,6 +528,12 @@ class SVGShaperEditor {
         // Add viewport mouse events to wrapper for dragging
         this.svgWrapper.addEventListener('wheel', (e) => this.viewport.handleWheel(e));
         this.svgWrapper.addEventListener('mousedown', (e) => this.viewport.handleMouseDown(e));
+
+        // Add touch events for trackpad gestures (macOS)
+        this.svgWrapper.addEventListener('touchstart', (e) => this.viewport.handleTouchStart(e), { passive: false });
+        this.svgWrapper.addEventListener('touchmove', (e) => this.viewport.handleTouchMove(e), { passive: false });
+        this.svgWrapper.addEventListener('touchend', (e) => this.viewport.handleTouchEnd(e));
+
         this.svgWrapper.addEventListener('mousemove', (e) => {
             this.viewport.handleMouseMove(e);
 

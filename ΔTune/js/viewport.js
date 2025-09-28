@@ -13,6 +13,13 @@ class Viewport {
         this.svgElement = null;
         this.onViewportChange = null; // Callback for when viewport state changes
 
+        // Touch/Trackpad gesture tracking
+        this.touchStartDistance = 0;
+        this.touchStartZoom = 1;
+        this.touchStartPanX = 0;
+        this.touchStartPanY = 0;
+        this.isTrackpadPanning = false;
+
         // Initialize SVG helper for SVG operations
         this.svgHelper = new SVGHelper();
     }
@@ -82,36 +89,194 @@ class Viewport {
         this.notifyViewportChange();
     }
 
-    // Mouse wheel zoom
+    // Mouse wheel zoom and trackpad gestures
     handleWheel(event) {
+        // LOG ALL EVENT PROPERTIES
+        console.log('🎡 WHEEL EVENT:', {
+            deltaX: event.deltaX,
+            deltaY: event.deltaY,
+            deltaZ: event.deltaZ,
+            deltaMode: event.deltaMode,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            shiftKey: event.shiftKey,
+            altKey: event.altKey,
+            type: event.type,
+            target: event.target.tagName
+        });
+
         event.preventDefault();
 
         if (!this.svgContainer) return;
 
-        const rect = this.svgContainer.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
+        // Universal zoom logic (based on the provided example)
+        // Trackpad Pinch: wheel + ctrlKey = zoom
+        // Mouse Wheel: wheel + altKey = zoom (or just wheel for now)
+        // Everything else: pan
 
-        const oldZoom = this.zoom;
-        const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-        this.zoom = Math.max(0.1, Math.min(this.zoom * zoomFactor, 10));
+        let shouldZoom = false;
+        let zoomFactor = 1;
 
-        // Adjust pan to zoom into mouse position
-        const zoomRatio = this.zoom / oldZoom;
-        this.panX = mouseX - (mouseX - this.panX) * zoomRatio;
-        this.panY = mouseY - (mouseY - this.panY) * zoomRatio;
+        if (event.ctrlKey && Math.abs(event.deltaY) > 0) {
+            // Trackpad Pinch - use exponential zoom like in the example
+            shouldZoom = true;
+            zoomFactor = Math.exp(-event.deltaY * 0.01);
+            console.log('🤏 TRACKPAD PINCH ZOOM:', { deltaY: event.deltaY, zoomFactor });
+        } else if (event.altKey && Math.abs(event.deltaY) > 0) {
+            // Mouse wheel zoom (with Alt key modifier)
+            shouldZoom = true;
+            zoomFactor = Math.exp(-event.deltaY * 0.01);
+            console.log('�️ MOUSE WHEEL ZOOM:', { deltaY: event.deltaY, zoomFactor });
+        } else {
+            // Everything else is trackpad pan
+            console.log('👆 TRACKPAD PAN:', { deltaX: event.deltaX, deltaY: event.deltaY });
+        }
 
-        this.updateTransform();
-        this.updateZoomLevel();
-        this.notifyViewportChange();
+        if (shouldZoom) {
+        // ZOOM (Pinch gesture or mouse wheel with Alt)
+            const rect = this.svgContainer.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
 
-        // Update gutter if callback is available
-        if (this.onZoomChange) {
-            this.onZoomChange();
+            const oldZoom = this.zoom;
+            this.zoom = Math.max(0.1, Math.min(this.zoom * zoomFactor, 10));            // Adjust pan to zoom into mouse position
+            const zoomRatio = this.zoom / oldZoom;
+            this.panX = mouseX - (mouseX - this.panX) * zoomRatio;
+            this.panY = mouseY - (mouseY - this.panY) * zoomRatio;
+
+            this.updateTransform();
+            this.updateZoomLevel();
+            this.notifyViewportChange();
+
+            // Update gutter if callback is available
+            if (this.onZoomChange) {
+                this.onZoomChange();
+            }
+
+        } else {
+            // PAN (Two-finger scroll on trackpad - everything that's not zoom)
+            const panSensitivity = 1.0;
+
+            this.panX -= event.deltaX * panSensitivity;
+            this.panY -= event.deltaY * panSensitivity;
+
+            this.updateTransform();
+
+            // Only save state on significant movement to avoid too many saves
+            if (Math.abs(event.deltaX) > 5 || Math.abs(event.deltaY) > 5) {
+                this.notifyViewportDragEnd(); // Use lightweight save for panning
+            }
         }
     }
 
-    handleMouseMove(event) {
+    handleMouseDown(event) {
+        console.log('🖱️ MOUSE DOWN:', {
+            button: event.button,
+            buttons: event.buttons,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            clientX: event.clientX,
+            clientY: event.clientY
+        });
+
+        // For Windows/Linux: Use middle mouse button or Ctrl+drag
+        const isMiddleButton = event.button === 1; // Middle mouse button
+        const isCtrlDrag = event.ctrlKey && event.button === 0; // Ctrl+left click
+
+        if (isMiddleButton || isCtrlDrag) {
+            console.log('✅ STARTING MOUSE DRAG');
+            event.preventDefault();
+            this.isDragging = true;
+            this.lastMouseX = event.clientX;
+            this.lastMouseY = event.clientY;
+
+            if (this.svgContainer) {
+                this.svgContainer.classList.add('dragging');
+            }
+        }
+    }        // Touch events for trackpad gestures (macOS)
+    handleTouchStart(event) {
+        console.log('👆 TOUCH START:', {
+            touchCount: event.touches.length,
+            touches: Array.from(event.touches).map(t => ({ x: t.clientX, y: t.clientY }))
+        });
+
+        if (event.touches.length === 2) {
+            console.log('✅ STARTING TOUCH GESTURE');
+            event.preventDefault();
+
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            // Calculate initial distance for pinch detection
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            this.touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+
+            // Store initial state
+            this.touchStartZoom = this.zoom;
+            this.touchStartPanX = this.panX;
+            this.touchStartPanY = this.panY;
+
+            // Calculate center point
+            this.lastMouseX = (touch1.clientX + touch2.clientX) / 2;
+            this.lastMouseY = (touch1.clientY + touch2.clientY) / 2;
+
+            this.isTrackpadPanning = true;
+        }
+    }
+
+    handleTouchMove(event) {
+        if (event.touches.length === 2 && this.isTrackpadPanning) {
+            event.preventDefault();
+
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            // Calculate current distance
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            const currentDistance = Math.sqrt(dx * dx + dy * dy);
+
+            // Calculate center point
+            const currentCenterX = (touch1.clientX + touch2.clientX) / 2;
+            const currentCenterY = (touch1.clientY + touch2.clientY) / 2;
+
+            // Determine if this is primarily a pinch (zoom) or pan gesture
+            const distanceChange = Math.abs(currentDistance - this.touchStartDistance);
+            const panDistance = Math.sqrt(
+                Math.pow(currentCenterX - this.lastMouseX, 2) +
+                Math.pow(currentCenterY - this.lastMouseY, 2)
+            );
+
+            if (distanceChange > panDistance * 0.5) {
+                // Pinch gesture - ZOOM
+                const zoomFactor = currentDistance / this.touchStartDistance;
+                this.zoom = Math.max(0.1, Math.min(this.touchStartZoom * zoomFactor, 10));
+            } else {
+                // Pan gesture - DRAG
+                const deltaX = currentCenterX - this.lastMouseX;
+                const deltaY = currentCenterY - this.lastMouseY;
+
+                this.panX = this.touchStartPanX + deltaX;
+                this.panY = this.touchStartPanY + deltaY;
+            }
+
+            this.updateTransform();
+            this.updateZoomLevel();
+        }
+    }
+
+    handleTouchEnd(event) {
+        if (this.isTrackpadPanning) {
+            this.isTrackpadPanning = false;
+            this.notifyViewportChange();
+
+            if (this.onZoomChange) {
+                this.onZoomChange();
+            }
+        }
+    } handleMouseMove(event) {
         if (!this.isDragging) return;
 
         const deltaX = event.clientX - this.lastMouseX;
