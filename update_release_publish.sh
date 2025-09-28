@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 git fetch
 git checkout main
 git rebase origin/main
