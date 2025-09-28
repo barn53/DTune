@@ -89,7 +89,7 @@ class SVGShaperEditor {
             // --- NEW: Analyze the SVG and populate the data map ---
             // This is the one-time measurement of all elements
             if (!this.isLoadingFromLocalStorage) {
-            // Only clear and re-analyze when loading a new file, not from localStorage
+                // Only clear and re-analyze when loading a new file, not from localStorage
                 this.elementDataMap.clear(); // Clear old data
                 const newMap = this.measurementSystem.analyzeSVG(svgElement);
                 newMap.forEach((value, key) => this.elementDataMap.set(key, value));
@@ -345,13 +345,10 @@ class SVGShaperEditor {
 
         // Restore viewport state (zoom and pan) only when loading from localStorage
         if (typeof settings.zoom === 'number' && !isNaN(settings.zoom)) {
-            this.viewport.zoom = Math.max(0.1, Math.min(settings.zoom, 10)); // Clamp to valid range
+            this.viewport.setZoom(Math.max(0.1, Math.min(settings.zoom, 10))); // Clamp to valid range
         }
         if (typeof settings.panX === 'number' && !isNaN(settings.panX)) {
-            this.viewport.panX = settings.panX;
-        }
-        if (typeof settings.panY === 'number' && !isNaN(settings.panY)) {
-            this.viewport.panY = settings.panY;
+            this.viewport.setPan(settings.panX, settings.panY || 0);
         }
 
         // Apply the restored viewport transform
@@ -360,6 +357,11 @@ class SVGShaperEditor {
 
         // Restore the viewport change callback
         this.viewport.onViewportChange = originalCallback;
+
+        console.log('Viewport state restored:', {
+            zoom: this.viewport.getZoom(),
+            pan: this.viewport.getPan()
+        });
     }    // Helper method to apply a setting with proper toggle synchronization
     applySetting(settingValue, validValues, applyFn, toggleElement, toggleCondition) {
         if (validValues.includes(settingValue)) {
@@ -497,15 +499,9 @@ class SVGShaperEditor {
 
         // Set up viewport
         this.viewport.setSVGElements(this.svgWrapper, displayClone);
-        this.viewport.resetViewport();
 
         // Add overlays and click handlers
         this.addOverlaysToDisplayedSVG(displayClone);
-
-        // Auto-fit the SVG after a short delay
-        setTimeout(() => {
-            this.viewport.zoomToFit();
-        }, 100);
 
         // Show editor section
         this.showEditor();
