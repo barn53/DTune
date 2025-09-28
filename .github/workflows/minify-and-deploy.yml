@@ -91,7 +91,7 @@ jobs:
           output_path="minified/${file#./}"
           mkdir -p "$(dirname "$output_path")"
           npx html-minifier-terser \
-            --input "$file" \
+            "$file" \
             --output "$output_path" \
             --collapse-whitespace \
             --remove-comments \
