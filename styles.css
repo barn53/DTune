@@ -263,82 +263,68 @@ header p {
 }
 
 /* Toolbar */
-.toolbar {
-    background: #f8f9fa;
-    padding: 15px 20px;
-    border-bottom: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-}
 
-.current-file-name-overlay {
+/* Neue Pill-Titelbar über die ganze Breite */
+.pill-titlebar {
     position: absolute;
     top: 12px;
     left: 16px;
-        right: auto;
-        bottom: auto;
-    padding: 10px 100px 10px 12px;
-        /* Transparenter Glassmorphism */
+    right: 16px;
+        padding: 12px 24px;
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(10px) saturate(140%);
         -webkit-backdrop-filter: blur(10px) saturate(140%);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #000;
-    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
-        font-size: 20px;
-    line-height: 1.2;
-    font-weight: 600;
     border-radius: 30px;
-        /* Größerer Radius für deutlichere Pill */
-    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
     z-index: 1000;
-    max-width: 520px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0;
+    justify-content: space-between;
     transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-height: 56px;
     }
 
 /* Fallback für Browser ohne backdrop-filter Support */
 @supports not ((backdrop-filter: blur(0)) or (-webkit-backdrop-filter: blur(0))) {
-    .current-file-name-overlay {
+    .pill-titlebar {
         background: rgba(255, 255, 255, 0.85);
     }
 }
 
-.current-file-name-overlay::before {
+/* Dateiname links in der Titelbar */
+.titlebar-filename {
+    display: flex;
+    align-items: center;
+    color: #000;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.titlebar-filename::before {
     content: '';
     display: inline-block;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+        height: 32px;
     background: url('icons/shaperDelta.svg') center center / contain no-repeat;
-    flex: 0 0 36px;
-    align-self: center;
-    margin-top: 0;
+    flex: 0 0 32px;
+        margin-right: 12px;
 }
 
-.current-file-name-overlay .filename-spacer {
-    width: 16px;
+.titlebar-filename .filename-text {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.current-file-name-overlay .filename-text {
-    display: inline-block;
-    max-width: 460px;
-    white-space: normal;
-    overflow: visible;
-    font-weight: 600;
-        color: #333;
-    }
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                /* Toolbar right section */
-.toolbar-right {
-    gap: 25px;
-    font-size: 14px;
-    /* Uses .flex-center-y utility */
+/* Controls rechts in der Titelbar */
+.titlebar-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
 }
 
 /* Zoom level display in toolbar */
@@ -714,6 +700,8 @@ header p {
     height: 70vh;
     background: transparent !important;
     overflow: hidden;
+    /* Platz für die neue Pill-Titelbar */
+        margin-top: 60px;
 }
 
 .svg-wrapper {

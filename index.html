@@ -32,8 +32,16 @@
         </div>
 
         <div class="editor-section" id="editorSection" style="display: none;">
-            <div class="toolbar no-context-menu">
-                <div class="toolbar-right flex-center-y">
+            <!-- Neue Pill-Titelbar über die ganze Breite -->
+            <div class="pill-titlebar no-context-menu" id="pillTitlebar">
+                <!-- Dateiname und Icon links -->
+                <div class="titlebar-filename" id="titlebarFilename" style="display: none;">
+                    <span class="filename-spacer" aria-hidden="true"></span>
+                    <span class="filename-text"></span>
+                </div>
+            
+                <!-- Controls rechts -->
+                <div class="titlebar-controls">
                     <div class="label-pill-group flex-center-y">
                         <span class="label-pill-label text-muted toggle-label-align">Grid:</span>
                         <input type="checkbox" id="gutterToggle" class="toggle-switch">
@@ -85,10 +93,7 @@
                     <div class="gutter-overlay" id="gutterOverlay" style="display: none;"></div>
                     <div class="svg-content" id="svgContent"></div>
                 </div>
-                <span id="currentFileName" class="current-file-name-overlay" style="display: none;">
-                    <span class="filename-spacer" aria-hidden="true"></span>
-                    <span class="filename-text"></span>
-                </span>
+
 
                 <!-- Floating Action Buttons -->
                 <div class="floating-buttons no-context-menu">

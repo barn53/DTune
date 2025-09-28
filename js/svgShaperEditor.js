@@ -70,7 +70,7 @@ class SVGShaperEditor {
         this.centerViewBtn = document.getElementById('centerView');
 
         // Filename display
-        this.currentFileNameDisplay = document.getElementById('currentFileName');
+        this.currentFileNameDisplay = document.getElementById('titlebarFilename');
 
         // Initialize UI components
         this.uiComponents.initializeElements();
