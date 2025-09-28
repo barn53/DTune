@@ -277,66 +277,64 @@ header p {
 .current-file-name-overlay {
     position: absolute;
     top: 12px;
-        left: 16px;
+    left: 16px;
         right: auto;
         bottom: auto;
-        padding: 4px 12px 4px 10px;
-        background: transparent;
-        /* transparent background */
+    padding: 10px 100px 10px 12px;
+        /* Transparenter Glassmorphism */
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px) saturate(140%);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         color: #000;
-        /* black text */
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
         font-size: 20px;
-        /* larger text to harmonize with bigger icon */
-        line-height: 1.2;
-        /* reset from fixed 36px for better multiline spacing */
-        font-weight: 600;
-        border-radius: 4px;
+    line-height: 1.2;
+    font-weight: 600;
+    border-radius: 30px;
+        /* Größerer Radius für deutlichere Pill */
     pointer-events: none;
     z-index: 1000;
     max-width: 520px;
-        /* allow longer filenames */
-        display: inline-flex;
-        /* align icon + text nicely */
-        align-items: center;
-        /* center icon vs total text block */
-        gap: 0;
-        /* gap removed; spacer controls distance */
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-                                                                .current-file-name-overlay::before {
-        content: '';
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            background: url('icons/shaperDelta.svg') center center / contain no-repeat;
-            flex: 0 0 36px;
-            align-self: center;
-            /* override previous flex-start */
-            margin-top: 0;
-            /* reset */
-        }
-
-        .current-file-name-overlay .filename-spacer {
-            /* reduced spacing */
-            width: 16px;
-            /* was 28px */
-        }
-
-        .current-file-name-overlay .filename-text {
-            display: inline-block;
-            max-width: 460px;
-            white-space: normal;
-            /* allow wrapping */
-            overflow: visible;
-            /* show full wrapped lines */
-            text-overflow: clip;
-            /* no ellipsis for multiline */
-            word-break: break-word;
-            /* break long tokens */
-            line-height: 1.2;
+/* Fallback für Browser ohne backdrop-filter Support */
+@supports not ((backdrop-filter: blur(0)) or (-webkit-backdrop-filter: blur(0))) {
+    .current-file-name-overlay {
+        background: rgba(255, 255, 255, 0.85);
+    }
 }
 
-/* Toolbar right section */
+.current-file-name-overlay::before {
+    content: '';
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    background: url('icons/shaperDelta.svg') center center / contain no-repeat;
+    flex: 0 0 36px;
+    align-self: center;
+    margin-top: 0;
+}
+
+.current-file-name-overlay .filename-spacer {
+    width: 16px;
+}
+
+.current-file-name-overlay .filename-text {
+    display: inline-block;
+    max-width: 460px;
+    white-space: normal;
+    overflow: visible;
+    font-weight: 600;
+        color: #333;
+    }
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                /* Toolbar right section */
 .toolbar-right {
     gap: 25px;
     font-size: 14px;
