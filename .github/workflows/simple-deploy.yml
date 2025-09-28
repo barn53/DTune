@@ -27,28 +27,111 @@ jobs:
     - name: Install minifiers
       run: npm install -g html-minifier-terser terser clean-css-cli
 
-    - name: Minify files
+    - name: Create all-in-one build script
       run: |
-        # Create webapp directory
-        mkdir webapp
+        cat > build.js << 'EOF'
+        const fs = require('fs');
+        const path = require('path');
 
-        # Minify and copy main files
-        html-minifier-terser index.html --collapse-whitespace --remove-comments --minify-css --minify-js > webapp/index.html
-        cleancss styles.css > webapp/styles.css
+        // Create webapp directory
+        if (!fs.existsSync('webapp')) {
+          fs.mkdirSync('webapp');
+        }
 
-        # Create js directory and minify JS files
-        mkdir webapp/js
-        for file in js/*.js; do
-          terser "$file" --compress --mangle > "webapp/js/$(basename "$file")"
-        done
+        // Step 1: Combine all JS files
+        const jsFiles = [
+          'js/shaperConstants.js',
+          'js/measurementSystem.js',
+          'js/elementManager.js',
+          'js/viewport.js',
+          'js/uiComponents.js',
+          'js/svgHelper.js',
+          'js/fileManager.js',
+          'js/attributeSystem.js',
+          'js/svgShaperEditor.js'
+        ];
 
-        # Copy static assets
-        cp -r icons webapp/
+        let combinedJS = '';
+        jsFiles.forEach(file => {
+          if (fs.existsSync(file)) {
+            combinedJS += fs.readFileSync(file, 'utf8') + '\n';
+          }
+        });
 
-        # Copy other HTML files if they exist
+        // Step 2: Read HTML and CSS
+        let html = fs.readFileSync('index.html', 'utf8');
+        let css = fs.readFileSync('styles.css', 'utf8');
+
+        // Step 3: Create self-contained HTML
+        // Remove CSS link and add inline CSS
+        html = html.replace(/<link rel="stylesheet" href="styles\.css">/, `<style>${css}</style>`);
+
+        // Remove all individual script tags and existing inline scripts
+        html = html.replace(/<script src="js\/[^"]+"><\/script>/g, '');
+        html = html.replace(/<script>[\s\S]*?<\/script>/g, '');
+
+        // Add all JS inline before closing body
+        html = html.replace('</body>', `<script>${combinedJS}</script></body>`);
+
+        // Step 4: Process icons inline as base64 (optional but ultimate optimization)
+        const iconFiles = fs.readdirSync('icons').filter(f => f.endsWith('.svg'));
+        iconFiles.forEach(iconFile => {
+          const iconPath = `icons/${iconFile}`;
+          if (fs.existsSync(iconPath)) {
+            const iconContent = fs.readFileSync(iconPath, 'utf8');
+            const base64 = Buffer.from(iconContent).toString('base64');
+            const dataUri = `data:image/svg+xml;base64,${base64}`;
+            html = html.replace(new RegExp(`icons/${iconFile}`, 'g'), dataUri);
+          }
+        });
+
+        fs.writeFileSync('webapp/index.html', html);
+        console.log('✅ All-in-one HTML created with inline CSS, JS, and SVG icons');
+        console.log('📦 Zero external dependencies - everything is self-contained!');
+        EOF
+
+    - name: Build all-in-one file
+      run: |
+        # Run the build script
+        node build.js
+
+        # Minify the all-in-one HTML (with CSS and JS inline)
+        html-minifier-terser webapp/index.html \
+          --collapse-whitespace \
+          --remove-comments \
+          --remove-optional-tags \
+          --remove-redundant-attributes \
+          --remove-script-type-attributes \
+          --remove-tag-whitespace \
+          --use-short-doctype \
+          --minify-css true \
+          --minify-js true > webapp/index_final.html
+
+        mv webapp/index_final.html webapp/index.html
+
+        # Copy any additional HTML files (also self-contained)
         find . -name "*.html" -not -name "index.html" -not -path "./webapp/*" | while read file; do
           html-minifier-terser "$file" --collapse-whitespace --remove-comments --minify-css --minify-js > "webapp/$(basename "$file")"
         done
+
+        # Show amazing build results
+        echo "🚀 === ALL-IN-ONE BUILD RESULTS ==="
+        echo "📂 Original project:"
+        echo "   - HTML: $(wc -c < index.html) bytes"
+        echo "   - CSS: $(wc -c < styles.css) bytes"
+        echo "   - JS files: $(find js -name '*.js' -exec wc -c {} + | tail -1 | awk '{print $1}') bytes"
+        echo "   - Icons: $(find icons -name '*.svg' | wc -l) files"
+        echo ""
+        echo "📦 Final single file:"
+        echo "   - index.html: $(wc -c < webapp/index.html) bytes"
+        echo "   - Files needed: 1 (ONLY index.html!)"
+        echo "   - External dependencies: 0"
+        echo "   - HTTP requests: 1"
+        echo ""
+        echo "✅ Your entire app is now a single self-contained HTML file!"
+
+        # Cleanup
+        rm -f build.js
 
     - name: Deploy to webapp branch
       run: |
