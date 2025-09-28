@@ -2,6 +2,8 @@
 
 A client-side web application for editing Shaper Tools attributes in SVG files.
 
+[![Simple Deploy to GitHub Pages](https://github.com/barn53/DTune/actions/workflows/simple-deploy.yml/badge.svg?branch=release)](https://github.com/barn53/DTune/actions/workflows/simple-deploy.yml)
+
 ## Features
 
 - **File Upload**: Drag and drop or browse to upload SVG files
