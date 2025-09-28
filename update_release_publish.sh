@@ -6,6 +6,6 @@ git checkout main
 git rebase origin/main
 
 git checkout release
-git merge main
+git merge main -m "Merge main into release"
 git push origin release
 
