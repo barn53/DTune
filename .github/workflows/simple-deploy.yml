@@ -1,157 +1,84 @@
-name: Simple Deploy to GitHub Pages
+name: Deploy SVG Editor
 
 on:
   push:
     branches: [ release ]
-  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pages: write
       id-token: write
 
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: release
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Install minifiers
-      run: npm install -g html-minifier-terser terser clean-css-cli
+      - name: Install build tools
+        run: npm install -g html-minifier-terser terser clean-css-cli
 
-    - name: Create all-in-one build script
-      run: |
-        cat > build.js << 'EOF'
-        const fs = require('fs');
-        const path = require('path');
+      - name: Build single-file app
+        run: |
+          mkdir build
 
-        // Create webapp directory
-        if (!fs.existsSync('webapp')) {
-          fs.mkdirSync('webapp');
-        }
+          # Combine all JavaScript files
+          cat js/*.js > build/combined.js
 
-        // Step 1: Combine all JS files
-        const jsFiles = [
-          'js/shaperConstants.js',
-          'js/measurementSystem.js',
-          'js/elementManager.js',
-          'js/viewport.js',
-          'js/uiComponents.js',
-          'js/svgHelper.js',
-          'js/fileManager.js',
-          'js/attributeSystem.js',
-          'js/svgShaperEditor.js'
-        ];
+          # Minify everything
+          clean-css-cli styles.css -o build/styles.min.css
+          terser build/combined.js -c -m -o build/app.min.js
 
-        let combinedJS = '';
-        jsFiles.forEach(file => {
-          if (fs.existsSync(file)) {
-            combinedJS += fs.readFileSync(file, 'utf8') + '\n';
-          }
-        });
+          # Create final HTML with everything inline
+          cp index.html build/index.html
 
-        // Step 2: Read HTML and CSS
-        let html = fs.readFileSync('index.html', 'utf8');
-        let css = fs.readFileSync('styles.css', 'utf8');
+          # Replace CSS link with inline styles
+          CSS=$(cat build/styles.min.css)
+          sed -i 's|<link rel="stylesheet" href="styles.css">|<style>'"$CSS"'</style>|' build/index.html
 
-        // Step 3: Create self-contained HTML
-        // Remove CSS link and add inline CSS
-        html = html.replace(/<link rel="stylesheet" href="styles\.css">/, `<style>${css}</style>`);
+          # Remove JS script tags and add inline script
+          sed -i '/<script src="js\//d' build/index.html
+          JS=$(cat build/app.min.js)
+          sed -i 's|</body>|<script>'"$JS"'</script></body>|' build/index.html
 
-        // Remove all individual script tags and existing inline scripts
-        html = html.replace(/<script src="js\/[^"]+"><\/script>/g, '');
-        html = html.replace(/<script>[\s\S]*?<\/script>/g, '');
+          # Convert SVG icons to data URLs
+          for icon in icons/*.svg; do
+            name=$(basename "$icon")
+            data="data:image/svg+xml;base64,$(base64 -w 0 < "$icon")"
+            sed -i "s|icons/$name|$data|g" build/index.html
+          done
 
-        // Add all JS inline before closing body
-        html = html.replace('</body>', `<script>${combinedJS}</script></body>`);
+          # Final HTML minification
+          html-minifier-terser build/index.html \
+            --collapse-whitespace \
+            --remove-comments \
+            --minify-css \
+            --minify-js \
+            -o build/final.html
 
-        // Step 4: Process icons inline as base64 (optional but ultimate optimization)
-        const iconFiles = fs.readdirSync('icons').filter(f => f.endsWith('.svg'));
-        iconFiles.forEach(iconFile => {
-          const iconPath = `icons/${iconFile}`;
-          if (fs.existsSync(iconPath)) {
-            const iconContent = fs.readFileSync(iconPath, 'utf8');
-            const base64 = Buffer.from(iconContent).toString('base64');
-            const dataUri = `data:image/svg+xml;base64,${base64}`;
-            html = html.replace(new RegExp(`icons/${iconFile}`, 'g'), dataUri);
-          }
-        });
+          mv build/final.html build/index.html
 
-        fs.writeFileSync('webapp/index.html', html);
-        console.log('✅ All-in-one HTML created with inline CSS, JS, and SVG icons');
-        console.log('📦 Zero external dependencies - everything is self-contained!');
-        EOF
+          # Clean up temp files
+          rm build/combined.js build/app.min.js build/styles.min.css
 
-    - name: Build all-in-one file
-      run: |
-        # Run the build script
-        node build.js
+          echo "✅ Built single-file app: $(du -h build/index.html | cut -f1)"
 
-        # Minify the all-in-one HTML (with CSS and JS inline)
-        html-minifier-terser webapp/index.html \
-          --collapse-whitespace \
-          --remove-comments \
-          --remove-optional-tags \
-          --remove-redundant-attributes \
-          --remove-script-type-attributes \
-          --remove-tag-whitespace \
-          --use-short-doctype \
-          --minify-css true \
-          --minify-js true > webapp/index_final.html
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-        mv webapp/index_final.html webapp/index.html
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build
 
-        # Copy any additional HTML files (also self-contained)
-        find . -name "*.html" -not -name "index.html" -not -path "./webapp/*" | while read file; do
-          html-minifier-terser "$file" --collapse-whitespace --remove-comments --minify-css --minify-js > "webapp/$(basename "$file")"
-        done
-
-        # Show amazing build results
-        echo "🚀 === ALL-IN-ONE BUILD RESULTS ==="
-        echo "📂 Original project:"
-        echo "   - HTML: $(wc -c < index.html) bytes"
-        echo "   - CSS: $(wc -c < styles.css) bytes"
-        echo "   - JS files: $(find js -name '*.js' -exec wc -c {} + | tail -1 | awk '{print $1}') bytes"
-        echo "   - Icons: $(find icons -name '*.svg' | wc -l) files"
-        echo ""
-        echo "📦 Final single file:"
-        echo "   - index.html: $(wc -c < webapp/index.html) bytes"
-        echo "   - Files needed: 1 (ONLY index.html!)"
-        echo "   - External dependencies: 0"
-        echo "   - HTTP requests: 1"
-        echo ""
-        echo "✅ Your entire app is now a single self-contained HTML file!"
-
-        # Cleanup
-        rm -f build.js
-
-    - name: Deploy to webapp branch
-      run: |
-        cd webapp
-        git init
-        git config user.name 'GitHub Actions'
-        git config user.email 'actions@github.com'
-        git add .
-        git commit -m "Deploy from 'release' branch"
-        git branch -M webapp
-        git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-        git push -f origin webapp
-
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './webapp'
-
-    - name: Deploy to GitHub Pages
-      uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

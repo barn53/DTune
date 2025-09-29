@@ -1,4 +1,12 @@
 ============================================
+Hah, klick auf Pfad öffnet nicht den dialog, sondern markiert den Pfad
+Modal Editor öffnen über Kontext Menü
+Dann Save gilt für alle selektierten Pfade!
+
+
+
+
+============================================
 attribut-modal schöner machen:
 mini svg vom element im attribute editor statt sperriger zu technischer überschrift
 Wie kontext menü oder sogar tool tips.
@@ -100,6 +108,9 @@ cut type setzt auch die linien farbe und -füllung entsprechend shaper vorgaben.
 https://support.shapertools.com/hs-fs/hubfs/Knowledge%20Base%20Import/Cut_Style_Guide-2.png?width=1300&height=600&name=Cut_Style_Guide-2.png
 
 
+============================================
+Internationalisierung: DE EN FR
+
 
 ============================================
 Gitter skalierung ist wieder durcheinander gekommen!
@@ -121,7 +132,7 @@ designwie attribut dialog. Das lila fenster wegmachen.
 
 ============================================
 Titelbar eingabe texte Size: Zoom: sind nur weiß kontrast einbauen,damit man sieht das ist wasaktives.
-
+Titelbar responsive: zu smal: alle eingaben und toggels in hamburger Menü packen
 
 
 ============================================
