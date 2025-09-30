@@ -4,6 +4,26 @@ Modal Editor öffnen über Kontext Menü
 Dann Save gilt für alle selektierten Pfade!
 
 
+Zustände des Pfads:
+- einfach nur Pfad - irgendwas einheitliches mit dezentem outline
+- geschlossener Pfad leichte transparente Füllung
+- Hover - orange glow
+- Ausgewählt - blauer glow
+
+
+
+============================================
+svg linien einheitlich keine faben vom original übernehmen anzeigen.
+auch die linien dicke sollte einheitlich sein.
+
+
+
+============================================
+shaper attribute path outlines, je nach cutType.
+also online, inline, outline pocket als zusätzlichen outline hinter dem eigentlichen
+Pfad einbauen, so sieht man gleich, welchen cut Type der Pfad hat.
+Erweiterung innen/außen oder beidseitig, Tasche über füllung...
+
 
 
 ============================================
@@ -14,7 +34,15 @@ icons verwenden für tie attribute.
 Großschrift
 Auswahl werte für die input Felder als buttons im Textfeld
 
-wenn kein geschlossener pfad kann nur 'online' cutType ausgewählt werden.
+
+
+============================================
+cut type setzt auch die linien farbe und -füllung entsprechend shaper vorgaben. (evtl. nur für den export)
+https://support.shapertools.com/hs-fs/hubfs/Knowledge%20Base%20Import/Cut_Style_Guide-2.png?width=1300&height=600&name=Cut_Style_Guide-2.png
+
+
+
+wenn kein geschlossener pfad, dann kann nur 'online' cutType ausgewählt werden.
     In SVG wird ein Pfad als „geschlossen“ betrachtet, wenn er mit einem Z oder z endet (ClosePath-Befehl).
     Wenn der d-String mit Z oder z endet, ist er geschlossen.
     Ein Pfad kann theoretisch geometrisch geschlossen sein, auch wenn er kein Z enthält (z. B. Start- und Endpunkt identisch). Das müsste man rechnerisch prüfen, indem man den ersten und letzten Punkt der Kontur vergleicht.
@@ -85,27 +113,8 @@ wenn kein geschlossener pfad kann nur 'online' cutType ausgewählt werden.
             </html>
 
 
-save to all im editor
 ganzer hintergrund blurred
 
-
-
-
-============================================
-svg linien einheitlich keine faben vom original übernehmen anzeigen.
-auch die linien dicke sollte einheitlich sein.
-
-
-============================================
-shaper attribute path outlines, je nach cutType.
-also online, inline, outline pocket als zusätzlichen outline hinter dem eigentlichen
-Pfad einbauen , so sieht man gleich, welchen cut Type der Pfad hat.
-Erweiterung innen/außen oder beidseitig, tasche über füllung...
-
-
-============================================
-cut type setzt auch die linien farbe und -füllung entsprechend shaper vorgaben. (evtl. nur für den export)
-https://support.shapertools.com/hs-fs/hubfs/Knowledge%20Base%20Import/Cut_Style_Guide-2.png?width=1300&height=600&name=Cut_Style_Guide-2.png
 
 
 ============================================
@@ -124,18 +133,25 @@ Gitter gestrichelt machen
 
 
 ============================================
+Gitter über Zoom Buttons!
+
+
+============================================
 Datei laden bei leerem local storage:
 Gleich editor anzeigen dann dragdrop feld über dem viewport anzeigen
-designwie attribut dialog. Das lila fenster wegmachen.
+design wie attribut dialog. Das lila fenster wegmachen.
 
 
 
 ============================================
 Titelbar eingabe texte Size: Zoom: sind nur weiß kontrast einbauen,damit man sieht das ist wasaktives.
-Titelbar responsive: zu smal: alle eingaben und toggels in hamburger Menü packen
+Titelbar responsive: zu small: alle eingaben und toggels in hamburger Menü packen
+
 
 
 ============================================
-Keyboard Shortcuts (Zoom: +/-, Pan: Pfeiltasten, Export: Ctrl+E)
-
+Keyboard Shortcuts
+- Zoom: +/-,
+- Pan: Pfeiltasten, Export
+- Ctrl+A: Alle Pfade markieren
 

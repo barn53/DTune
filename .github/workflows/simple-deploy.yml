@@ -58,29 +58,33 @@ jobs:
           fs.writeFileSync('build/index.html', html);
           "
 
-          # Add version info to HTML
-          cat >> build/version.js << EOF
-          window.BUILD_INFO = {
-            gitHash: "${GIT_HASH}",
-            buildDate: "${BUILD_DATE}",
-            version: "$(date +%Y%m%d)-${GIT_HASH}"
-          };
-          console.log("📦 App version:", window.BUILD_INFO.version);
+          # Add version info using Node.js (bulletproof method)
+          node -e "
+          const fs = require('fs');
+          let html = fs.readFileSync('build/index.html', 'utf8');
 
-          // Add visible version indicator
+          const versionScript = \`
+          <script>
+          window.BUILD_INFO = {
+            gitHash: '${GIT_HASH}',
+            buildDate: '${BUILD_DATE}',
+            version: '$(date +%Y%m%d)-${GIT_HASH}'
+          };
+          console.log('📦 App version:', window.BUILD_INFO.version);
+
           setTimeout(() => {
-            const v = document.createElement("div");
-            v.style = "position:fixed;bottom:5px;right:5px;font-size:10px;opacity:0.6;z-index:9999;background:rgba(0,0,0,0.7);color:white;padding:2px 5px;border-radius:3px;font-family:monospace;";
-            v.textContent = "v${GIT_HASH}";
-            v.title = "Built: ${BUILD_DATE}";
+            const v = document.createElement('div');
+            v.style = 'position:fixed;bottom:5px;right:5px;font-size:10px;opacity:0.6;z-index:9999;background:rgba(0,0,0,0.7);color:white;padding:2px 5px;border-radius:3px;font-family:monospace;';
+            v.textContent = 'v${GIT_HASH}';
+            v.title = 'Built: ${BUILD_DATE}';
             document.body.appendChild(v);
           }, 1000);
-          EOF
+          </script>
+          \`;
 
-          # Insert version script into HTML
-          sed -i 's|</head>|<script>'"$(cat build/version.js)"'</script></head>|' build/index.html
-
-          # Convert SVG icons to data URLs
+          html = html.replace('</head>', versionScript + '</head>');
+          fs.writeFileSync('build/index.html', html);
+          "          # Convert SVG icons to data URLs
           for icon in icons/*.svg; do
             if [ -f "$icon" ]; then
               name=$(basename "$icon")
@@ -100,7 +104,7 @@ jobs:
           mv build/final.html build/index.html
 
           # Clean up temp files
-          rm build/combined.js build/app.min.js build/styles.min.css build/version.js
+          rm build/combined.js build/app.min.js build/styles.min.css
 
           echo "✅ Built single-file app: $(du -h build/index.html | cut -f1)"
           echo "🏷️  Version: $(date +%Y%m%d)-${GIT_HASH}"
