@@ -37,17 +37,22 @@ jobs:
           npx clean-css-cli styles.css -o build/styles.min.css
           npx terser build/combined.js -c -m -o build/app.min.js
 
-          # Create final HTML with everything inline
-          cp index.html build/index.html
+          # Create final HTML with everything inline using Node.js (bulletproof)
+          node -e "
+          const fs = require('fs');
+          let html = fs.readFileSync('index.html', 'utf8');
+          const css = fs.readFileSync('build/styles.min.css', 'utf8');
+          const js = fs.readFileSync('build/app.min.js', 'utf8');
 
-          # Replace CSS link with inline styles
-          CSS=$(cat build/styles.min.css)
-          sed -i 's|<link rel="stylesheet" href="styles.css">|<style>'"$CSS"'</style>|' build/index.html
+          // Replace CSS link with inline styles
+          html = html.replace('<link rel=\"stylesheet\" href=\"styles.css\">', '<style>' + css + '</style>');
 
-          # Remove JS script tags and add inline script
-          sed -i '/<script src="js\//d' build/index.html
-          JS=$(cat build/app.min.js)
-          sed -i 's|</body>|<script>'"$JS"'</script></body>|' build/index.html
+          // Remove JS script tags and add inline script
+          html = html.replace(/<script src=\"js\/[^\"]*\"><\/script>/g, '');
+          html = html.replace('</body>', '<script>' + js + '</script></body>');
+
+          fs.writeFileSync('build/index.html', html);
+          "
 
           # Convert SVG icons to data URLs
           for icon in icons/*.svg; do
