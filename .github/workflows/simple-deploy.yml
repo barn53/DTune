@@ -24,7 +24,7 @@ jobs:
           node-version: '20'
 
       - name: Install build tools
-        run: npm install -g html-minifier-terser terser clean-css-cli
+        run: npm install html-minifier-terser terser clean-css-cli
 
       - name: Build single-file app
         run: |
@@ -33,9 +33,9 @@ jobs:
           # Combine all JavaScript files
           cat js/*.js > build/combined.js
 
-          # Minify everything
-          clean-css-cli styles.css -o build/styles.min.css
-          terser build/combined.js -c -m -o build/app.min.js
+          # Minify everything using npx (more reliable)
+          npx clean-css-cli styles.css -o build/styles.min.css
+          npx terser build/combined.js -c -m -o build/app.min.js
 
           # Create final HTML with everything inline
           cp index.html build/index.html
@@ -57,7 +57,7 @@ jobs:
           done
 
           # Final HTML minification
-          html-minifier-terser build/index.html \
+          npx html-minifier-terser build/index.html \
             --collapse-whitespace \
             --remove-comments \
             --minify-css \
