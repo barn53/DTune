@@ -37,12 +37,28 @@ jobs:
           npx clean-css-cli styles.css -o build/styles.min.css
           npx terser build/combined.js -c -m -o build/app.min.js
 
+          # Get git info for version tracking
+          GIT_HASH=$(git rev-parse --short HEAD)
+          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
           # Create final HTML with everything inline using Node.js (bulletproof)
           node -e "
           const fs = require('fs');
           let html = fs.readFileSync('index.html', 'utf8');
           const css = fs.readFileSync('build/styles.min.css', 'utf8');
-          const js = fs.readFileSync('build/app.min.js', 'utf8');
+          let js = fs.readFileSync('build/app.min.js', 'utf8');
+
+          // Inject build info into JavaScript
+          const buildInfo = {
+            gitHash: '${GIT_HASH}',
+            gitBranch: '${GIT_BRANCH}',
+            buildDate: '${BUILD_DATE}',
+            version: '$(date +%Y%m%d)-${GIT_HASH}'
+          };
+          
+          // Add build info as global variable at the start of JS
+          js = 'window.BUILD_INFO = ' + JSON.stringify(buildInfo, null, 2) + ';\\n\\n' + js;
 
           // Replace CSS link with inline styles
           html = html.replace('<link rel=\"stylesheet\" href=\"styles.css\">', '<style>' + css + '</style>');
@@ -53,6 +69,8 @@ jobs:
 
           fs.writeFileSync('build/index.html', html);
           "
+
+          echo "🏷️  Build info: ${GIT_HASH} from ${GIT_BRANCH} at ${BUILD_DATE}"
 
           # Convert SVG icons to data URLs
           for icon in icons/*.svg; do
