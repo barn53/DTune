@@ -33,32 +33,20 @@ jobs:
           # Combine all JavaScript files
           cat js/*.js > build/combined.js
 
-          # Minify everything using npx (more reliable)
+          # Minify everything
           npx clean-css-cli styles.css -o build/styles.min.css
           npx terser build/combined.js -c -m -o build/app.min.js
 
           # Get git info for version tracking
           GIT_HASH=$(git rev-parse --short HEAD)
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
 
-          # Create final HTML with everything inline using Node.js (bulletproof)
+          # Create final HTML with everything inline
           node -e "
           const fs = require('fs');
           let html = fs.readFileSync('index.html', 'utf8');
           const css = fs.readFileSync('build/styles.min.css', 'utf8');
-          let js = fs.readFileSync('build/app.min.js', 'utf8');
-
-          // Inject build info into JavaScript
-          const buildInfo = {
-            gitHash: '${GIT_HASH}',
-            gitBranch: '${GIT_BRANCH}',
-            buildDate: '${BUILD_DATE}',
-            version: '$(date +%Y%m%d)-${GIT_HASH}'
-          };
-          
-          // Add build info as global variable at the start of JS
-          js = 'window.BUILD_INFO = ' + JSON.stringify(buildInfo, null, 2) + ';\\n\\n' + js;
+          const js = fs.readFileSync('build/app.min.js', 'utf8');
 
           // Replace CSS link with inline styles
           html = html.replace('<link rel=\"stylesheet\" href=\"styles.css\">', '<style>' + css + '</style>');
@@ -70,13 +58,35 @@ jobs:
           fs.writeFileSync('build/index.html', html);
           "
 
-          echo "🏷️  Build info: ${GIT_HASH} from ${GIT_BRANCH} at ${BUILD_DATE}"
+          # Add version info to HTML
+          cat >> build/version.js << EOF
+          window.BUILD_INFO = {
+            gitHash: "${GIT_HASH}",
+            buildDate: "${BUILD_DATE}",
+            version: "$(date +%Y%m%d)-${GIT_HASH}"
+          };
+          console.log("📦 App version:", window.BUILD_INFO.version);
+
+          // Add visible version indicator
+          setTimeout(() => {
+            const v = document.createElement("div");
+            v.style = "position:fixed;bottom:5px;right:5px;font-size:10px;opacity:0.6;z-index:9999;background:rgba(0,0,0,0.7);color:white;padding:2px 5px;border-radius:3px;font-family:monospace;";
+            v.textContent = "v${GIT_HASH}";
+            v.title = "Built: ${BUILD_DATE}";
+            document.body.appendChild(v);
+          }, 1000);
+          EOF
+
+          # Insert version script into HTML
+          sed -i 's|</head>|<script>'"$(cat build/version.js)"'</script></head>|' build/index.html
 
           # Convert SVG icons to data URLs
           for icon in icons/*.svg; do
-            name=$(basename "$icon")
-            data="data:image/svg+xml;base64,$(base64 -w 0 < "$icon")"
-            sed -i "s|icons/$name|$data|g" build/index.html
+            if [ -f "$icon" ]; then
+              name=$(basename "$icon")
+              data="data:image/svg+xml;base64,$(base64 -w 0 < "$icon")"
+              sed -i "s|icons/$name|$data|g" build/index.html
+            fi
           done
 
           # Final HTML minification
@@ -90,9 +100,10 @@ jobs:
           mv build/final.html build/index.html
 
           # Clean up temp files
-          rm build/combined.js build/app.min.js build/styles.min.css
+          rm build/combined.js build/app.min.js build/styles.min.css build/version.js
 
           echo "✅ Built single-file app: $(du -h build/index.html | cut -f1)"
+          echo "🏷️  Version: $(date +%Y%m%d)-${GIT_HASH}"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
