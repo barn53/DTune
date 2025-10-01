@@ -112,16 +112,13 @@ class ShaperUtils {
 
     // Find corresponding element in another SVG by index and tag
     static findCorrespondingElement(sourceElement, targetSVG) {
-        console.log('findCorrespondingElement called'); // Debug log
         if (!targetSVG || !sourceElement) {
-            console.log('Missing targetSVG or sourceElement'); // Debug log
             return null;
         }
 
         // Skip if source element is an overlay or boundary element
         if (sourceElement.classList.contains(ShaperConstants.CSS_CLASSES.OVERLAY) ||
             sourceElement.classList.contains(ShaperConstants.CSS_CLASSES.BOUNDARY_OUTLINE)) {
-            console.log('Source element is overlay/boundary, skipping'); // Debug log
             return null;
         }
 
@@ -136,21 +133,14 @@ class ShaperUtils {
         // Get all elements from target (original should not have overlays)
         const targetElements = Array.from(targetSVG.children);
 
-        console.log('Source elements (filtered):', sourceElements.length); // Debug log
-        console.log('Target elements:', targetElements.length); // Debug log
-
         // Find the index of source element among filtered elements
         const elementIndex = sourceElements.indexOf(sourceElement);
 
-        console.log('Element index:', elementIndex); // Debug log
-
         if (elementIndex === -1 || elementIndex >= targetElements.length) {
-            console.log('Index not found or out of bounds'); // Debug log
             return null;
         }
 
         const correspondingElement = targetElements[elementIndex];
-        console.log('Found corresponding element:', correspondingElement); // Debug log
 
         return (correspondingElement && correspondingElement.tagName === sourceElement.tagName)
             ? correspondingElement

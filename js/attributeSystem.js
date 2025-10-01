@@ -46,7 +46,6 @@ class AttributeSystem {
 
         // Update SVG data for export (no shaper attributes sync needed)
         this.fileManager.updateSVGData();
-        console.log('AttributeSystem.saveAttributes completed'); // Debug log
     }
 
     // Save cutType attribute (non-measurement)

@@ -31,9 +31,6 @@ class SVGShaperEditor {
 
         // Flag to track if we're loading from localStorage
         this.isLoadingFromLocalStorage = false;
-
-        // Debug overlay visibility state (immer default AN beim Laden; keine Persistenz)
-        this.debugOverlayEnabled = false;
     }
 
     initializeElements() {
@@ -238,7 +235,6 @@ class SVGShaperEditor {
             const savedSettings = localStorage.getItem('shaperEditorSettings');
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
-                console.log('Parsed settings:', settings); // Debug log
 
                 // Apply gutter toggle
                 if (typeof settings.gutterEnabled === 'boolean') {
@@ -246,10 +242,7 @@ class SVGShaperEditor {
                     this.gutterOverlay.style.display = settings.gutterEnabled ? 'block' : 'none';
                 }
 
-                // Debug Overlay: Keine Persistenz mehr – immer aktiv beim Start
-                this.debugOverlayEnabled = true;
-                const existing = document.getElementById('gridDebugOverlay');
-                if (existing) existing.style.display = 'block';
+                // ...existing code...
 
                 // Apply units with toggle synchronization
                 this.applySetting(
@@ -299,7 +292,6 @@ class SVGShaperEditor {
 
                 // Restore elementData if available
                 if (settings.elementData && Array.isArray(settings.elementData)) {
-                    console.log('Restoring elementData from localStorage:', settings.elementData.length, 'elements');
                     this.elementDataMap.clear();
                     settings.elementData.forEach(item => {
                         if (item.elementId && item.data) {
@@ -358,10 +350,6 @@ class SVGShaperEditor {
         // Restore the viewport change callback
         this.viewport.onViewportChange = originalCallback;
 
-        console.log('Viewport state restored:', {
-            zoom: this.viewport.getZoom(),
-            pan: this.viewport.getPan()
-        });
     }    // Helper method to apply a setting with proper toggle synchronization
     applySetting(settingValue, validValues, applyFn, toggleElement, toggleCondition) {
         if (validValues.includes(settingValue)) {
@@ -467,21 +455,19 @@ class SVGShaperEditor {
         document.addEventListener('keydown', (e) => this.uiComponents.handleKeyDown(e));
         // Global shortcut listener (in separater Listener um bestehende Logik nicht zu stören)
         document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'g') {
-                e.preventDefault();
-                this.toggleDebugOverlayVisibility();
-            }
             // Zoom to Fit: Cmd/Ctrl + 0 (falls Browser nicht vorher abfängt)
-            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '0' || e.code === 'Digit0')) {
-                // Nicht auslösen, wenn gerade in einem Eingabefeld gearbeitet wird
-                const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
-                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
-                // Manche Browser nutzen Cmd/Ctrl+0 für Page-Zoom-Reset; wir versuchen zu übernehmen
-                e.preventDefault();
-                if (this.viewport && typeof this.viewport.zoomToFit === 'function') {
-                    this.viewport.zoomToFit();
-                    this.updateGutterSize();
-                    this.showNotification('Zoom to Fit', 'info');
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                if (e.key === '0' || e.code === 'Digit0') {
+                    // Nicht auslösen, wenn gerade in einem Eingabefeld gearbeitet wird
+                    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+                    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+                    // Manche Browser nutzen Cmd/Ctrl+0 für Page-Zoom-Reset; wir versuchen zu übernehmen
+                    e.preventDefault();
+                    if (this.viewport && typeof this.viewport.zoomToFit === 'function') {
+                        this.viewport.zoomToFit();
+                        this.updateGutterSize();
+                        this.showNotification('Zoom to Fit', 'info');
+                    }
                 }
             }
         });
@@ -536,12 +522,8 @@ class SVGShaperEditor {
             // Insert overlay after the original path
             path.parentNode.insertBefore(overlay, path.nextSibling);
 
-            // Test if element can receive events
-            overlay.addEventListener('mouseover', () => {
-                console.log('MOUSEOVER detected on overlay!');
-            });            // Add event handlers to overlay
+            // Add event handlers to overlay
             overlay.addEventListener('click', (e) => {
-                console.log('Overlay clicked!', overlay);
                 e.stopPropagation();
                 this.uiComponents.openAttributeModal(path);
             });
@@ -553,11 +535,11 @@ class SVGShaperEditor {
             });
 
             overlay.addEventListener('mouseenter', (e) => {
-                console.log('Overlay mouse enter!', overlay);
                 path.classList.add(ShaperConstants.CSS_CLASSES.HOVER);
                 this.elementManager.setHoveredPath(path);
                 this.uiComponents.showTooltip(path, e.clientX, e.clientY);
-            }); overlay.addEventListener('mousemove', (e) => {
+            });
+            overlay.addEventListener('mousemove', (e) => {
                 this.viewport.updateMousePosition(e.clientX, e.clientY);
                 this.uiComponents.setMousePosition(e.clientX, e.clientY);
                 this.uiComponents.updateTooltipPosition(e.clientX, e.clientY);
@@ -827,148 +809,9 @@ class SVGShaperEditor {
         }
         // Ursprung/Marker NICHT mehr extern überschreiben – Marker wird ausschließlich im Viewport.updateInfiniteGrid() positioniert.
 
-        // 7. Debug Overlay (ohne viewBox / mismatch, da irrelevant laut Nutzer)
-        const debugData = {
-            gutterRawMm,
-            baseCellPx,
-            boundaryPx,
-            expectedCells,
-            actualCells,
-            totalLogicalMm,
-            pxPerMm: baseCellPx / gutterRawMm, // sollte konstant 3.7795...
-            zoom: this.viewport ? this.viewport.getZoom() : 1,
-            units: this.measurementSystem.units,
-            dpi: this.measurementSystem.dpi,
-            method: measurementMethod || 'n/a',
-            anchorLogicalX: this.viewport ? this.viewport.anchorLogicalX : 0,
-            anchorLogicalY: this.viewport ? this.viewport.anchorLogicalY : 0,
-            anchorScreenX: this.viewport ? (this.viewport.getZoom() * (this.viewport.anchorLogicalX || 0) + (this.viewport.getPan().x || 0)) : 0,
-            anchorScreenY: this.viewport ? (this.viewport.getZoom() * (this.viewport.anchorLogicalY || 0) + (this.viewport.getPan().y || 0)) : 0
-        };
-        this.lastGridDebugData = debugData;
-        this._updateGridDebugOverlay(debugData);
+        // ...existing code...
     }
 
-    // === GRID DEBUG OVERLAY ===
-    _updateGridDebugOverlay(data) {
-        // Respect visibility flag
-        if (!this.debugOverlayEnabled) {
-            const existingHidden = document.getElementById('gridDebugOverlay');
-            if (existingHidden) existingHidden.style.display = 'none';
-            return; // Keine Updates solange deaktiviert
-        }
-        let overlay = document.getElementById('gridDebugOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'gridDebugOverlay';
-            overlay.style.cssText = [
-                'position:absolute',
-                'bottom:8px',
-                'right:8px',
-                'z-index:4000',
-                'background:rgba(10,14,20,0.85)',
-                'backdrop-filter:blur(4px)',
-                'color:#e6f1ff',
-                'font:11px/1.35 monospace',
-                'padding:10px 12px 14px 12px',
-                'border:1px solid #2a3b4d',
-                'border-radius:8px',
-                'max-width:300px',
-                'white-space:pre-wrap',
-                'user-select:text',
-                'pointer-events:auto'
-            ].join(';');
-            const container = this.editorSection || document.body;
-            container.appendChild(overlay);
-
-            const copyBtn = document.createElement('button');
-            copyBtn.textContent = 'COPY';
-            copyBtn.type = 'button';
-            copyBtn.style.cssText = [
-                'position:absolute', 'top:4px', 'left:4px', 'padding:2px 6px', 'font:10px monospace', 'border:1px solid #3a4a5a', 'background:#1e2a3a', 'color:#fff', 'border-radius:4px', 'cursor:pointer']
-                .join(';');
-            copyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const raw = overlay.dataset.rawText || overlay.textContent || '';
-                navigator.clipboard.writeText(raw).then(() => {
-                    copyBtn.textContent = '✓';
-                    setTimeout(() => copyBtn.textContent = 'COPY', 1100);
-                }).catch(() => {
-                    copyBtn.textContent = 'ERR';
-                    setTimeout(() => copyBtn.textContent = 'COPY', 1500);
-                });
-            });
-            overlay.appendChild(copyBtn);
-        }
-
-        const fmt = (v, d = 3) => (v === null || v === undefined || isNaN(v) ? '-' : parseFloat(v).toFixed(d));
-
-        if (data.error) {
-            overlay.dataset.rawText = `[GRID]\nERROR: ${data.error}`;
-            overlay.innerHTML = overlay.innerHTML.split('</button>').shift() + '</button>' + `<pre style="margin:18px 0 0">[GRID]\nERROR: ${data.error}</pre>`;
-            return;
-        }
-
-        const lines = [
-            'GRID DEBUG',
-            `gutterRawMm:      ${fmt(data.gutterRawMm)}`,
-            `baseCellPx:       ${fmt(data.baseCellPx)}`,
-            `pxPerMm(const):  ${fmt(data.pxPerMm, 4)}`,
-            `zoom:            ${fmt(data.zoom, 2)}`,
-            '',
-            `boundaryWidthPx:  ${fmt(data.boundaryPx)}`,
-            `totalWidthMm:     ${fmt(data.totalLogicalMm)}`,
-            '',
-            `expectedCells:    ${fmt(data.expectedCells, 3)}`,
-            `actualCells:      ${fmt(data.actualCells, 3)}`,
-            '',
-            `units(display):   ${data.units || '-'}`,
-            `dpi:              ${data.dpi}`,
-            `measureMethod:    ${data.method}`,
-            '',
-            `anchorLogicalX:   ${fmt(data.anchorLogicalX, 3)}`,
-            `anchorLogicalY:   ${fmt(data.anchorLogicalY, 3)}`,
-            `anchorScreenX:    ${fmt(data.anchorScreenX, 2)}`,
-            `anchorScreenY:    ${fmt(data.anchorScreenY, 2)}`,
-            `timestamp:        ${new Date().toISOString().split('T')[1].replace('Z', '')}`
-        ];
-
-        overlay.dataset.rawText = lines.join('\n');
-        const copyBtn = overlay.querySelector('button');
-        Array.from(overlay.childNodes).forEach(n => { if (n !== copyBtn) overlay.removeChild(n); });
-        const pre = document.createElement('pre');
-        pre.style.cssText = 'margin:18px 0 0;padding:0;font:inherit;';
-        pre.textContent = lines.join('\n');
-        overlay.appendChild(pre);
-        overlay.style.display = 'block';
-    }
-
-    toggleDebugOverlayVisibility() {
-        this.debugOverlayEnabled = !this.debugOverlayEnabled;
-        const overlay = document.getElementById('gridDebugOverlay');
-        if (overlay) {
-            overlay.style.display = this.debugOverlayEnabled ? 'block' : 'none';
-        } else if (this.debugOverlayEnabled) {
-            // Force refresh to create overlay if turning on
-            this.updateGutterSize();
-        }
-        // Keine Persistenz – bewusst nichts speichern
-        // Optional kleines Feedback
-        this.showNotification(this.debugOverlayEnabled ? 'Debug Overlay ON' : 'Debug Overlay OFF', 'info');
-    }
-
-    // Schnelles Aktualisieren nur der Anchor/Zoom/Pan abhängigen Werte ohne komplette Neuberechnung
-    refreshGridDebugAnchors(anchorScreenX, anchorScreenY) {
-        if (!this.debugOverlayEnabled) return;
-        if (!this.lastGridDebugData) return;
-        // Clone previous data to avoid mutating reference while someone copies
-        const d = Object.assign({}, this.lastGridDebugData);
-        d.zoom = this.viewport ? this.viewport.getZoom() : d.zoom;
-        d.anchorScreenX = anchorScreenX;
-        d.anchorScreenY = anchorScreenY;
-        // Pan ändert anchorLogical nicht – bleibt unverändert
-        this._updateGridDebugOverlay(d);
-    }
 
     getBoundaryOffset() {
         // Get the actual SVG element and its viewBox/dimensions (not the boundary path donut)
