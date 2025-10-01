@@ -70,7 +70,8 @@ class UIComponents {
      * @param {Element} path - SVG path element to edit
      */
     openAttributeModal(path) {
-        this.elementManager.selectPath(path);
+        // Note: This method will be called from menu entry, not from element clicks
+        // The path should already be selected through the new selection system
         this.populateAttributeForm(path);
         this.modal.style.display = 'flex';
     }
@@ -83,7 +84,7 @@ class UIComponents {
      */
     closeModal() {
         this.modal.style.display = 'none';
-        this.elementManager.selectPath(null);
+        // Don't clear selection when closing modal - keep elements selected
 
         // Reset form fields to empty state
         document.getElementById('cutDepth').value = '';

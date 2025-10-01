@@ -69,10 +69,27 @@
     pointer-events: all !important;
 }
 
+:root {
+    --normalized-color: #444;
+    --normalized-stroke-width: 2px;
+
+    --hover-color: #1E90FF;
+    --hover-stroke-width: 2.5px;
+    --hover-glow: rgba(30,144,255,0.4);
+
+    --selected-color: #FF9500;
+    --selected-stroke-width: 2.5px;
+    --selected-glow: rgba(255,149,0,0.6);
+
+    --overlay-stroke: rgba(85, 85, 85, 0.3);
+    --overlay-stroke-width: 5px;
+}
+
 /* Normalized Path Styles - Applied by normalizePathVisuals() */
 .svg-content svg .normalized-path {
-    stroke: #555555 !important;
-    stroke-width: 1px !important;
+    stroke: var(--normalized-color) !important;
+    stroke-width: var(--normalized-stroke-width) !important;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
     stroke-dasharray: none !important;
     stroke-linecap: round !important;
     stroke-linejoin: round !important;
@@ -94,9 +111,9 @@
 .svg-content svg text.normalized-text,
 .svg-content svg tspan.normalized-text,
 .svg-content svg textPath.normalized-text {
-    fill: #555555 !important;
-    stroke: #555555 !important;
-    stroke-width: 1px !important;
+    fill: var(--normalized-color) !important;
+    stroke: var(--normalized-color) !important;
+    stroke-width: var(--normalized-stroke-width) !important;
         stroke-dasharray: none !important;
         stroke-linecap: round !important;
         stroke-linejoin: round !important;
@@ -106,8 +123,8 @@
 /* Interactive Overlay Styles */
 .svg-content svg .path-overlay {
     fill: transparent !important;
-    stroke: rgba(85, 85, 85, 0.3) !important;
-    stroke-width: 5px !important;
+    stroke: var(--overlay-stroke) !important;
+    stroke-width: var(--overlay-stroke-width) !important;
     vector-effect: non-scaling-stroke !important;
     pointer-events: all !important;
     cursor: pointer;
@@ -116,8 +133,8 @@
 /* Text overlay needs special handling for hit area */
 .svg-content svg text.path-overlay {
     fill: transparent !important;
-    stroke: rgba(85, 85, 85, 0.3) !important;
-    stroke-width: 5px !important;
+    stroke: var(--overlay-stroke) !important;
+    stroke-width: var(--overlay-stroke-width) !important;
     vector-effect: non-scaling-stroke !important;
     pointer-events: all !important;
     cursor: pointer;
@@ -129,10 +146,9 @@
 .svg-content svg text.hover-active,
 .svg-content svg tspan.hover-active,
 .svg-content svg textPath.hover-active {
-    stroke: rgba(0, 85, 234, 0.9) !important;
-        stroke-width: 2px !important;
-        filter: drop-shadow(0 0 12px rgba(0, 85, 234, 0.5)) brightness(2) !important;
-        animation: hoverPulse 1s ease-in infinite;
+    stroke: var(--hover-color) !important;
+    stroke-width: var(--hover-stroke-width) !important;
+    filter: drop-shadow(0 0 4px var(--hover-glow));
 }
 
 /* Selected Element Styles */
@@ -140,24 +156,20 @@
 .svg-content svg text.path-selected,
 .svg-content svg tspan.path-selected,
 .svg-content svg textPath.path-selected {
-    --selected-color: rgb(255, 175, 62);
     stroke: var(--selected-color) !important;
-    stroke-width: 2px !important;
-    filter: drop-shadow(0 0 12px rgba(255, 175, 62, 0.9)) drop-shadow(0 0 24px rgba(255, 175, 62, 0.5)) brightness(2);
-    /* transform: scale(1.03); */
-    animation: selectedPulse 1s ease-in-out infinite;
+    stroke-width: var(--selected-stroke-width) !important;
+    filter: drop-shadow(0 0 6px var(--selected-glow));
 }
 
-@keyframes selectedPulse {
-    0%,
-    100% {
-        filter: drop-shadow(0 0 12px rgba(255, 175, 62, 0.9)) drop-shadow(0 0 24px rgba(255, 175, 62, 0.5)) brightness(1);
-    }
-
-    50% {
-        filter: drop-shadow(0 0 16px rgba(255, 175, 62, 1)) drop-shadow(0 0 32px rgba(255, 175, 62, 0.7)) brightness(2);
+/*
+stroke-dasharray: 10 !important;
+animation: dashmove 1s linear infinite;
+@keyframes dashmove {
+    to {
+        stroke-dashoffset: -20;
     }
 }
+*/
 
 /* SVG Boundary Outline */
 .svg-boundary-outline {

@@ -635,7 +635,9 @@ class SVGShaperEditor {
             // Add event handlers to overlay
             overlay.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.uiComponents.openAttributeModal(path);
+                // Multi-selection support: Ctrl/Cmd/Shift for multi-select
+                const multiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
+                this.elementManager.selectPath(path, multiSelect);
             });
 
             // Allow mousedown events to bubble up for panning functionality
@@ -690,6 +692,30 @@ class SVGShaperEditor {
             }
         });
         this.svgWrapper.addEventListener('mouseup', (e) => this.viewport.handleMouseUp(e));
+
+        // Add click handler for clearing selection on empty canvas
+        this.svgWrapper.addEventListener('click', (e) => {
+            // Only clear selection if clicking on empty canvas (not on elements)
+            // The element overlays call stopPropagation(), so this only fires for empty areas
+
+            // Check if click is on background elements (not interactive overlays)
+            const isBackgroundClick = (
+                e.target === this.svgWrapper ||
+                e.target.classList.contains('svg-content') ||
+                e.target.classList.contains('gutter-overlay') ||
+                (e.target.tagName === 'svg' && e.target.parentElement.classList.contains('svg-content')) ||
+                // Also check for normalized SVG elements (they have pointer-events: none, so clicks bubble up)
+                (e.target.classList && (
+                    e.target.classList.contains('normalized-path') ||
+                    e.target.classList.contains('normalized-text') ||
+                    e.target.classList.contains('svg-boundary-outline')
+                ))
+            );
+
+            if (isBackgroundClick) {
+                this.elementManager.clearSelection();
+            }
+        });
     }
 
     addBoundaryOutlineEvents(boundaryPath) {
@@ -800,7 +826,7 @@ class SVGShaperEditor {
         // Clear current state
         this.fileManager.clearSVG();
         this.svgContent.innerHTML = '';
-        this.elementManager.selectPath(null);
+        this.elementManager.clearSelection();
         this.fileInput.value = '';
         this.currentFileName = null;
         this.updateFileNameDisplay();

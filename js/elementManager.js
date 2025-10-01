@@ -24,30 +24,54 @@ class ElementManager {
         this.measurementSystem = measurementSystem;
         this.fileManager = fileManager;
         this.elementDataMap = elementDataMap; // Cached element data storage
-        this.selectedPath = null;
+        this.selectedPaths = new Set(); // Multiple selection support
         this.hoveredPath = null;
         this.svgHelper = new SVGHelper();
     }
 
     /**
-     * Select SVG path element and update visual state
+     * Select SVG path element with multi-selection support
      *
-     * Manages single-selection mode by clearing previous selection
-     * and applying visual selection styling via CSS classes.
-     *
-     * @param {Element|null} path - SVG path to select, or null to clear selection
+     * @param {Element} path - SVG path to select
+     * @param {boolean} multiSelect - If true, add to selection; if false, replace selection
      */
-    selectPath(path) {
-        const previousSelected = document.querySelector(`.${ShaperConstants.CSS_CLASSES.SELECTED}`);
-        if (previousSelected) {
-            previousSelected.classList.remove(ShaperConstants.CSS_CLASSES.SELECTED);
+    selectPath(path, multiSelect = false) {
+        if (!multiSelect) {
+            // Clear all previous selections
+            this.clearSelection();
         }
+
         if (path) {
-            path.classList.add(ShaperConstants.CSS_CLASSES.SELECTED);
-            this.selectedPath = path;
-        } else {
-            this.selectedPath = null;
+            if (this.selectedPaths.has(path)) {
+                // Deselect if already selected (toggle behavior)
+                this.deselectPath(path);
+            } else {
+            // Add to selection
+                path.classList.add(ShaperConstants.CSS_CLASSES.SELECTED);
+                this.selectedPaths.add(path);
+            }
         }
+    }
+
+    /**
+     * Deselect a specific path
+     * @param {Element} path - SVG path to deselect
+     */
+    deselectPath(path) {
+        if (path && this.selectedPaths.has(path)) {
+            path.classList.remove(ShaperConstants.CSS_CLASSES.SELECTED);
+            this.selectedPaths.delete(path);
+        }
+    }
+
+    /**
+     * Clear all selections
+     */
+    clearSelection() {
+        this.selectedPaths.forEach(path => {
+            path.classList.remove(ShaperConstants.CSS_CLASSES.SELECTED);
+        });
+        this.selectedPaths.clear();
     }
 
     /**
@@ -59,11 +83,19 @@ class ElementManager {
     }
 
     /**
-     * Get currently selected SVG path element
-     * @returns {Element|null} Selected path or null if none selected
+     * Get currently selected SVG path elements
+     * @returns {Set} Set of selected paths
+     */
+    getSelectedPaths() {
+        return this.selectedPaths;
+    }
+
+    /**
+     * Get the first selected path (for backward compatibility)
+     * @returns {Element|null} First selected path or null if none selected
      */
     getSelectedPath() {
-        return this.selectedPath;
+        return this.selectedPaths.size > 0 ? this.selectedPaths.values().next().value : null;
     }
 
     /**
