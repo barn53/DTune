@@ -1,86 +1,113 @@
-// Main SVG Shaper Editor Application
-// Orchestrates all modules and handles application lifecycle
-
+/**
+ * SVG Shaper Editor - Main Application Orchestrator
+ *
+ * Central coordination hub that manages all application subsystems and
+ * handles the complete application lifecycle. Provides module integration,
+ * event coordination, and state management for the SVG editing environment.
+ *
+ * Architecture:
+ * - Modular design with loose coupling between subsystems
+ * - Event-driven communication between modules
+ * - Centralized state management with localStorage persistence
+ * - Responsive UI with touch and desktop interaction support
+ * - Real-time measurement and unit conversion system
+ *
+ * Key Responsibilities:
+ * - Module initialization and dependency injection
+ * - Event binding and delegation
+ * - File loading and processing coordination
+ * - Viewport and interaction management
+ * - State persistence and restoration
+ * - Error handling and user feedback
+ */
 class SVGShaperEditor {
+    /**
+     * Initialize SVG Shaper Editor with all subsystems
+     */
     constructor() {
-        // Initialize all subsystems
+        // Core subsystem initialization with dependency injection
         this.measurementSystem = new MeasurementSystem();
         this.fileManager = new FileManager(this.measurementSystem);
-        // --- NEW: Create a map to hold pre-analyzed element data ---
+
+        // Element data cache for performance optimization
         this.elementDataMap = new Map();
-        // --- UPDATED: Pass the data map to the ElementManager ---
+
+        // Module initialization with dependency wiring
         this.elementManager = new ElementManager(this.measurementSystem, this.fileManager, this.elementDataMap);
         this.viewport = new Viewport();
         this.uiComponents = new UIComponents(this.measurementSystem, this.elementManager);
         this.attributeSystem = new AttributeSystem(this.measurementSystem, this.fileManager, this.elementManager);
 
-        // Initialize SVG helper for SVG operations
+        // SVG processing utilities
         this.svgHelper = new SVGHelper();
 
-        // UI elements
+        // Application initialization sequence
         this.initializeElements();
-
-        // Bind events
         this.bindEvents();
-
-        // Set up module connections
         this.setupModuleConnections();
 
-        // Boundary tooltip tracking
+        // Application state tracking
         this.boundaryTooltipActive = false;
-
-        // Flag to track if we're loading from localStorage
         this.isLoadingFromLocalStorage = false;
-
-        // Debug overlay visibility state (immer default AN beim Laden; keine Persistenz)
-        this.debugOverlayEnabled = true;
     }
 
+    /**
+     * Initialize DOM element references and UI components
+     *
+     * Caches references to all critical DOM elements for efficient access
+     * throughout the application lifecycle. Sets up UI component initialization.
+     */
     initializeElements() {
-
-        // Main sections
+        // Main application sections
         this.uploadSection = document.getElementById('uploadSection');
         this.editorSection = document.getElementById('editorSection');
 
-        // Upload elements
+        // File upload interface elements
         this.fileInput = document.getElementById('fileInput');
         this.uploadArea = document.getElementById('uploadArea');
         this.uploadButton = document.getElementById('uploadBtn');
         this.floatingImportBtn = document.getElementById('floatingImportBtn');
         this.floatingExportBtn = document.getElementById('floatingExportBtn');
 
-        // SVG display elements
+        // SVG viewport and display elements
         this.svgContainer = document.getElementById('svgContainer');
         this.svgWrapper = document.getElementById('svgWrapper');
         this.svgContent = document.getElementById('svgContent');
         this.gutterOverlay = document.getElementById('gutterOverlay');
 
-        // Controls
+        // User control elements
         this.unitsToggle = document.getElementById('unitToggle');
         this.decimalToggle = document.getElementById('decimalToggle');
         this.gutterToggle = document.getElementById('gutterToggle');
         this.gutterSize = document.getElementById('gutterSize');
         this.gutterUnitLabel = document.getElementById('gutterUnitLabel');
 
-        // Buttons
+        // Viewport control buttons
         this.zoomInBtn = document.getElementById('zoomIn');
         this.zoomOutBtn = document.getElementById('zoomOut');
         this.zoom100Btn = document.getElementById('zoom100');
         this.zoomFitBtn = document.getElementById('zoomFit');
         this.centerViewBtn = document.getElementById('centerView');
 
-        // Filename display
+        // Application state display
         this.currentFileNameDisplay = document.getElementById('titlebarFilename');
 
-        // Initialize UI components
+        // Initialize complex UI components
         this.uiComponents.initializeElements();
     }
 
+    /**
+     * Establish inter-module connections and callback systems
+     *
+     * Creates the communication pathways between modules using dependency
+     * injection and callback patterns. Ensures loose coupling while enabling
+     * coordinated functionality across the application.
+     */
     setupModuleConnections() {
-        // Connect elementManager to fileManager for export functionality
+        // Connect elementManager to fileManager for coordinated export operations
         this.fileManager.setElementManager(this.elementManager);
 
-        // Connect file manager to display system
+        // Establish SVG loading pipeline with comprehensive callback handling
         this.fileManager.setLoadCallback((svgElement, svgData, fileName) => {
             this.currentFileName = fileName;
             this.updateFileNameDisplay();
@@ -225,7 +252,7 @@ class SVGShaperEditor {
             } : null,
             // --- Debugging ---
             displayCloneSVG: this.svgContent.innerHTML,
-            measurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML,
+            measurementCloneSVG: this.measurementSystem.measurementCloneSVG,
             // Debug: Current boundary dimensions
             boundaryDebug: this.getBoundaryDebugInfo()
         };
@@ -238,7 +265,6 @@ class SVGShaperEditor {
             const savedSettings = localStorage.getItem('shaperEditorSettings');
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
-                console.log('Parsed settings:', settings); // Debug log
 
                 // Apply gutter toggle
                 if (typeof settings.gutterEnabled === 'boolean') {
@@ -246,10 +272,7 @@ class SVGShaperEditor {
                     this.gutterOverlay.style.display = settings.gutterEnabled ? 'block' : 'none';
                 }
 
-                // Debug Overlay: Keine Persistenz mehr – immer aktiv beim Start
-                this.debugOverlayEnabled = true;
-                const existing = document.getElementById('gridDebugOverlay');
-                if (existing) existing.style.display = 'block';
+                // ...existing code...
 
                 // Apply units with toggle synchronization
                 this.applySetting(
@@ -299,7 +322,6 @@ class SVGShaperEditor {
 
                 // Restore elementData if available
                 if (settings.elementData && Array.isArray(settings.elementData)) {
-                    console.log('Restoring elementData from localStorage:', settings.elementData.length, 'elements');
                     this.elementDataMap.clear();
                     settings.elementData.forEach(item => {
                         if (item.elementId && item.data) {
@@ -318,8 +340,17 @@ class SVGShaperEditor {
                         this.updateFileNameDisplay();
                         this.fileManager.parseSVG(settings.originalSVG.svg, this.currentFileName);
 
-                        // Restore viewport state after the file is loaded
-                        // Use setTimeout to ensure this happens after the load callback
+                        // CRITICAL: Event loop deferral trick for proper initialization sequence
+                        //
+                        // Why setTimeout(0) is necessary here:
+                        // 1. parseSVG() triggers the fileManager.setLoadCallback() asynchronously
+                        // 2. The load callback modifies DOM, measures elements, and updates viewport
+                        // 3. We need viewport restoration to happen AFTER the load callback completes
+                        // 4. setTimeout(0) defers execution to the next event loop cycle
+                        // 5. This ensures the load callback's DOM modifications are complete before restoration
+                        //
+                        // Without this pattern: Race condition where viewport gets restored before
+                        // SVG is properly loaded and measured, leading to incorrect zoom/pan state.
                         setTimeout(() => {
                             this.restoreViewportState(settings);
                             this.isLoadingFromLocalStorage = false;
@@ -358,10 +389,6 @@ class SVGShaperEditor {
         // Restore the viewport change callback
         this.viewport.onViewportChange = originalCallback;
 
-        console.log('Viewport state restored:', {
-            zoom: this.viewport.getZoom(),
-            pan: this.viewport.getPan()
-        });
     }    // Helper method to apply a setting with proper toggle synchronization
     applySetting(settingValue, validValues, applyFn, toggleElement, toggleCondition) {
         if (validValues.includes(settingValue)) {
@@ -467,21 +494,19 @@ class SVGShaperEditor {
         document.addEventListener('keydown', (e) => this.uiComponents.handleKeyDown(e));
         // Global shortcut listener (in separater Listener um bestehende Logik nicht zu stören)
         document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'g') {
-                e.preventDefault();
-                this.toggleDebugOverlayVisibility();
-            }
             // Zoom to Fit: Cmd/Ctrl + 0 (falls Browser nicht vorher abfängt)
-            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '0' || e.code === 'Digit0')) {
-                // Nicht auslösen, wenn gerade in einem Eingabefeld gearbeitet wird
-                const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
-                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
-                // Manche Browser nutzen Cmd/Ctrl+0 für Page-Zoom-Reset; wir versuchen zu übernehmen
-                e.preventDefault();
-                if (this.viewport && typeof this.viewport.zoomToFit === 'function') {
-                    this.viewport.zoomToFit();
-                    this.updateGutterSize();
-                    this.showNotification('Zoom to Fit', 'info');
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                if (e.key === '0' || e.code === 'Digit0') {
+                    // Nicht auslösen, wenn gerade in einem Eingabefeld gearbeitet wird
+                    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+                    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+                    // Manche Browser nutzen Cmd/Ctrl+0 für Page-Zoom-Reset; wir versuchen zu übernehmen
+                    e.preventDefault();
+                    if (this.viewport && typeof this.viewport.zoomToFit === 'function') {
+                        this.viewport.zoomToFit();
+                        this.updateGutterSize();
+                        this.showNotification('Zoom to Fit', 'info');
+                    }
                 }
             }
         });
@@ -491,11 +516,17 @@ class SVGShaperEditor {
         // Clear previous content
         this.svgContent.innerHTML = '';
 
-        // Clone and append the SVG element
-        const displayClone = this.svgHelper.cloneSVGElement(svgElement, this.svgContent);
+        // Clone SVG element but DON'T add to DOM yet
+        const displayClone = this.svgHelper.cloneSVGElement(svgElement);
+
+        // Normalize visual appearance BEFORE adding to DOM
+        this.normalizePathVisuals(displayClone);
 
         // Add boundary outline to show SVG boundaries
         this.addBoundaryOutline(displayClone);
+
+        // Now add the fully normalized SVG to the DOM
+        this.svgContent.appendChild(displayClone);
 
         // Set up viewport
         this.viewport.setSVGElements(this.svgWrapper, displayClone);
@@ -505,6 +536,71 @@ class SVGShaperEditor {
 
         // Show editor section
         this.showEditor();
+    }
+
+    /**
+     * Normalize visual appearance of SVG paths in display clone
+     *
+     * Applies consistent styling to all paths for better visual clarity:
+     * - Standardizes stroke width to 2px for all paths
+     * - Sets uniform dark grey color (#555) for all strokes
+     * - Preserves original fill properties for shape recognition
+     * - Only affects display clone, not original SVG or exports
+     *
+     * @param {Element} svgElement - The display clone SVG element to normalize
+     */
+    normalizePathVisuals(svgElement) {
+        if (!svgElement) return;
+
+        // Find all drawable SVG elements that should be normalized
+        // Includes all basic shapes and path-based elements
+        const drawableElements = svgElement.querySelectorAll(`
+            path, line, polyline, polygon,
+            circle, ellipse, rect,
+            text, tspan, textPath,
+            use, image,
+            g[stroke], g[fill]
+        `.replace(/\s+/g, ' ').trim());
+
+        drawableElements.forEach(element => {
+            const tagName = element.tagName.toLowerCase();
+
+            // Apply CSS classes instead of inline styles for better maintainability
+            if (tagName === 'text' || tagName === 'tspan' || tagName === 'textpath') {
+                // Text elements get special treatment
+                element.classList.add('normalized-text');
+                element.classList.add('is-closed-path');
+                return;
+            }
+
+            // Skip image and use elements - they don't need stroke styling
+            if (tagName === 'image' || tagName === 'use') {
+                return;
+            }
+
+            // Apply normalized path class - CSS handles all styling including vector-effect
+            element.classList.add('normalized-path');
+
+            // Detect and mark closed paths/shapes for appropriate fill treatment
+            if (this.measurementSystem.isClosedShape(element)) {
+                element.classList.add('is-closed-path');
+            }
+
+            // Clean up any existing inline styles that might override CSS
+            element.removeAttribute('style');
+        });
+    }
+
+    /**
+     * Debug utility: Check closure status of element by ID
+     *
+     * Delegates to measurementSystem for actual analysis.
+     *
+     * @param {string} id - Element ID to check
+     * @returns {Object} Closure analysis results
+     */
+    checkPathClosure(id) {
+        return this.measurementSystem.checkPathClosure(id);
     }
 
     addBoundaryOutline(svgElement) {
@@ -536,12 +632,8 @@ class SVGShaperEditor {
             // Insert overlay after the original path
             path.parentNode.insertBefore(overlay, path.nextSibling);
 
-            // Test if element can receive events
-            overlay.addEventListener('mouseover', () => {
-                console.log('MOUSEOVER detected on overlay!');
-            });            // Add event handlers to overlay
+            // Add event handlers to overlay
             overlay.addEventListener('click', (e) => {
-                console.log('Overlay clicked!', overlay);
                 e.stopPropagation();
                 this.uiComponents.openAttributeModal(path);
             });
@@ -553,11 +645,11 @@ class SVGShaperEditor {
             });
 
             overlay.addEventListener('mouseenter', (e) => {
-                console.log('Overlay mouse enter!', overlay);
                 path.classList.add(ShaperConstants.CSS_CLASSES.HOVER);
                 this.elementManager.setHoveredPath(path);
                 this.uiComponents.showTooltip(path, e.clientX, e.clientY);
-            }); overlay.addEventListener('mousemove', (e) => {
+            });
+            overlay.addEventListener('mousemove', (e) => {
                 this.viewport.updateMousePosition(e.clientX, e.clientY);
                 this.uiComponents.setMousePosition(e.clientX, e.clientY);
                 this.uiComponents.updateTooltipPosition(e.clientX, e.clientY);
@@ -641,9 +733,6 @@ class SVGShaperEditor {
         const donutPath = `${outerPath} ${innerPath}`;
 
         const hitArea = this.svgHelper.createPath(donutPath, {
-            fill: 'transparent',
-            'fill-rule': 'evenodd',
-            cursor: 'pointer',
             class: `boundary-overlay ${ShaperConstants.CSS_CLASSES.NO_EXPORT}`
         });
 
@@ -827,148 +916,9 @@ class SVGShaperEditor {
         }
         // Ursprung/Marker NICHT mehr extern überschreiben – Marker wird ausschließlich im Viewport.updateInfiniteGrid() positioniert.
 
-        // 7. Debug Overlay (ohne viewBox / mismatch, da irrelevant laut Nutzer)
-        const debugData = {
-            gutterRawMm,
-            baseCellPx,
-            boundaryPx,
-            expectedCells,
-            actualCells,
-            totalLogicalMm,
-            pxPerMm: baseCellPx / gutterRawMm, // sollte konstant 3.7795...
-            zoom: this.viewport ? this.viewport.getZoom() : 1,
-            units: this.measurementSystem.units,
-            dpi: this.measurementSystem.dpi,
-            method: measurementMethod || 'n/a',
-            anchorLogicalX: this.viewport ? this.viewport.anchorLogicalX : 0,
-            anchorLogicalY: this.viewport ? this.viewport.anchorLogicalY : 0,
-            anchorScreenX: this.viewport ? (this.viewport.getZoom() * (this.viewport.anchorLogicalX || 0) + (this.viewport.getPan().x || 0)) : 0,
-            anchorScreenY: this.viewport ? (this.viewport.getZoom() * (this.viewport.anchorLogicalY || 0) + (this.viewport.getPan().y || 0)) : 0
-        };
-        this.lastGridDebugData = debugData;
-        this._updateGridDebugOverlay(debugData);
+        // ...existing code...
     }
 
-    // === GRID DEBUG OVERLAY ===
-    _updateGridDebugOverlay(data) {
-        // Respect visibility flag
-        if (!this.debugOverlayEnabled) {
-            const existingHidden = document.getElementById('gridDebugOverlay');
-            if (existingHidden) existingHidden.style.display = 'none';
-            return; // Keine Updates solange deaktiviert
-        }
-        let overlay = document.getElementById('gridDebugOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'gridDebugOverlay';
-            overlay.style.cssText = [
-                'position:absolute',
-                'bottom:8px',
-                'right:8px',
-                'z-index:4000',
-                'background:rgba(10,14,20,0.85)',
-                'backdrop-filter:blur(4px)',
-                'color:#e6f1ff',
-                'font:11px/1.35 monospace',
-                'padding:10px 12px 14px 12px',
-                'border:1px solid #2a3b4d',
-                'border-radius:8px',
-                'max-width:300px',
-                'white-space:pre-wrap',
-                'user-select:text',
-                'pointer-events:auto'
-            ].join(';');
-            const container = this.editorSection || document.body;
-            container.appendChild(overlay);
-
-            const copyBtn = document.createElement('button');
-            copyBtn.textContent = 'COPY';
-            copyBtn.type = 'button';
-            copyBtn.style.cssText = [
-                'position:absolute', 'top:4px', 'left:4px', 'padding:2px 6px', 'font:10px monospace', 'border:1px solid #3a4a5a', 'background:#1e2a3a', 'color:#fff', 'border-radius:4px', 'cursor:pointer']
-                .join(';');
-            copyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const raw = overlay.dataset.rawText || overlay.textContent || '';
-                navigator.clipboard.writeText(raw).then(() => {
-                    copyBtn.textContent = '✓';
-                    setTimeout(() => copyBtn.textContent = 'COPY', 1100);
-                }).catch(() => {
-                    copyBtn.textContent = 'ERR';
-                    setTimeout(() => copyBtn.textContent = 'COPY', 1500);
-                });
-            });
-            overlay.appendChild(copyBtn);
-        }
-
-        const fmt = (v, d = 3) => (v === null || v === undefined || isNaN(v) ? '-' : parseFloat(v).toFixed(d));
-
-        if (data.error) {
-            overlay.dataset.rawText = `[GRID]\nERROR: ${data.error}`;
-            overlay.innerHTML = overlay.innerHTML.split('</button>').shift() + '</button>' + `<pre style="margin:18px 0 0">[GRID]\nERROR: ${data.error}</pre>`;
-            return;
-        }
-
-        const lines = [
-            'GRID DEBUG',
-            `gutterRawMm:      ${fmt(data.gutterRawMm)}`,
-            `baseCellPx:       ${fmt(data.baseCellPx)}`,
-            `pxPerMm(const):  ${fmt(data.pxPerMm, 4)}`,
-            `zoom:            ${fmt(data.zoom, 2)}`,
-            '',
-            `boundaryWidthPx:  ${fmt(data.boundaryPx)}`,
-            `totalWidthMm:     ${fmt(data.totalLogicalMm)}`,
-            '',
-            `expectedCells:    ${fmt(data.expectedCells, 3)}`,
-            `actualCells:      ${fmt(data.actualCells, 3)}`,
-            '',
-            `units(display):   ${data.units || '-'}`,
-            `dpi:              ${data.dpi}`,
-            `measureMethod:    ${data.method}`,
-            '',
-            `anchorLogicalX:   ${fmt(data.anchorLogicalX, 3)}`,
-            `anchorLogicalY:   ${fmt(data.anchorLogicalY, 3)}`,
-            `anchorScreenX:    ${fmt(data.anchorScreenX, 2)}`,
-            `anchorScreenY:    ${fmt(data.anchorScreenY, 2)}`,
-            `timestamp:        ${new Date().toISOString().split('T')[1].replace('Z', '')}`
-        ];
-
-        overlay.dataset.rawText = lines.join('\n');
-        const copyBtn = overlay.querySelector('button');
-        Array.from(overlay.childNodes).forEach(n => { if (n !== copyBtn) overlay.removeChild(n); });
-        const pre = document.createElement('pre');
-        pre.style.cssText = 'margin:18px 0 0;padding:0;font:inherit;';
-        pre.textContent = lines.join('\n');
-        overlay.appendChild(pre);
-        overlay.style.display = 'block';
-    }
-
-    toggleDebugOverlayVisibility() {
-        this.debugOverlayEnabled = !this.debugOverlayEnabled;
-        const overlay = document.getElementById('gridDebugOverlay');
-        if (overlay) {
-            overlay.style.display = this.debugOverlayEnabled ? 'block' : 'none';
-        } else if (this.debugOverlayEnabled) {
-            // Force refresh to create overlay if turning on
-            this.updateGutterSize();
-        }
-        // Keine Persistenz – bewusst nichts speichern
-        // Optional kleines Feedback
-        this.showNotification(this.debugOverlayEnabled ? 'Debug Overlay ON' : 'Debug Overlay OFF', 'info');
-    }
-
-    // Schnelles Aktualisieren nur der Anchor/Zoom/Pan abhängigen Werte ohne komplette Neuberechnung
-    refreshGridDebugAnchors(anchorScreenX, anchorScreenY) {
-        if (!this.debugOverlayEnabled) return;
-        if (!this.lastGridDebugData) return;
-        // Clone previous data to avoid mutating reference while someone copies
-        const d = Object.assign({}, this.lastGridDebugData);
-        d.zoom = this.viewport ? this.viewport.getZoom() : d.zoom;
-        d.anchorScreenX = anchorScreenX;
-        d.anchorScreenY = anchorScreenY;
-        // Pan ändert anchorLogical nicht – bleibt unverändert
-        this._updateGridDebugOverlay(d);
-    }
 
     getBoundaryOffset() {
         // Get the actual SVG element and its viewBox/dimensions (not the boundary path donut)
@@ -1270,13 +1220,13 @@ class SVGShaperEditor {
             const exportNode = this.fileManager.masterSVGElement.cloneNode(true);
 
             // Clean all elements in the cloned node for export (same as exportSVG)
-            exportNode.querySelectorAll('[data-app-id]').forEach(el => {
+            exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
                 // Set namespaced attributes from raw values
                 this.fileManager.updateShaperAttributesForExport(el);
                 // Remove all raw attributes
                 ShaperUtils.removeAllRawAttributes(el);
                 // Remove the internal app-id for the final export
-                el.removeAttribute('data-app-id');
+                el.removeAttribute('delta-app-id');
             });
 
             // Create SVG string

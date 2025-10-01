@@ -33,8 +33,9 @@ jobs:
           # Combine all JavaScript files
           cat js/*.js > build/combined.js
 
-          # Minify everything
-          npx clean-css-cli styles.css -o build/styles.min.css
+          # Combine and minify all CSS files
+          cat *.css > build/combined.css
+          npx clean-css-cli build/combined.css -o build/styles.min.css
           npx terser build/combined.js -c -m -o build/app.min.js
 
           # Get git info for version tracking
@@ -48,8 +49,9 @@ jobs:
           const css = fs.readFileSync('build/styles.min.css', 'utf8');
           const js = fs.readFileSync('build/app.min.js', 'utf8');
 
-          // Replace CSS link with inline styles
-          html = html.replace('<link rel=\"stylesheet\" href=\"styles.css\">', '<style>' + css + '</style>');
+          // Replace CSS links with inline styles
+          html = html.replace('<link rel=\"stylesheet\" href=\"styles.css\">', '');
+          html = html.replace('<link rel=\"stylesheet\" href=\"displaysvg.css\">', '<style>' + css + '</style>');
 
           // Remove JS script tags and add inline script
           html = html.replace(/<script src=\"js\/[^\"]*\"><\/script>/g, '');
@@ -104,7 +106,7 @@ jobs:
           mv build/final.html build/index.html
 
           # Clean up temp files
-          rm build/combined.js build/app.min.js build/styles.min.css
+          rm build/combined.js build/app.min.js build/styles.min.css build/combined.css
 
           echo "✅ Built single-file app: $(du -h build/index.html | cut -f1)"
           echo "🏷️  Version: $(date +%Y%m%d)-${GIT_HASH}"

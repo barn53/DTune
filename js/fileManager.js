@@ -1,35 +1,69 @@
-// File Manager Module
-// Handles SVG file loading, parsing, and export functionality
-
+/**
+ * File Manager Module - SVG File Operations and Processing
+ *
+ * Handles comprehensive SVG file lifecycle including loading, parsing,
+ * validation, and export preparation. Manages the "master model" concept
+ * where a source-of-truth SVG maintains element IDs while the display
+ * version handles interactive overlays and transformations.
+ *
+ * Key Features:
+ * - Drag-and-drop and file input SVG loading
+ * - Master model management with unique element IDs
+ * - SVG parsing with measurement unit detection
+ * - Export preparation with attribute cleanup
+ * - Error handling for malformed SVG files
+ * - Integration with measurement system for unit conversion
+ */
 class FileManager {
+    /**
+     * Initialize file manager with measurement system integration
+     *
+     * @param {MeasurementSystem} measurementSystem - Unit conversion and formatting
+     */
     constructor(measurementSystem) {
         this.measurementSystem = measurementSystem;
-        this.svg = null; // This will hold the string representation of the master model
-        this.svgElement = null; // Legacy, will be phased out or repurposed
-        this.masterSVGElement = null; // The "source of truth" DOM element with app IDs
-        this.onSVGLoaded = null; // Callback for when SVG is loaded
-        this.elementManager = null; // Will be set by main application
+        this.svg = null; // Master SVG string representation
+        this.svgElement = null; // Legacy display element reference
+        this.masterSVGElement = null; // Source of truth DOM element with app IDs
+        this.onSVGLoaded = null; // Callback for successful SVG loading
+        this.elementManager = null; // Set by main application during initialization
 
-        // Initialize SVG helper for clean operations
+        // Initialize SVG processing utilities
         this.svgHelper = new SVGHelper();
     }
 
-    // Set callback for SVG loading events
+    /**
+     * Set callback function for SVG loading completion events
+     * @param {Function} callback - Function to call when SVG loading completes
+     */
     setLoadCallback(callback) {
         this.onSVGLoaded = callback;
     }
 
-    // Set element manager reference (called after initialization)
+    /**
+     * Connect element manager for coordinated element operations
+     * @param {ElementManager} elementManager - Element state and selection manager
+     */
     setElementManager(elementManager) {
         this.elementManager = elementManager;
     }
 
-    // --- Private method to add unique IDs to graphical elements ---
+    /**
+     * Add unique application IDs to SVG graphical elements (private method)
+     *
+     * Assigns unique identifiers to all interactive SVG elements for tracking
+     * selection, attributes, and measurements. Uses data attributes to avoid
+     * conflicts with existing SVG IDs.
+     *
+     * @param {Element} svgElement - SVG root element to process
+     * @returns {Element} SVG element with app IDs added to child elements
+     * @private
+     */
     _addAppIds(svgElement) {
-        // Use a more specific selector to avoid adding IDs to group elements if not desired
+        // Target specific graphical elements, excluding structural groups
         const relevantElements = svgElement.querySelectorAll('path, rect, circle, ellipse, line, polygon, polyline');
         relevantElements.forEach(el => {
-            // Use a custom data-attribute to avoid conflicts with existing IDs
+            // Only add ID if not already present
             if (!el.dataset.appId) {
                 el.dataset.appId = `app-id-${Math.random().toString(36).slice(2, 11)}`;
             }
@@ -37,7 +71,13 @@ class FileManager {
         return svgElement;
     }
 
-    // File selection handling
+    /**
+     * Handle file input selection events
+     *
+     * Processes file selection from input elements and initiates SVG loading.
+     *
+     * @param {Event} event - File input change event
+     */
     handleFileSelect(event) {
         const file = event.target.files[0];
         if (file) {
@@ -45,16 +85,36 @@ class FileManager {
         }
     }
 
-    // Drag and drop handlers
+    /**
+     * Handle drag-over events for file drop zones
+     *
+     * Prevents default behavior and adds visual feedback for valid drop targets.
+     *
+     * @param {DragEvent} event - Drag over event
+     */
     handleDragOver(event) {
         event.preventDefault();
         event.currentTarget.classList.add('drag-over');
     }
 
+    /**
+     * Handle drag-leave events for file drop zones
+     *
+     * Removes visual feedback when dragged file leaves drop zone.
+     *
+     * @param {DragEvent} event - Drag leave event
+     */
     handleDragLeave(event) {
         event.currentTarget.classList.remove('drag-over');
     }
 
+    /**
+     * Handle file drop events for drag-and-drop SVG loading
+     *
+     * Processes dropped files and initiates SVG loading for valid files.
+     *
+     * @param {DragEvent} event - Drop event containing file data
+     */
     handleDrop(event) {
         event.preventDefault();
         event.currentTarget.classList.remove('drag-over');
@@ -65,7 +125,14 @@ class FileManager {
         }
     }
 
-    // Load SVG file
+    /**
+     * Load and process SVG file with validation and error handling
+     *
+     * Validates file type, reads file content, and initiates SVG parsing
+     * with comprehensive error handling for user feedback.
+     *
+     * @param {File} file - File object from input or drop event
+     */
     loadSVGFile(file) {
         if (!file.name.toLowerCase().endsWith('.svg')) {
             alert('Please select a valid SVG file.');
@@ -213,13 +280,13 @@ class FileManager {
         const exportNode = this.masterSVGElement.cloneNode(true);
 
         // Clean all elements in the cloned node for export
-        exportNode.querySelectorAll('[data-app-id]').forEach(el => {
+        exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
             // Set namespaced attributes from raw values
             this.updateShaperAttributesForExport(el);
             // Remove all raw attributes
             ShaperUtils.removeAllRawAttributes(el);
             // IMPORTANT: Remove the internal app-id for the final export
-            el.removeAttribute('data-app-id');
+            el.removeAttribute('delta-app-id');
         });
 
         const finalSVGString = new XMLSerializer().serializeToString(exportNode);

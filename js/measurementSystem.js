@@ -1,62 +1,119 @@
-// Measurement System Module
-// Handles unit conversion, decimal separators, and formatting
-
+/**
+ * Measurement System Module - Unit Conversion and Formatting
+ *
+ * Provides comprehensive measurement handling with unit conversion, decimal
+ * separator localization, and precise SVG measurement capabilities. Handles
+ * the complexity of converting between pixels, millimeters, and inches while
+ * maintaining accuracy for manufacturing applications.
+ *
+ * Key Features:
+ * - Multi-unit support (mm, inches) with DPI-based conversion
+ * - Localized decimal separator handling (comma/period)
+ * - Precise SVG measurement using clone technique
+ * - Number formatting with configurable precision
+ * - Angle normalization and formatting
+ * - Unit detection from SVG metadata
+ */
 class MeasurementSystem {
+    /**
+     * Initialize measurement system with default metric units
+     */
     constructor() {
-        this._units = 'mm'; // Private property
+        this._units = 'mm'; // Default to millimeters
         this.decimalSeparator = this.detectLocalDecimalSeparator();
-        this.detectedUnits = null;
-        this.dpi = 96; // Standard web DPI
-        this.mmPerInch = 25.4;
-        // --- REMOVED: Calibration logic is no longer needed ---
-        // --- Debugging ---
-        this.lastMeasurementCloneHTML = null;
+        this.detectedUnits = null; // Auto-detected from SVG
+        this.dpi = 96; // Standard web DPI for pixel conversion
+        this.mmPerInch = 25.4; // Conversion constant
+
+        // Debug information for measurement troubleshooting
+        this.measurementCloneSVG = null;
     }
 
-    // Getter and setter for units to track all changes
+    /**
+     * Get current measurement units
+     * @returns {string} Current units ('mm' or 'in')
+     */
     get units() {
         return this._units;
     }
 
+    /**
+     * Set measurement units with validation
+     * @param {string} newUnits - New units to use ('mm' or 'in')
+     */
     set units(newUnits) {
         this._units = newUnits;
     }
 
-    // Decimal separator detection and handling
+    /**
+     * Detect locale-appropriate decimal separator
+     *
+     * Uses browser locale formatting to determine whether the user's
+     * region uses comma or period as decimal separator.
+     *
+     * @returns {string} Detected decimal separator (',' or '.')
+     */
     detectLocalDecimalSeparator() {
         const testNumber = 1.1;
         const formatted = testNumber.toLocaleString();
         return formatted.includes(',') ? ',' : '.';
     }
 
+    /**
+     * Get current decimal separator setting
+     * @returns {string} Current decimal separator character
+     */
     getDecimalSeparator() {
         return this.decimalSeparator;
     }
 
+    /**
+     * Set decimal separator for number formatting
+     * @param {string} separator - Decimal separator to use (',' or '.')
+     */
     setDecimalSeparator(separator) {
         this.decimalSeparator = separator;
     }
 
-    // Number formatting with decimal separator support
+    /**
+     * Format numeric values for display with localized decimal separator
+     *
+     * Formats numbers to up to 3 decimal places with trailing zero removal,
+     * ensuring at least one decimal place for consistency. Applies user's
+     * preferred decimal separator.
+     *
+     * @param {number} value - Numeric value to format
+     * @returns {string} Formatted number string with appropriate decimal separator
+     */
     formatDisplayNumber(value) {
-        // Format number to show up to 3 decimal places, ensuring at least 1 decimal place
+        // Format to 3 decimal places for precision
         const fixed3 = parseFloat(value).toFixed(3);
 
-        // Remove trailing zeros but keep at least one decimal place
+        // Remove trailing zeros while preserving at least one decimal place
         let trimmed = parseFloat(fixed3).toString();
 
-        // Ensure at least one decimal place
+        // Ensure consistent decimal format
         if (!trimmed.includes('.')) {
             trimmed += '.0';
         }
 
-        // Use appropriate decimal separator
+        // Apply localized decimal separator
         const decimalSeparator = this.getDecimalSeparator();
         return trimmed.replace('.', decimalSeparator);
     }
 
+    /**
+     * Format angles with normalization and localized decimal separator
+     *
+     * Normalizes angles to 0-360 degree range and formats to one decimal
+     * place with appropriate decimal separator. Handles negative angles
+     * by converting to positive equivalent.
+     *
+     * @param {number} angleDegrees - Angle in degrees (can be negative)
+     * @returns {string} Formatted angle string (0-360 range)
+     */
     formatAngle(angleDegrees) {
-        // Normalize angle to 0-360 degrees
+        // Normalize angle to positive 0-360 degree range
         let normalizedAngle = angleDegrees % 360;
         if (normalizedAngle < 0) {
             normalizedAngle += 360;
@@ -65,59 +122,99 @@ class MeasurementSystem {
         // Format to 1 decimal place for angles
         const formattedValue = normalizedAngle.toFixed(1);
 
-        // Use appropriate decimal separator
+        // Apply localized decimal separator
         const decimalSeparator = this.getDecimalSeparator();
         return formattedValue.replace('.', decimalSeparator);
     }
 
+    /**
+     * Format number with unit suffix
+     *
+     * @param {number} value - Numeric value to format
+     * @param {number} precision - Decimal places (default: 3)
+     * @returns {string} Formatted number with unit suffix
+     */
     formatWithUnits(value, precision = 3) {
         const fixed = parseFloat(value).toFixed(precision);
         const trimmed = parseFloat(fixed).toString();
         return `${trimmed}${this.units}`;
     }
 
-    // Unit management
+    /**
+     * Set measurement units and trigger UI updates
+     * @param {string} newUnits - New unit system ('mm' or 'in')
+     */
     setUnits(newUnits) {
         this._units = newUnits;
     }
 
+    /**
+     * Get current measurement units
+     * @returns {string} Current units ('mm' or 'in')
+     */
     getUnits() {
         return this.units;
     }
 
-    // Value parsing and conversion utilities
+    /**
+     * Remove unit suffixes from numeric strings
+     *
+     * Extracts numeric value from strings that may contain unit suffixes,
+     * enabling clean numeric parsing for calculations.
+     *
+     * @param {string|number} value - Value with or without units
+     * @returns {number} Pure numeric value
+     */
     stripUnitsFromValue(value) {
         return parseFloat(value.toString().replace(/[a-zA-Z]/g, ''));
     }
 
+    /**
+     * Add current unit suffix to numeric value
+     * @param {number} value - Numeric value to suffix
+     * @returns {string} Value with unit suffix
+     */
     addUnitsToValue(value) {
         return `${value}${this.units}`;
     }
 
+    /**
+     * Parse value strings with intelligent unit and decimal separator handling
+     *
+     * Parses user input that may contain various decimal separators and unit
+     * suffixes. Handles international decimal formats and performs automatic
+     * unit conversion to target units when specified.
+     *
+     * @param {string} valueString - Input string with value and optional units
+     * @param {string} targetUnit - Optional target unit for conversion
+     * @returns {number|null} Parsed and converted numeric value, or null if invalid
+     */
     parseValueWithUnits(valueString, targetUnit = null) {
         if (!valueString) return null;
 
         const valueStr = valueString.toString().trim();
         if (!valueStr) return null;
 
-        // Handle both decimal separators - accept both "." and "," as input
-        // Always normalize to "." for parseFloat
+        // Normalize decimal separators for reliable parsing
         let normalizedValue = valueStr;
         if (valueStr.includes(',') && !valueStr.includes('.')) {
-            // If only comma is present, treat it as decimal separator
+            // Single comma treated as decimal separator
             normalizedValue = valueStr.replace(',', '.');
         } else if (valueStr.includes('.') && valueStr.includes(',')) {
-            // If both are present, assume the last one is decimal separator
+            // Both present: last occurrence is decimal separator
             const lastCommaIndex = valueStr.lastIndexOf(',');
             const lastDotIndex = valueStr.lastIndexOf('.');
 
             if (lastCommaIndex > lastDotIndex) {
+                // Comma is decimal, periods are thousands separators
                 normalizedValue = valueStr.replace(/\./g, '').replace(',', '.');
             } else {
+                // Period is decimal, commas are thousands separators
                 normalizedValue = valueStr.replace(/,/g, '');
             }
         }
 
+        // Extract numeric value and optional unit suffix
         const match = normalizedValue.match(/^([+-]?\d*\.?\d+)\s*([a-zA-Z]*)$/);
         if (!match) return null;
 
@@ -126,10 +223,12 @@ class MeasurementSystem {
 
         if (isNaN(numValue)) return null;
 
+        // Perform unit conversion if needed
         if (targetUnit && unit && unit !== targetUnit) {
             return this.convertBetweenUnits(numValue, unit, targetUnit);
         }
 
+        // Auto-convert to current system units if different valid unit detected
         if (!targetUnit && unit && unit !== this.units && (unit === 'mm' || unit === 'in')) {
             return this.convertBetweenUnits(numValue, unit, this.units);
         }
@@ -137,6 +236,16 @@ class MeasurementSystem {
         return numValue;
     }
 
+    /**
+     * Convert value to current unit system and format for display
+     *
+     * Takes a value string with optional units and converts it to the current
+     * measurement system, returning a formatted display string. Handles empty
+     * values gracefully and provides fallback parsing for unitless values.
+     *
+     * @param {string} valueWithUnits - Input value with optional unit suffix
+     * @returns {string} Formatted value in current units, or empty string if invalid
+     */
     convertValueToCurrentUnit(valueWithUnits) {
         if (!valueWithUnits || valueWithUnits === '') {
             return '';
@@ -149,9 +258,22 @@ class MeasurementSystem {
         return isNaN(stripped) ? '' : this.formatDisplayNumber(stripped);
     }
 
-    // Unit conversion between different measurement systems
+    /**
+     * Convert values between different measurement units
+     *
+     * Performs precise unit conversion using DPI-based calculations with
+     * pixels as intermediate format. Supports millimeters, inches, and pixels
+     * with standard web DPI (96) and metric conversion constants.
+     *
+     * @param {number} value - Numeric value to convert
+     * @param {string} fromUnit - Source unit ('mm', 'in', 'px')
+     * @param {string} toUnit - Target unit ('mm', 'in', 'px')
+     * @returns {number} Converted value in target units
+     */
     convertBetweenUnits(value, fromUnit, toUnit) {
         if (fromUnit === toUnit) return value;
+
+        // Convert source unit to pixels as intermediate format
         let pixels;
         switch (fromUnit) {
             case 'mm':
@@ -164,8 +286,10 @@ class MeasurementSystem {
                 pixels = value;
                 break;
             default:
-                return value;
+                return value; // Unknown unit, return unchanged
         }
+
+        // Convert pixels to target unit
         switch (toUnit) {
             case 'mm':
                 return pixels * this.mmPerInch / this.dpi;
@@ -174,7 +298,7 @@ class MeasurementSystem {
             case 'px':
                 return pixels;
             default:
-                return value;
+                return value; // Unknown unit, return unchanged
         }
     }
 
@@ -248,17 +372,17 @@ class MeasurementSystem {
             }
             tempContainer.appendChild(measurementClone);
             document.body.appendChild(tempContainer);
-            const elementInClone = measurementClone.querySelector(`[data-app-id="${appId}"]`);
+            const elementInClone = measurementClone.querySelector(`[delta-app-id="${appId}"]`);
             if (elementInClone) {
                 const bbox = elementInClone.getBoundingClientRect();
-                this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+                this.measurementCloneSVG = measurementClone.outerHTML;
                 return { width: bbox.width, height: bbox.height };
             }
-            this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+            this.measurementCloneSVG = measurementClone.outerHTML;
             return { width: 0, height: 0 };
         } finally {
             if (tempContainer.firstChild) {
-                this.lastMeasurementCloneHTML = tempContainer.firstChild.outerHTML;
+                this.measurementCloneSVG = tempContainer.firstChild.outerHTML;
             }
             if (tempContainer.parentNode) {
                 tempContainer.parentNode.removeChild(tempContainer);
@@ -273,7 +397,7 @@ class MeasurementSystem {
             return elementDataMap;
         }
 
-        const elementsToAnalyze = masterSVGElement.querySelectorAll('[data-app-id]');
+        const elementsToAnalyze = masterSVGElement.querySelectorAll('[delta-app-id]');
 
         elementsToAnalyze.forEach(element => {
             const appId = element.dataset.appId;
@@ -342,7 +466,7 @@ class MeasurementSystem {
     // Fallback: Try to detect real dimensions from current SVG
         const realDimensions = this.detectRealSVGDimensions(svgElement);
         if (realDimensions) {
-            this.lastMeasurementCloneHTML = `Real dimensions detected: ${realDimensions.width}${realDimensions.widthUnit} × ${realDimensions.height}${realDimensions.heightUnit}`;
+            this.measurementCloneSVG = `Real dimensions detected: ${realDimensions.width}${realDimensions.widthUnit} × ${realDimensions.height}${realDimensions.heightUnit}`;
 
             // Convert to pixels using the detected units
             const widthPx = this.convertBetweenUnits(realDimensions.width, realDimensions.widthUnit, 'px');
@@ -390,7 +514,7 @@ class MeasurementSystem {
 
             // Measure the SVG
             const svgBbox = measurementClone.getBoundingClientRect();
-            this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+            this.measurementCloneSVG = measurementClone.outerHTML;
 
             return {
                 width: svgBbox.width,
@@ -441,6 +565,119 @@ class MeasurementSystem {
      * This is a simplified version that focuses on getting the job done
      * without the extra features like caching or advanced unit detection.
      */
+
+    /**
+     * Check if an SVG element represents a closed shape
+     *
+     * Determines whether an element should be treated as a closed shape for
+     * visual styling purposes. Uses element type analysis for basic shapes
+     * and geometric analysis for paths.
+     *
+     * @param {Element} element - SVG element to analyze
+     * @returns {boolean} True if element is a closed shape
+     */
+    isClosedShape(element) {
+        const tagName = element.tagName.toLowerCase();
+
+        // Basic shapes that are inherently closed
+        if (['rect', 'circle', 'ellipse', 'polygon', 'text', 'tspan', 'textPath'].includes(tagName)) {
+            return true;
+        }
+
+        // Check paths for closure
+        if (tagName === 'path') {
+            return this.isClosedPath(element);
+        }
+
+        // Lines and polylines are typically open
+        return false;
+    }
+
+    /**
+     * Check if a path element is closed
+     *
+     * Uses both syntactic (Z command) and geometric (endpoint matching)
+     * analysis to determine if a path represents a closed shape.
+     *
+     * @param {Element} path - Path element to analyze
+     * @returns {boolean} True if path is closed
+     */
+    isClosedPath(path) {
+        // Check for explicit closure with Z command
+        if (this.isClosedByZ(path)) {
+            return true;
+        }
+
+        // Check for geometric closure (start and end points match)
+        return this.isGeometricallyClosed(path);
+    }
+
+    /**
+     * Check if path is closed by Z command
+     *
+     * @param {Element} path - Path element to check
+     * @returns {boolean} True if path ends with Z or z command
+     */
+    isClosedByZ(path) {
+        const d = path.getAttribute("d");
+        return d && /z$/i.test(d.trim());
+    }
+
+    /**
+     * Check if path is geometrically closed
+     *
+     * Compares start and end points of the path to determine if they
+     * match within a small tolerance, indicating a closed shape.
+     *
+     * @param {Element} path - Path element to check
+     * @returns {boolean} True if start and end points match
+     */
+    isGeometricallyClosed(path) {
+        try {
+            const len = path.getTotalLength();
+            const start = path.getPointAtLength(0);
+            const end = path.getPointAtLength(len);
+            const epsilon = 0.01; // Tolerance for coordinate matching
+
+            return Math.abs(start.x - end.x) < epsilon &&
+                Math.abs(start.y - end.y) < epsilon;
+        } catch (error) {
+            // If getTotalLength() fails (e.g., invalid path), assume open
+            return false;
+        }
+    }
+
+    /**
+     * Debug utility: Check closure status of element by ID
+     *
+     * Provides detailed information about why an element is considered
+     * closed or open. Useful for debugging and development.
+     *
+     * @param {string} id - Element ID to check
+     * @returns {Object} Closure analysis results
+     */
+    checkPathClosure(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            return { error: `Element with id '${id}' not found` };
+        }
+
+        const tagName = element.tagName.toLowerCase();
+        const isPath = tagName === 'path';
+
+        const result = {
+            id,
+            tagName,
+            isPath,
+            isInherentlyClosed: ['rect', 'circle', 'ellipse', 'polygon'].includes(tagName),
+            closedByZ: isPath ? this.isClosedByZ(element) : null,
+            closedGeometrically: isPath ? this.isGeometricallyClosed(element) : null,
+            isClosed: this.isClosedShape(element),
+            hasClosedClass: element.classList.contains('is-closed-path')
+        };
+
+        return result;
+    }
 }
 
 // Export for use in other modules

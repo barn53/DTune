@@ -1,0 +1,226 @@
+/* Display SVG Styles - Visual normalization and interaction for SVG display clone */
+
+/* SVG Container and Wrapper */
+.svg-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent !important;
+    overflow: hidden;
+}
+
+.svg-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: default;
+}
+
+.svg-wrapper.dragging {
+    cursor: grabbing;
+}
+
+.svg-wrapper.trackpad-panning {
+    cursor: grab;
+}
+.svg-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    transform-origin: 0 0;
+    /* Scaling from SVG origin */
+    z-index: 1;
+    /* Lower z-index so grid can overlay */
+}
+
+.svg-content svg {
+    max-width: 100%;
+    max-height: 100%;
+    user-select: none;
+    background: transparent !important;
+    fill: none !important;
+}
+
+/* Base SVG Element Styles */
+.svg-content svg path,
+.svg-content svg circle,
+.svg-content svg rect,
+.svg-content svg ellipse,
+.svg-content svg line,
+.svg-content svg polyline,
+.svg-content svg polygon,
+.svg-content svg text,
+.svg-content svg tspan,
+.svg-content svg textPath {
+    transition: all 0.3s ease !important;
+    pointer-events: none;
+}
+
+/* Override pointer-events for overlay elements */
+.svg-content svg .no-export {
+    pointer-events: all !important;
+}
+
+/* Normalized Path Styles - Applied by normalizePathVisuals() */
+.svg-content svg .normalized-path {
+    stroke: #555555 !important;
+    stroke-width: 2px !important;
+    stroke-dasharray: none !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    vector-effect: non-scaling-stroke !important;
+}
+
+/* Closed paths and shapes get subtle fill for shape recognition */
+.svg-content svg .normalized-path.is-closed-path,
+.svg-content svg .normalized-text.is-closed-path {
+    fill: rgba(85, 85, 85, 0.1) !important;
+}
+
+/* Open line elements keep transparent fill */
+.svg-content svg .normalized-path:not(.is-closed-path) {
+    fill: none !important;
+}
+
+/* Text elements get dark grey stroke outline like other elements */
+.svg-content svg text.normalized-text,
+.svg-content svg tspan.normalized-text,
+.svg-content svg textPath.normalized-text {
+    fill: #555555 !important;
+    stroke: #555555 !important;
+    stroke-width: 2px !important;
+        stroke-dasharray: none !important;
+        stroke-linecap: round !important;
+        stroke-linejoin: round !important;
+        vector-effect: non-scaling-stroke !important;
+}
+
+/* Interactive Overlay Styles */
+.svg-content svg .path-overlay {
+    fill: transparent !important;
+    stroke: rgba(85, 85, 85, 0.3) !important;
+    stroke-width: 20px !important;
+    vector-effect: non-scaling-stroke !important;
+    pointer-events: all !important;
+    cursor: pointer;
+}
+
+/* Text overlay needs special handling for hit area */
+.svg-content svg text.path-overlay {
+    fill: transparent !important;
+    stroke: rgba(85, 85, 85, 0.3) !important;
+    stroke-width: 20px !important;
+    vector-effect: non-scaling-stroke !important;
+    pointer-events: all !important;
+    cursor: pointer;
+    /* Text overlays need stroke to create hit area since text fill becomes transparent */
+}
+
+/* Hover State Styles */
+.svg-content svg path.hover-active,
+.svg-content svg circle.hover-active,
+.svg-content svg rect.hover-active,
+.svg-content svg ellipse.hover-active,
+.svg-content svg line.hover-active,
+.svg-content svg polyline.hover-active,
+.svg-content svg polygon.hover-active,
+.svg-content svg text.hover-active,
+.svg-content svg tspan.hover-active,
+.svg-content svg textPath.hover-active {
+    stroke: #8fa4f3 !important;
+    stroke-width: 2 !important;
+    filter: drop-shadow(0 0 3px rgba(143, 164, 243, 0.5)) !important;
+}
+
+/* Selected Element Styles */
+.svg-content svg path.selected,
+.svg-content svg circle.selected,
+.svg-content svg rect.selected,
+.svg-content svg ellipse.selected,
+.svg-content svg line.selected,
+.svg-content svg polyline.selected,
+.svg-content svg polygon.selected,
+.svg-content svg text.selected,
+.svg-content svg tspan.selected,
+.svg-content svg textPath.selected {
+    stroke: #667eea !important;
+    stroke-width: 4 !important;
+    filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.9)) drop-shadow(0 0 24px rgba(102, 126, 234, 0.5)) brightness(1.15);
+    transform: scale(1.03);
+    animation: selectedPulse 2s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.9)) drop-shadow(0 0 24px rgba(102, 126, 234, 0.5)) brightness(1.15);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 16px rgba(102, 126, 234, 1)) drop-shadow(0 0 32px rgba(102, 126, 234, 0.7)) brightness(1.25);
+    }
+}
+
+/* SVG Boundary Outline */
+.svg-boundary-outline {
+    --stroke-width: 5;
+    fill: none !important;
+    stroke: rgba(50, 146, 205, 0.3) !important;
+        stroke-width: calc(var(--stroke-width) * 1px) !important;
+        stroke-dasharray: 10px, 20px !important;
+    pointer-events: none !important;
+    vector-effect: non-scaling-stroke !important;
+    transition: stroke 0.2s ease !important;
+}
+
+.svg-boundary-outline.boundary-highlight {
+        stroke-width: calc(var(--stroke-width) * 1px) !important;
+}
+
+/* Boundary overlay - visible wider hit area for boundary interaction */
+.boundary-overlay {
+    fill: transparent !important;
+    fill-rule: evenodd !important;
+    cursor: pointer !important;
+    pointer-events: all !important;
+    stroke: transparent !important;
+    stroke-width: 10px !important;
+    vector-effect: non-scaling-stroke !important;
+}
+
+/* Grid Overlay System */
+.gutter-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(192, 192, 192, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(192, 192, 192, 0.4) 1px, transparent 1px);
+    background-size: 10px 10px;
+    z-index: 500;
+    /* High enough to overlay SVG content */
+}
+
+.gutter-intersection {
+    border-radius: 1px;
+    box-sizing: border-box;
+}
+
+/* Responsive adjustments for SVG display */
+@media (max-width: 768px) {
+    .svg-container {
+        height: 50vh;
+    }
+}
