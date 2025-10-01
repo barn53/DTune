@@ -1,9 +1,24 @@
-// SVG Helper Class
-// Handles SVG manipulation, cleaning, and serialization operations
-
+/**
+ * SVG Helper Module - SVG Manipulation and Export Processing
+ *
+ * Comprehensive SVG manipulation utilities for element operations, cleaning,
+ * and export preparation. Handles the complexity of SVG geometry calculations,
+ * element cleanup, and serialization for manufacturing output.
+ *
+ * Key Features:
+ * - Clean SVG export with overlay and temporary element removal
+ * - Safe bounding box calculations with fallback strategies
+ * - SVG boundary detection and measurement
+ * - Element geometry analysis and validation
+ * - Viewport attribute cleanup for export consistency
+ * - Robust error handling for malformed SVG content
+ */
 class SVGHelper {
+    /**
+     * Initialize SVG helper with utility methods for SVG operations
+     */
     constructor() {
-        // Initialize with reference to common dependencies
+        // Lightweight utility class - no heavy initialization required
     }
 
     /**
@@ -121,11 +136,16 @@ class SVGHelper {
     }
 
     /**
-     * Removes temporary CSS classes from an element
-     * @param {Element} element - The element to clean
+     * Remove temporary CSS classes from element for clean export
+     *
+     * Selectively removes classes that are used for editor functionality
+     * but should not appear in exported SVG. Preserves shaper-related
+     * classes that are part of the manufacturing specification.
+     *
+     * @param {Element} element - SVG element to clean
      */
     removeTemporaryClasses(element) {
-        // Only remove the no-export class (other temporary classes are fine to keep in exported SVG)
+        // Remove editor-specific classes while preserving shaper classes
         element.classList.remove(ShaperConstants.CSS_CLASSES.NO_EXPORT);
     }    /**
      * Serializes an SVG element to a clean XML string
@@ -154,17 +174,25 @@ class SVGHelper {
     }
 
     /**
-     * Gets the currently displayed SVG element from the DOM
-     * @returns {Element|null} The displayed SVG element or null if not found
+     * Get currently displayed SVG element from DOM
+     *
+     * Locates the active SVG element within the editor's content area.
+     * Used for operations that need to access the live SVG document.
+     *
+     * @returns {Element|null} Active SVG element or null if not found
      */
     getDisplayedSVG() {
         return document.querySelector('#svgContent svg');
     }
 
     /**
-     * Creates a clean copy of the currently displayed SVG
-     * @param {boolean} removeViewportAttributes - Whether to remove viewport transforms
-     * @returns {Element|null} Clean copy of the displayed SVG or null if not found
+     * Create clean copy of currently displayed SVG for export operations
+     *
+     * Convenience method that combines SVG retrieval with cleaning for
+     * common export scenarios. Removes viewport transforms and overlays.
+     *
+     * @param {boolean} removeViewportAttributes - Whether to strip viewport transforms
+     * @returns {Element|null} Clean SVG copy ready for export or null if no SVG found
      */
     createCleanDisplayedSVGCopy(removeViewportAttributes = true) {
         const displayedSVG = this.getDisplayedSVG();
@@ -172,9 +200,13 @@ class SVGHelper {
     }
 
     /**
-     * Gets a clean serialized string of the currently displayed SVG
-     * @param {FileManager} fileManager - Optional FileManager instance for proper export preparation
-     * @returns {string} Clean SVG string ready for export/storage
+     * Generate clean SVG string for export with proper attribute cleanup
+     *
+     * Complete export pipeline that retrieves current SVG, cleans it using
+     * FileManager for proper attribute handling, and serializes to string.
+     *
+     * @param {FileManager} fileManager - FileManager for proper export preparation
+     * @returns {string} Clean SVG string ready for export or empty string if no SVG
      */
     getCleanDisplayedSVGString(fileManager = null) {
         const displayedSVG = this.getDisplayedSVG();
@@ -183,33 +215,42 @@ class SVGHelper {
         }
 
         const cleanCopy = this.createCleanSVGCopy(displayedSVG, true, fileManager);
-        return this.serializeSVG(cleanCopy, false); // Don't create another clean copy
+        return this.serializeSVG(cleanCopy, false); // Skip redundant cleaning
     }
 
     /**
-     * Validates that an SVG element is valid and contains expected structure
-     * @param {Element} svgElement - The SVG element to validate
-     * @returns {boolean} True if valid SVG structure
+     * Validate SVG element structure and namespace compliance
+     *
+     * Performs basic validation to ensure element is a proper SVG with
+     * correct namespace. Used for error checking before processing operations.
+     *
+     * @param {Element} svgElement - SVG element to validate
+     * @returns {boolean} True if element is valid SVG with proper namespace
      */
     validateSVGStructure(svgElement) {
         if (!svgElement) {
             return false;
         }
 
-        // Check if it's actually an SVG element
+        // Verify element is actually an SVG
         if (svgElement.tagName.toLowerCase() !== 'svg') {
             return false;
         }
 
-        // Check for basic SVG attributes
+        // Check for proper SVG namespace
         const hasValidNamespace = svgElement.namespaceURI === 'http://www.w3.org/2000/svg';
 
         return hasValidNamespace;
     }
 
     /**
-     * Ensures proper shaper namespace is set on SVG for export
-     * @param {Element} svgElement - The SVG element to update
+     * Ensure shaper namespace declaration for attribute compatibility
+     *
+     * Adds shaper namespace declaration to SVG root if missing, ensuring
+     * exported SVG files properly declare custom shaper attributes for
+     * manufacturing software compatibility.
+     *
+     * @param {Element} svgElement - SVG root element to update
      */
     ensureShaperNamespace(svgElement) {
         if (svgElement && !svgElement.hasAttribute(`xmlns:${ShaperConstants.NAMESPACE_PREFIX}`)) {
@@ -222,15 +263,20 @@ class SVGHelper {
     // =================
 
     /**
-     * Creates an SVG element with proper namespace
-     * @param {string} tagName - The SVG element tag name (e.g., 'path', 'rect', 'circle')
-     * @param {Object} attributes - Optional attributes to set on the element
-     * @returns {Element} New SVG element
+     * Create SVG element with proper namespace and attributes
+     *
+     * Factory method for creating SVG elements with correct namespace
+     * declaration and batch attribute setting. Ensures compatibility
+     * across different browsers and SVG contexts.
+     *
+     * @param {string} tagName - SVG element type (e.g., 'path', 'rect', 'circle')
+     * @param {Object} attributes - Key-value pairs of attributes to set
+     * @returns {Element} New SVG element with namespace and attributes applied
      */
     createSVGElement(tagName, attributes = {}) {
         const element = document.createElementNS('http://www.w3.org/2000/svg', tagName);
 
-        // Set any provided attributes
+        // Batch set attributes for efficiency
         Object.entries(attributes).forEach(([key, value]) => {
             element.setAttribute(key, value);
         });
@@ -239,28 +285,36 @@ class SVGHelper {
     }
 
     /**
-     * Gets the root SVG element from various contexts
-     * @param {Element} contextElement - Optional element to search from (uses ownerDocument)
-     * @param {string} containerId - Optional container ID to search within (default: 'svgContent')
-     * @returns {Element|null} The SVG root element or null if not found
+     * Locate SVG root element from various contexts
+     *
+     * Flexible SVG root finder that works from element context or container
+     * search. Useful when operating on SVG fragments or nested documents.
+     *
+     * @param {Element} contextElement - Element within SVG to trace back from
+     * @param {string} containerId - Container ID to search within (default: 'svgContent')
+     * @returns {Element|null} SVG root element or null if not found
      */
     getSVGRoot(contextElement = null, containerId = 'svgContent') {
         if (contextElement) {
-            // Use ownerDocument to find SVG root from any element within SVG
+            // Navigate from element context to find owning SVG
             return contextElement.ownerDocument.querySelector('svg');
         }
 
-        // Default: search within specified container
+        // Fallback to container-based search
         const container = document.getElementById(containerId);
         return container ? container.querySelector('svg') : null;
     }
 
     /**
-     * Clones an SVG element and optionally inserts it into a container
-     * @param {Element} svgElement - The SVG element to clone
-     * @param {Element} targetContainer - Optional container to insert clone into
-     * @param {boolean} deep - Whether to perform deep clone (default: true)
-     * @returns {Element} The cloned element
+     * Clone SVG element with optional container insertion
+     *
+     * Creates deep or shallow copies of SVG elements with error handling.
+     * Optionally inserts clone directly into target container for convenience.
+     *
+     * @param {Element} svgElement - Source SVG element to clone
+     * @param {Element} targetContainer - Optional container for clone insertion
+     * @param {boolean} deep - Whether to include child elements (default: true)
+     * @returns {Element|null} Cloned element or null if source invalid
      */
     cloneSVGElement(svgElement, targetContainer = null, deep = true) {
         if (!svgElement) {

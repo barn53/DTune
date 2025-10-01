@@ -1,83 +1,113 @@
-// Main SVG Shaper Editor Application
-// Orchestrates all modules and handles application lifecycle
-
+/**
+ * SVG Shaper Editor - Main Application Orchestrator
+ *
+ * Central coordination hub that manages all application subsystems and
+ * handles the complete application lifecycle. Provides module integration,
+ * event coordination, and state management for the SVG editing environment.
+ *
+ * Architecture:
+ * - Modular design with loose coupling between subsystems
+ * - Event-driven communication between modules
+ * - Centralized state management with localStorage persistence
+ * - Responsive UI with touch and desktop interaction support
+ * - Real-time measurement and unit conversion system
+ *
+ * Key Responsibilities:
+ * - Module initialization and dependency injection
+ * - Event binding and delegation
+ * - File loading and processing coordination
+ * - Viewport and interaction management
+ * - State persistence and restoration
+ * - Error handling and user feedback
+ */
 class SVGShaperEditor {
+    /**
+     * Initialize SVG Shaper Editor with all subsystems
+     */
     constructor() {
-        // Initialize all subsystems
+        // Core subsystem initialization with dependency injection
         this.measurementSystem = new MeasurementSystem();
         this.fileManager = new FileManager(this.measurementSystem);
-        // --- NEW: Create a map to hold pre-analyzed element data ---
+
+        // Element data cache for performance optimization
         this.elementDataMap = new Map();
-        // --- UPDATED: Pass the data map to the ElementManager ---
+
+        // Module initialization with dependency wiring
         this.elementManager = new ElementManager(this.measurementSystem, this.fileManager, this.elementDataMap);
         this.viewport = new Viewport();
         this.uiComponents = new UIComponents(this.measurementSystem, this.elementManager);
         this.attributeSystem = new AttributeSystem(this.measurementSystem, this.fileManager, this.elementManager);
 
-        // Initialize SVG helper for SVG operations
+        // SVG processing utilities
         this.svgHelper = new SVGHelper();
 
-        // UI elements
+        // Application initialization sequence
         this.initializeElements();
-
-        // Bind events
         this.bindEvents();
-
-        // Set up module connections
         this.setupModuleConnections();
 
-        // Boundary tooltip tracking
+        // Application state tracking
         this.boundaryTooltipActive = false;
-
-        // Flag to track if we're loading from localStorage
         this.isLoadingFromLocalStorage = false;
     }
 
+    /**
+     * Initialize DOM element references and UI components
+     *
+     * Caches references to all critical DOM elements for efficient access
+     * throughout the application lifecycle. Sets up UI component initialization.
+     */
     initializeElements() {
-
-        // Main sections
+        // Main application sections
         this.uploadSection = document.getElementById('uploadSection');
         this.editorSection = document.getElementById('editorSection');
 
-        // Upload elements
+        // File upload interface elements
         this.fileInput = document.getElementById('fileInput');
         this.uploadArea = document.getElementById('uploadArea');
         this.uploadButton = document.getElementById('uploadBtn');
         this.floatingImportBtn = document.getElementById('floatingImportBtn');
         this.floatingExportBtn = document.getElementById('floatingExportBtn');
 
-        // SVG display elements
+        // SVG viewport and display elements
         this.svgContainer = document.getElementById('svgContainer');
         this.svgWrapper = document.getElementById('svgWrapper');
         this.svgContent = document.getElementById('svgContent');
         this.gutterOverlay = document.getElementById('gutterOverlay');
 
-        // Controls
+        // User control elements
         this.unitsToggle = document.getElementById('unitToggle');
         this.decimalToggle = document.getElementById('decimalToggle');
         this.gutterToggle = document.getElementById('gutterToggle');
         this.gutterSize = document.getElementById('gutterSize');
         this.gutterUnitLabel = document.getElementById('gutterUnitLabel');
 
-        // Buttons
+        // Viewport control buttons
         this.zoomInBtn = document.getElementById('zoomIn');
         this.zoomOutBtn = document.getElementById('zoomOut');
         this.zoom100Btn = document.getElementById('zoom100');
         this.zoomFitBtn = document.getElementById('zoomFit');
         this.centerViewBtn = document.getElementById('centerView');
 
-        // Filename display
+        // Application state display
         this.currentFileNameDisplay = document.getElementById('titlebarFilename');
 
-        // Initialize UI components
+        // Initialize complex UI components
         this.uiComponents.initializeElements();
     }
 
+    /**
+     * Establish inter-module connections and callback systems
+     *
+     * Creates the communication pathways between modules using dependency
+     * injection and callback patterns. Ensures loose coupling while enabling
+     * coordinated functionality across the application.
+     */
     setupModuleConnections() {
-        // Connect elementManager to fileManager for export functionality
+        // Connect elementManager to fileManager for coordinated export operations
         this.fileManager.setElementManager(this.elementManager);
 
-        // Connect file manager to display system
+        // Establish SVG loading pipeline with comprehensive callback handling
         this.fileManager.setLoadCallback((svgElement, svgData, fileName) => {
             this.currentFileName = fileName;
             this.updateFileNameDisplay();

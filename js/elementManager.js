@@ -1,16 +1,42 @@
-// Element Manager Module
-// Handles SVG element selection, measurements, and overlays
-
+/**
+ * Element Manager Module - SVG Element State and Measurement Management
+ *
+ * Manages SVG element selection states, hover tracking, and measurement
+ * calculations. Provides centralized interface for element operations
+ * including dimension queries and visual state management.
+ *
+ * Key Features:
+ * - Element selection and hover state management
+ * - Cached dimension data retrieval via element data map
+ * - Smart element description generation with unit conversion
+ * - Integration with measurement system for unit display
+ * - SVG geometry calculations for complex elements
+ */
 class ElementManager {
+    /**
+     * Initialize element manager with system dependencies
+     *
+     * @param {MeasurementSystem} measurementSystem - Unit conversion and formatting
+     * @param {FileManager} fileManager - SVG file operations
+     * @param {Map} elementDataMap - Cached element dimension data
+     */
     constructor(measurementSystem, fileManager, elementDataMap) {
         this.measurementSystem = measurementSystem;
         this.fileManager = fileManager;
-        this.elementDataMap = elementDataMap; // Store the map
+        this.elementDataMap = elementDataMap; // Cached element data storage
         this.selectedPath = null;
         this.hoveredPath = null;
         this.svgHelper = new SVGHelper();
     }
 
+    /**
+     * Select SVG path element and update visual state
+     *
+     * Manages single-selection mode by clearing previous selection
+     * and applying visual selection styling via CSS classes.
+     *
+     * @param {Element|null} path - SVG path to select, or null to clear selection
+     */
     selectPath(path) {
         const previousSelected = document.querySelector(`.${ShaperConstants.CSS_CLASSES.SELECTED}`);
         if (previousSelected) {
@@ -24,18 +50,40 @@ class ElementManager {
         }
     }
 
+    /**
+     * Track hovered element for tooltip and interaction feedback
+     * @param {Element|null} path - SVG path being hovered, or null
+     */
     setHoveredPath(path) {
         this.hoveredPath = path;
     }
 
+    /**
+     * Get currently selected SVG path element
+     * @returns {Element|null} Selected path or null if none selected
+     */
     getSelectedPath() {
         return this.selectedPath;
     }
 
+    /**
+     * Get currently hovered SVG path element
+     * @returns {Element|null} Hovered path or null if none hovered
+     */
     getHoveredPath() {
         return this.hoveredPath;
     }
 
+    /**
+     * Retrieve cached dimension data for SVG element
+     *
+     * Accesses pre-calculated element dimensions from the element data map
+     * using the element's application ID. Returns cached measurements and
+     * shaper attributes for efficient access without recalculation.
+     *
+     * @param {Element} element - SVG element with app-id data attribute
+     * @returns {Object} Cached dimension data including measurements and attributes
+     */
     getElementDimensions(element) {
         if (!element || !element.dataset.appId) {
             return {};
@@ -45,13 +93,23 @@ class ElementManager {
         return dimensions || {};
     }
 
-    // Element description generation
+    /**
+     * Generate user-friendly element description with measurements
+     *
+     * Creates descriptive text for SVG elements including geometry type
+     * and key measurements in current units. Handles special cases like
+     * circles and lines with appropriate formatting.
+     *
+     * @param {Element} element - SVG element to describe
+     * @returns {string} Human-readable element description with measurements
+     */
     getElementDescription(element) {
         const dimensions = this.getElementDimensions(element);
         if (!dimensions || !dimensions.tagName) return "Unknown Element";
 
         const tagName = dimensions.tagName;
 
+        // Special handling for circular elements
         if (dimensions.isCircle) {
             const { diameterPx, radiusPx } = dimensions;
             const diameter = this.measurementSystem.convertPixelsToCurrentUnit(diameterPx);
@@ -59,7 +117,7 @@ class ElementManager {
             return `Circle: ⌀${this.measurementSystem.formatDisplayNumber(diameter)}${this.measurementSystem.units}; Radius: ${this.measurementSystem.formatDisplayNumber(radius)}${this.measurementSystem.units}`;
         }
 
-        // --- REVISED: 'line' gets special handling again, but calculated from BBox ---
+        // Handle different SVG element types with appropriate descriptions
         switch (tagName) {
             case 'rect':
             case 'ellipse':
@@ -79,6 +137,7 @@ class ElementManager {
                 }
             case 'line':
                 {
+                    // Calculate line length and angle from bounding box dimensions
                     const { width, height } = dimensions;
                     const length = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
                     const angle = Math.atan2(height, width) * (180 / Math.PI);
@@ -89,7 +148,16 @@ class ElementManager {
         }
     }
 
-    // Element measurements for tooltips
+    /**
+     * Extract detailed measurements for tooltip display
+     *
+     * Provides structured measurement data for tooltips with proper unit
+     * conversion and formatting. Returns different measurement sets based
+     * on element geometry type (circles, rectangles, lines, etc.).
+     *
+     * @param {Element} element - SVG element to extract measurements from
+     * @returns {Array} Array of measurement objects with name and formatted value
+     */
     getElementMeasurements(element) {
         const measurements = [];
         const dimensions = this.getElementDimensions(element);
@@ -97,6 +165,7 @@ class ElementManager {
 
         const tagName = dimensions.tagName;
 
+        // Special measurement handling for circular elements
         if (dimensions.isCircle) {
             const { diameterPx, radiusPx } = dimensions;
             const diameter = this.measurementSystem.convertPixelsToCurrentUnit(diameterPx);
@@ -108,7 +177,7 @@ class ElementManager {
             return measurements;
         }
 
-        // --- REVISED: 'line' gets special handling again, but calculated from BBox ---
+        // Generate measurements based on element geometry type
         switch (tagName) {
             case 'rect':
             case 'ellipse':
@@ -116,6 +185,7 @@ class ElementManager {
             case 'polyline':
             case 'path':
                 {
+                    // Standard width/height measurements for bounding box elements
                     const { widthPx, heightPx } = dimensions;
                     if (widthPx > 0) {
                         const width = this.measurementSystem.convertPixelsToCurrentUnit(widthPx);
@@ -129,6 +199,7 @@ class ElementManager {
                 }
             case 'line':
                 {
+                    // Line-specific measurements: length and angle
                     const { widthPx, heightPx } = dimensions;
                     const lengthPx = Math.sqrt(Math.pow(widthPx, 2) + Math.pow(heightPx, 2));
                     const length = this.measurementSystem.convertPixelsToCurrentUnit(lengthPx);
@@ -144,11 +215,24 @@ class ElementManager {
         return measurements;
     }
 
+    /**
+     * Extract coordinate points from SVG path data string
+     *
+     * Parses path data strings to extract numeric coordinate pairs.
+     * Provides coordinate data for path analysis and measurement
+     * calculations on complex geometries.
+     *
+     * @param {string} pathData - SVG path data string (d attribute)
+     * @returns {Array} Array of {x, y} coordinate objects
+     */
     extractPathCoordinates(pathData) {
         const coords = [];
         if (!pathData) return coords;
+
+        // Extract numeric values from path string
         const matches = pathData.match(/[-+]?\d*\.?\d+/g);
         if (matches) {
+            // Group consecutive numbers into coordinate pairs
             for (let i = 0; i < matches.length; i += 2) {
                 if (i + 1 < matches.length) {
                     coords.push({
