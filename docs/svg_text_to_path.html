@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Text zu Pfad mit opentype.js</title>
+</head>
+
+<body>
+    <svg id="mysvg" width="600" height="200" xmlns="http://www.w3.org/2000/svg" style="border:1px solid #ccc">
+        <!-- Dein ursprünglicher Text -->
+        <text id="mytext" x="50" y="100" font-size="72" font-family="Roboto" fill="gray">
+            Hallo Welt
+        </text>
+    </svg>
+
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
+    <script>
+        // 1. SVG-Referenzen
+        const svg = document.getElementById("mysvg");
+        const textElement = document.getElementById("mytext");
+
+        // 2. Text-Inhalt + Position + Größe abfragen
+        const textContent = textElement.textContent;
+        const x = parseFloat(textElement.getAttribute("x")) || 0;
+        const y = parseFloat(textElement.getAttribute("y")) || 0;
+        const fontSize = parseFloat(textElement.getAttribute("font-size")) || 72;
+
+        // 3. Schrift laden (hier Roboto als Beispiel, kann jede TTF/OTF-URL sein)
+        opentype.load("https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf", function (err, font) {
+            if (err) {
+                console.error("Fehler beim Laden der Schrift:", err);
+                return;
+            }
+
+            // 4. Pfad aus dem Text erzeugen
+            const path = font.getPath(textContent, x, y, fontSize);
+            const d = path.toPathData();
+
+            // 5. Neues <path> ins SVG einfügen
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            p.setAttribute("d", d);
+            p.setAttribute("fill", "black");  // Farbe wie du willst
+            svg.appendChild(p);
+
+            // Optional: altes <text>-Element entfernen
+            //textElement.remove();
+        });
+    </script>
+</body>
+
+</html>

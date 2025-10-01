@@ -252,7 +252,7 @@ class SVGShaperEditor {
             } : null,
             // --- Debugging ---
             displayCloneSVG: this.svgContent.innerHTML,
-            measurementCloneSVG: this.measurementSystem.lastMeasurementCloneHTML,
+            measurementCloneSVG: this.measurementSystem.measurementCloneSVG,
             // Debug: Current boundary dimensions
             boundaryDebug: this.getBoundaryDebugInfo()
         };
@@ -516,11 +516,17 @@ class SVGShaperEditor {
         // Clear previous content
         this.svgContent.innerHTML = '';
 
-        // Clone and append the SVG element
-        const displayClone = this.svgHelper.cloneSVGElement(svgElement, this.svgContent);
+        // Clone SVG element but DON'T add to DOM yet
+        const displayClone = this.svgHelper.cloneSVGElement(svgElement);
+
+        // Normalize visual appearance BEFORE adding to DOM
+        this.normalizePathVisuals(displayClone);
 
         // Add boundary outline to show SVG boundaries
         this.addBoundaryOutline(displayClone);
+
+        // Now add the fully normalized SVG to the DOM
+        this.svgContent.appendChild(displayClone);
 
         // Set up viewport
         this.viewport.setSVGElements(this.svgWrapper, displayClone);
@@ -530,6 +536,71 @@ class SVGShaperEditor {
 
         // Show editor section
         this.showEditor();
+    }
+
+    /**
+     * Normalize visual appearance of SVG paths in display clone
+     *
+     * Applies consistent styling to all paths for better visual clarity:
+     * - Standardizes stroke width to 2px for all paths
+     * - Sets uniform dark grey color (#555) for all strokes
+     * - Preserves original fill properties for shape recognition
+     * - Only affects display clone, not original SVG or exports
+     *
+     * @param {Element} svgElement - The display clone SVG element to normalize
+     */
+    normalizePathVisuals(svgElement) {
+        if (!svgElement) return;
+
+        // Find all drawable SVG elements that should be normalized
+        // Includes all basic shapes and path-based elements
+        const drawableElements = svgElement.querySelectorAll(`
+            path, line, polyline, polygon,
+            circle, ellipse, rect,
+            text, tspan, textPath,
+            use, image,
+            g[stroke], g[fill]
+        `.replace(/\s+/g, ' ').trim());
+
+        drawableElements.forEach(element => {
+            const tagName = element.tagName.toLowerCase();
+
+            // Apply CSS classes instead of inline styles for better maintainability
+            if (tagName === 'text' || tagName === 'tspan' || tagName === 'textpath') {
+                // Text elements get special treatment
+                element.classList.add('normalized-text');
+                element.classList.add('is-closed-path');
+                return;
+            }
+
+            // Skip image and use elements - they don't need stroke styling
+            if (tagName === 'image' || tagName === 'use') {
+                return;
+            }
+
+            // Apply normalized path class - CSS handles all styling including vector-effect
+            element.classList.add('normalized-path');
+
+            // Detect and mark closed paths/shapes for appropriate fill treatment
+            if (this.measurementSystem.isClosedShape(element)) {
+                element.classList.add('is-closed-path');
+            }
+
+            // Clean up any existing inline styles that might override CSS
+            element.removeAttribute('style');
+        });
+    }
+
+    /**
+     * Debug utility: Check closure status of element by ID
+     *
+     * Delegates to measurementSystem for actual analysis.
+     *
+     * @param {string} id - Element ID to check
+     * @returns {Object} Closure analysis results
+     */
+    checkPathClosure(id) {
+        return this.measurementSystem.checkPathClosure(id);
     }
 
     addBoundaryOutline(svgElement) {
@@ -662,9 +733,6 @@ class SVGShaperEditor {
         const donutPath = `${outerPath} ${innerPath}`;
 
         const hitArea = this.svgHelper.createPath(donutPath, {
-            fill: 'transparent',
-            'fill-rule': 'evenodd',
-            cursor: 'pointer',
             class: `boundary-overlay ${ShaperConstants.CSS_CLASSES.NO_EXPORT}`
         });
 
@@ -1152,13 +1220,13 @@ class SVGShaperEditor {
             const exportNode = this.fileManager.masterSVGElement.cloneNode(true);
 
             // Clean all elements in the cloned node for export (same as exportSVG)
-            exportNode.querySelectorAll('[data-app-id]').forEach(el => {
+            exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
                 // Set namespaced attributes from raw values
                 this.fileManager.updateShaperAttributesForExport(el);
                 // Remove all raw attributes
                 ShaperUtils.removeAllRawAttributes(el);
                 // Remove the internal app-id for the final export
-                el.removeAttribute('data-app-id');
+                el.removeAttribute('delta-app-id');
             });
 
             // Create SVG string

@@ -60,6 +60,9 @@ class Viewport {
         this.touchStartPanY = 0;
         this.isTrackpadPanning = false;
 
+        // Trackpad panning cursor timeout
+        this.trackpadPanTimeout = null;
+
         // SVG helper for element operations
         this.svgHelper = new SVGHelper();
 
@@ -233,6 +236,19 @@ class Viewport {
         } else {
             // Everything else is trackpad pan
             console.log('👆 TRACKPAD PAN:', { deltaX: event.deltaX, deltaY: event.deltaY });
+
+            // Show grab cursor during trackpad panning
+            if (this.svgContainer) {
+                this.svgContainer.classList.add('trackpad-panning');
+
+                // Clear the cursor after a short delay when panning stops
+                clearTimeout(this.trackpadPanTimeout);
+                this.trackpadPanTimeout = setTimeout(() => {
+                    if (this.svgContainer) {
+                        this.svgContainer.classList.remove('trackpad-panning');
+                    }
+                }, 150); // Remove cursor after 150ms of no pan events
+            }
         }
 
         if (shouldZoom) {
@@ -562,36 +578,15 @@ class Viewport {
     }
 
     /**
-     * Maintain constant pixel stroke widths regardless of zoom level
+     * Update stroke widths (deprecated - now handled by CSS)
      *
-     * Applies inverse scaling to various SVG stroke elements so they
-     * maintain consistent visual thickness on screen. Targets specific
-     * stroke widths:
-     * - Boundary outlines: 2px
-     * - Interactive overlays: 10px
-     * - Path overlays: 10px
+     * All SVG elements now use vector-effect: non-scaling-stroke in CSS
+     * for automatic zoom-independent stroke widths. This method is kept
+     * for compatibility but no longer performs dynamic adjustments.
      */
     updateStrokeWidths() {
-        // Calculate inverse zoom factor for pixel-constant stroke widths
-        const inverseScale = 1 / this.zoom;
-
-        // Maintain 2px boundary outline thickness
-        const boundaryOutlines = document.querySelectorAll('.svg-boundary-outline');
-        boundaryOutlines.forEach(outline => {
-            outline.setAttribute('stroke-width', (2 * inverseScale).toString());
-        });
-
-        // Maintain 10px interactive overlay thickness
-        const overlays = document.querySelectorAll('.boundary-overlay');
-        overlays.forEach(overlay => {
-            overlay.setAttribute('stroke-width', (10 * inverseScale).toString());
-        });
-
-        // Maintain 10px transparent path overlay thickness
-        const pathOverlays = document.querySelectorAll('path[stroke="transparent"]');
-        pathOverlays.forEach(overlay => {
-            overlay.setAttribute('stroke-width', (10 * inverseScale).toString());
-        });
+        // All stroke width management moved to CSS with vector-effect: non-scaling-stroke
+        // No JavaScript intervention needed
     }
 
     /**

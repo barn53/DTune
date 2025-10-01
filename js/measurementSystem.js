@@ -26,7 +26,7 @@ class MeasurementSystem {
         this.mmPerInch = 25.4; // Conversion constant
 
         // Debug information for measurement troubleshooting
-        this.lastMeasurementCloneHTML = null;
+        this.measurementCloneSVG = null;
     }
 
     /**
@@ -372,17 +372,17 @@ class MeasurementSystem {
             }
             tempContainer.appendChild(measurementClone);
             document.body.appendChild(tempContainer);
-            const elementInClone = measurementClone.querySelector(`[data-app-id="${appId}"]`);
+            const elementInClone = measurementClone.querySelector(`[delta-app-id="${appId}"]`);
             if (elementInClone) {
                 const bbox = elementInClone.getBoundingClientRect();
-                this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+                this.measurementCloneSVG = measurementClone.outerHTML;
                 return { width: bbox.width, height: bbox.height };
             }
-            this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+            this.measurementCloneSVG = measurementClone.outerHTML;
             return { width: 0, height: 0 };
         } finally {
             if (tempContainer.firstChild) {
-                this.lastMeasurementCloneHTML = tempContainer.firstChild.outerHTML;
+                this.measurementCloneSVG = tempContainer.firstChild.outerHTML;
             }
             if (tempContainer.parentNode) {
                 tempContainer.parentNode.removeChild(tempContainer);
@@ -397,7 +397,7 @@ class MeasurementSystem {
             return elementDataMap;
         }
 
-        const elementsToAnalyze = masterSVGElement.querySelectorAll('[data-app-id]');
+        const elementsToAnalyze = masterSVGElement.querySelectorAll('[delta-app-id]');
 
         elementsToAnalyze.forEach(element => {
             const appId = element.dataset.appId;
@@ -466,7 +466,7 @@ class MeasurementSystem {
     // Fallback: Try to detect real dimensions from current SVG
         const realDimensions = this.detectRealSVGDimensions(svgElement);
         if (realDimensions) {
-            this.lastMeasurementCloneHTML = `Real dimensions detected: ${realDimensions.width}${realDimensions.widthUnit} × ${realDimensions.height}${realDimensions.heightUnit}`;
+            this.measurementCloneSVG = `Real dimensions detected: ${realDimensions.width}${realDimensions.widthUnit} × ${realDimensions.height}${realDimensions.heightUnit}`;
 
             // Convert to pixels using the detected units
             const widthPx = this.convertBetweenUnits(realDimensions.width, realDimensions.widthUnit, 'px');
@@ -514,7 +514,7 @@ class MeasurementSystem {
 
             // Measure the SVG
             const svgBbox = measurementClone.getBoundingClientRect();
-            this.lastMeasurementCloneHTML = measurementClone.outerHTML;
+            this.measurementCloneSVG = measurementClone.outerHTML;
 
             return {
                 width: svgBbox.width,
@@ -565,6 +565,119 @@ class MeasurementSystem {
      * This is a simplified version that focuses on getting the job done
      * without the extra features like caching or advanced unit detection.
      */
+
+    /**
+     * Check if an SVG element represents a closed shape
+     *
+     * Determines whether an element should be treated as a closed shape for
+     * visual styling purposes. Uses element type analysis for basic shapes
+     * and geometric analysis for paths.
+     *
+     * @param {Element} element - SVG element to analyze
+     * @returns {boolean} True if element is a closed shape
+     */
+    isClosedShape(element) {
+        const tagName = element.tagName.toLowerCase();
+
+        // Basic shapes that are inherently closed
+        if (['rect', 'circle', 'ellipse', 'polygon', 'text', 'tspan', 'textPath'].includes(tagName)) {
+            return true;
+        }
+
+        // Check paths for closure
+        if (tagName === 'path') {
+            return this.isClosedPath(element);
+        }
+
+        // Lines and polylines are typically open
+        return false;
+    }
+
+    /**
+     * Check if a path element is closed
+     *
+     * Uses both syntactic (Z command) and geometric (endpoint matching)
+     * analysis to determine if a path represents a closed shape.
+     *
+     * @param {Element} path - Path element to analyze
+     * @returns {boolean} True if path is closed
+     */
+    isClosedPath(path) {
+        // Check for explicit closure with Z command
+        if (this.isClosedByZ(path)) {
+            return true;
+        }
+
+        // Check for geometric closure (start and end points match)
+        return this.isGeometricallyClosed(path);
+    }
+
+    /**
+     * Check if path is closed by Z command
+     *
+     * @param {Element} path - Path element to check
+     * @returns {boolean} True if path ends with Z or z command
+     */
+    isClosedByZ(path) {
+        const d = path.getAttribute("d");
+        return d && /z$/i.test(d.trim());
+    }
+
+    /**
+     * Check if path is geometrically closed
+     *
+     * Compares start and end points of the path to determine if they
+     * match within a small tolerance, indicating a closed shape.
+     *
+     * @param {Element} path - Path element to check
+     * @returns {boolean} True if start and end points match
+     */
+    isGeometricallyClosed(path) {
+        try {
+            const len = path.getTotalLength();
+            const start = path.getPointAtLength(0);
+            const end = path.getPointAtLength(len);
+            const epsilon = 0.01; // Tolerance for coordinate matching
+
+            return Math.abs(start.x - end.x) < epsilon &&
+                Math.abs(start.y - end.y) < epsilon;
+        } catch (error) {
+            // If getTotalLength() fails (e.g., invalid path), assume open
+            return false;
+        }
+    }
+
+    /**
+     * Debug utility: Check closure status of element by ID
+     *
+     * Provides detailed information about why an element is considered
+     * closed or open. Useful for debugging and development.
+     *
+     * @param {string} id - Element ID to check
+     * @returns {Object} Closure analysis results
+     */
+    checkPathClosure(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            return { error: `Element with id '${id}' not found` };
+        }
+
+        const tagName = element.tagName.toLowerCase();
+        const isPath = tagName === 'path';
+
+        const result = {
+            id,
+            tagName,
+            isPath,
+            isInherentlyClosed: ['rect', 'circle', 'ellipse', 'polygon'].includes(tagName),
+            closedByZ: isPath ? this.isClosedByZ(element) : null,
+            closedGeometrically: isPath ? this.isGeometricallyClosed(element) : null,
+            isClosed: this.isClosedShape(element),
+            hasClosedClass: element.classList.contains('is-closed-path')
+        };
+
+        return result;
+    }
 }
 
 // Export for use in other modules

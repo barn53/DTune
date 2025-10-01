@@ -53,6 +53,7 @@ Works in all modern browsers that support ES6+ features:
 ## Files
 
 - `index.html` - Main application interface
-- `styles.css` - Modern UI styling
-- `script.js` - Application logic and functionality
+- `styles.css` - Main UI styling and components
+- `displaysvg.css` - SVG display clone visualization styles
+- `js/*.js` - Modular application logic and functionality
 - `sample-shaper.svg` - Sample SVG with Shaper attributes for testing

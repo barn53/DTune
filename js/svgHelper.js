@@ -366,6 +366,22 @@ class SVGHelper {
             }
         });
 
+        // Special handling for text elements
+        if (originalElement.tagName.toLowerCase() === 'text') {
+            // Copy text content and text-specific attributes
+            overlay.textContent = originalElement.textContent;
+            const textAttrs = ['font-family', 'font-size', 'font-weight', 'text-anchor', 'dominant-baseline'];
+            textAttrs.forEach(attr => {
+                if (originalElement.hasAttribute(attr)) {
+                    overlay.setAttribute(attr, originalElement.getAttribute(attr));
+                }
+            });
+            // Copy style attribute which often contains font properties
+            if (originalElement.hasAttribute('style')) {
+                overlay.setAttribute('style', originalElement.getAttribute('style'));
+            }
+        }
+
         // Apply overlay-specific attributes
         Object.entries(overlayAttributes).forEach(([key, value]) => {
             overlay.setAttribute(key, value);
@@ -407,7 +423,11 @@ class SVGHelper {
         }
 
         // Create boundary outline as a path
-        const pathData = `M ${x} ${y} L ${x + width} ${y} L ${x + width} ${y + height} L ${x} ${y + height} Z`;
+        // Inset by half stroke width to ensure entire stroke is visible within SVG bounds
+        // Get stroke width from CSS or use default - this keeps JS and CSS in sync
+        const strokeWidth = this.getBoundaryStrokeWidth();
+        const strokeOffset = strokeWidth / 2;
+        const pathData = `M ${x + strokeOffset} ${y + strokeOffset} L ${x + width - strokeOffset} ${y + strokeOffset} L ${x + width - strokeOffset} ${y + height - strokeOffset} L ${x + strokeOffset} ${y + height - strokeOffset} Z`;
 
         const defaultAttributes = {
             d: pathData,
@@ -415,6 +435,30 @@ class SVGHelper {
         };
 
         return this.createSVGElement('path', { ...defaultAttributes, ...attributes });
+    }
+
+    /**
+     * Get the current boundary stroke width from CSS
+     *
+     * Reads the actual stroke-width value from the CSS to keep JavaScript
+     * and CSS in sync. Provides fallback value if CSS cannot be read.
+     *
+     * @returns {number} Stroke width in pixels
+     */
+    getBoundaryStrokeWidth() {
+        try {
+            // Get stroke width from CSS custom property
+            const svgWrapper = document.querySelector('.svg-wrapper svg');
+            if (svgWrapper) {
+                const strokeWidth = getComputedStyle(svgWrapper).getPropertyValue('--stroke-width');
+                return parseFloat(strokeWidth) || 3; // fallback to 3 if not found
+            }
+            return 3; // default fallback
+        } catch (error) {
+            // Fallback to default if CSS reading fails
+            console.warn('Could not read boundary stroke width from CSS, using default:', error);
+            return 3;
+        }
     }
 }
 

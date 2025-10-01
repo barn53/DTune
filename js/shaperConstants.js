@@ -78,7 +78,7 @@ class ShaperConstants {
     };
 
     /** CSS selector for SVG elements that support shaper functionality */
-    static ELEMENT_SELECTORS = 'path, rect, circle, ellipse, line, polygon, polyline';
+    static ELEMENT_SELECTORS = 'path, rect, circle, ellipse, line, polygon, polyline, text';
 }
 
 /**

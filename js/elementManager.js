@@ -246,15 +246,22 @@ class ElementManager {
     }
 
     createPathOverlay(originalPath) {
-        const overlay = this.svgHelper.createOverlayElement(originalPath, {
-            fill: 'transparent',
-            stroke: 'transparent',
-            'stroke-width': '10',
-            'pointer-events': 'all',
-            cursor: 'pointer',
+        // Get the app-id from the original path for tracking
+        const appId = originalPath.getAttribute('delta-app-id');
+
+        // All visual styling is now handled by CSS classes - no inline attributes needed
+        const overlayAttributes = {
             class: `${ShaperConstants.CSS_CLASSES.OVERLAY} ${ShaperConstants.CSS_CLASSES.NO_EXPORT}`
-        });
-        overlay.style.setProperty('pointer-events', 'all', 'important');
+        };
+
+        // Add delta-for-id for tracking which element this overlay belongs to
+        // (avoids conflicts with existing delta-app-id filtering logic)
+        if (appId) {
+            overlayAttributes['delta-for-id'] = `${appId}`;
+        }
+
+        const overlay = this.svgHelper.createOverlayElement(originalPath, overlayAttributes);
+        // No inline styles needed - everything handled by CSS classes
         return overlay;
     }
 }
