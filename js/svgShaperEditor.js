@@ -340,8 +340,17 @@ class SVGShaperEditor {
                         this.updateFileNameDisplay();
                         this.fileManager.parseSVG(settings.originalSVG.svg, this.currentFileName);
 
-                        // Restore viewport state after the file is loaded
-                        // Use setTimeout to ensure this happens after the load callback
+                        // CRITICAL: Event loop deferral trick for proper initialization sequence
+                        //
+                        // Why setTimeout(0) is necessary here:
+                        // 1. parseSVG() triggers the fileManager.setLoadCallback() asynchronously
+                        // 2. The load callback modifies DOM, measures elements, and updates viewport
+                        // 3. We need viewport restoration to happen AFTER the load callback completes
+                        // 4. setTimeout(0) defers execution to the next event loop cycle
+                        // 5. This ensures the load callback's DOM modifications are complete before restoration
+                        //
+                        // Without this pattern: Race condition where viewport gets restored before
+                        // SVG is properly loaded and measured, leading to incorrect zoom/pan state.
                         setTimeout(() => {
                             this.restoreViewportState(settings);
                             this.isLoadingFromLocalStorage = false;

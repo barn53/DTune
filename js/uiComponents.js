@@ -301,12 +301,12 @@ class UIComponents {
         this.updateTooltipPosition(mouseX, mouseY);
         this.tooltip.style.display = 'block';
 
-        // Delayed class addition for CSS transition effects
-        setTimeout(() => {
+        // Use requestAnimationFrame for smooth CSS transition effects
+        requestAnimationFrame(() => {
             if (this.tooltip) {
                 this.tooltip.classList.add('visible');
             }
-        }, 10);
+        });
     }
 
     /**
@@ -351,12 +351,12 @@ class UIComponents {
         this.updateTooltipPosition(mouseX, mouseY);
         this.tooltip.style.display = 'block';
 
-        // Smooth transition for visual appeal
-        setTimeout(() => {
+        // Use requestAnimationFrame for smooth visual transitions
+        requestAnimationFrame(() => {
             if (this.tooltip) {
                 this.tooltip.classList.add('visible');
             }
-        }, 10);
+        });
     }
 
     /**
@@ -462,11 +462,11 @@ class UIComponents {
         const currentPath = this.elementManager.getHoveredPath();
         if (currentPath && this.tooltip && this.tooltip.style.display !== 'none') {
             this.hideTooltip();
-            // Brief delay ensures clean transition during refresh
-            setTimeout(() => {
+            // Use requestAnimationFrame for smooth transition during refresh
+            requestAnimationFrame(() => {
                 const mousePos = { x: this.lastMouseX || 0, y: this.lastMouseY || 0 };
                 this.showTooltip(currentPath, mousePos.x, mousePos.y);
-            }, 10);
+            });
         }
     }
 
