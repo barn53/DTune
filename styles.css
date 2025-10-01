@@ -1336,6 +1336,17 @@ header p {
     background: rgba(41, 128, 185, 0.9);
 }
 
+.context-menu-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+    background: transparent;
+    transform: none;
+}
+
 .context-menu-icon {
     width: 16px;
     height: 16px;

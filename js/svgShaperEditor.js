@@ -179,7 +179,29 @@ class SVGShaperEditor {
         };
 
         // Connect context menu actions
-        this.uiComponents.onExportSVG = () => {
+        this.uiComponents.onEditAttributes = () => {
+            const selectedPaths = this.elementManager.getSelectedPaths();
+            if (selectedPaths.size > 0) {
+                // Collect information for all selected elements
+                const selectedElementsInfo = Array.from(selectedPaths).map((path, index) => {
+                    const attributes = this.attributeSystem.getShaperAttributes(path);
+                    return {
+                        id: path.id || `element-${index}`,
+                        element: path,
+                        cutType: attributes.cutType || 'line',
+                        cutDepth: attributes.cutDepth || 0,
+                        toolDia: attributes.toolDia || 0,
+                        cutOffset: attributes.cutOffset || 0
+                    };
+                });
+
+                // Open modal with information about all selected elements
+                this.uiComponents.openAttributeModal(selectedElementsInfo[0].element, selectedElementsInfo);
+            } else {
+                // This shouldn't happen since the menu item should be disabled
+                console.warn('No elements selected when trying to open Plan Cuts dialog');
+            }
+        };        this.uiComponents.onExportSVG = () => {
             this.fileManager.exportSVG();
         };
 

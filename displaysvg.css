@@ -81,8 +81,8 @@
     --selected-stroke-width: 2.5px;
     --selected-glow: rgba(255,149,0,0.6);
 
-    --overlay-stroke: rgba(85, 85, 85, 0.3);
-    --overlay-stroke-width: 5px;
+    --overlay-stroke: rgba(85, 85, 85, 0.01);
+    --overlay-stroke-width: 10px;
 }
 
 /* Normalized Path Styles - Applied by normalizePathVisuals() */

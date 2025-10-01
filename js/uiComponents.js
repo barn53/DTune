@@ -1,5 +1,5 @@
 /**
- * UI Components Module - Interactive User Interface Management
+ * UI Components Module - Interactive User Interface Manager
  *
  * Manages complex UI elements including modal dialogs, contextual tooltips,
  * custom sliders, and context menus. Provides the interactive layer between
@@ -62,18 +62,26 @@ class UIComponents {
     }
 
     /**
-     * Open attribute editing modal for selected path
+     * Open attribute editing modal for selected path(s)
      *
-     * Selects the target path element, populates form with current
+     * Loads current shaper attribute data, populates form with existing
      * attribute values, and displays modal dialog for editing.
      *
-     * @param {Element} path - SVG path element to edit
+     * @param {Element} path - Primary SVG path element to edit
+     * @param {Array} selectedElementsInfo - Array of selected elements with their attributes
      */
-    openAttributeModal(path) {
-        // Note: This method will be called from menu entry, not from element clicks
-        // The path should already be selected through the new selection system
+    openAttributeModal(path, selectedElementsInfo = null) {
+        // Store selected elements info for use in form handling
+        this.selectedElementsInfo = selectedElementsInfo;
+
+        // Populate form with primary element's data
         this.populateAttributeForm(path);
         this.modal.style.display = 'flex';
+
+        // Log selected elements info for debugging
+        if (selectedElementsInfo) {
+            console.log('Planning cuts for elements:', selectedElementsInfo);
+        }
     }
 
     /**
@@ -630,6 +638,14 @@ class UIComponents {
         // Define context menu structure with actions and icons
         const menuItems = [
             {
+                label: 'Cut Planning',
+                action: 'editAttributes',
+                icon: 'icons/plan.svg'
+            },
+            {
+                separator: true
+            },
+            {
                 label: 'Export SVG',
                 action: 'export',
                 icon: 'icons/export.svg'
@@ -760,6 +776,9 @@ class UIComponents {
             return;
         }
 
+        // Update menu item states based on current selections
+        this.updateContextMenuState();
+
         // Activate backdrop for modal behavior
         this.contextMenuBackdrop.style.display = 'block';
 
@@ -802,6 +821,30 @@ class UIComponents {
     /**
      * Execute context menu action via callback system
      *
+     * Update context menu item states based on current selections
+     */
+    updateContextMenuState() {
+        if (!this.elementManager) return;
+
+        const selectedPaths = this.elementManager.getSelectedPaths();
+        const hasSelection = selectedPaths && selectedPaths.size > 0;
+
+        // Find and update the Plan Cuts menu item
+        const planCutsItem = this.contextMenu.querySelector('[data-action="editAttributes"]');
+        if (planCutsItem) {
+            if (hasSelection) {
+                planCutsItem.classList.remove('disabled');
+                planCutsItem.style.opacity = '1';
+                planCutsItem.style.pointerEvents = 'auto';
+            } else {
+                planCutsItem.classList.add('disabled');
+                planCutsItem.style.opacity = '0.5';
+                planCutsItem.style.pointerEvents = 'none';
+            }
+        }
+    }
+
+    /**
      * Dispatches menu selection to appropriate application function
      * through callback connections established during initialization.
      * Provides loose coupling between UI and application logic.
@@ -811,6 +854,9 @@ class UIComponents {
     handleContextMenuAction(action) {
         // Callback connections established in svgShaperEditor.js setupModuleConnections()
         switch (action) {
+            case 'editAttributes':
+                if (this.onEditAttributes) this.onEditAttributes();
+                break;
             case 'export':
                 if (this.onExportSVG) this.onExportSVG();
                 break;
