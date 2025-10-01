@@ -33,7 +33,7 @@ class SVGShaperEditor {
         this.isLoadingFromLocalStorage = false;
 
         // Debug overlay visibility state (immer default AN beim Laden; keine Persistenz)
-        this.debugOverlayEnabled = true;
+        this.debugOverlayEnabled = false;
     }
 
     initializeElements() {

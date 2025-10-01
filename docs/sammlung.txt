@@ -1,4 +1,17 @@
 ============================================
+Namen:
+Δ Tune, Δ Tunr
+Δ SVG
+Δ Plannr, Δ Planner
+Δ PathTuner
+Δ DimTunr
+Δ Dim'n'Go, Δ Dim'n'Shop, Δ Dim2Shop, Δ Dim4Shop, Δ Dim'n'Route
+Δ Annotate, Δ Annotex
+Δ Measure
+
+
+
+============================================
 Hah, klick auf Pfad öffnet nicht den dialog, sondern markiert den Pfad
 Modal Editor öffnen über Kontext Menü
 Dann Save gilt für alle selektierten Pfade!
@@ -152,6 +165,22 @@ Titelbar responsive: zu small: alle eingaben und toggels in hamburger Menü pack
 ============================================
 Keyboard Shortcuts
 - Zoom: +/-,
-- Pan: Pfeiltasten, Export
+- Pan: Pfeiltasten
+- Export, Import
 - Ctrl+A: Alle Pfade markieren
+- Eigenschaften Dialog öffnen
+
+
+
+=============================================
+Druckbaren Werkstatt Plan exportieren mit
+allen Maßen an den Pfaden
+-> Mehrwert!
+
+
+
+
+
+
+
 
