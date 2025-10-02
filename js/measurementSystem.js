@@ -372,7 +372,7 @@ class MeasurementSystem {
             }
             tempContainer.appendChild(measurementClone);
             document.body.appendChild(tempContainer);
-            const elementInClone = measurementClone.querySelector(`[delta-app-id="${appId}"]`);
+            const elementInClone = measurementClone.querySelector(`[data-app-id="${appId}"]`);
             if (elementInClone) {
                 const bbox = elementInClone.getBoundingClientRect();
                 this.measurementCloneSVG = measurementClone.outerHTML;

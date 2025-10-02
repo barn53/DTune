@@ -279,7 +279,7 @@ class ElementManager {
 
     createPathOverlay(originalPath) {
         // Get the app-id from the original path for tracking
-        const appId = originalPath.getAttribute('delta-app-id');
+        const appId = originalPath.dataset.appId;
 
         // All visual styling is now handled by CSS classes - no inline attributes needed
         const overlayAttributes = {
@@ -287,7 +287,7 @@ class ElementManager {
         };
 
         // Add delta-for-id for tracking which element this overlay belongs to
-        // (avoids conflicts with existing delta-app-id filtering logic)
+        // (avoids conflicts with existing data-app-id filtering logic)
         if (appId) {
             overlayAttributes['delta-for-id'] = `${appId}`;
         }

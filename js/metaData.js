@@ -484,4 +484,36 @@ class MetaData {
             fileName: this.applicationState.currentFileName
         };
     }
+
+    /**
+     * Force clear all localStorage data (for debugging)
+     */
+    clearLocalStorage() {
+        try {
+            localStorage.removeItem('shaperEditorSettings');
+            console.log('DEBUG: localStorage cleared');
+        } catch (error) {
+            console.warn('Failed to clear localStorage:', error);
+        }
+    }
+
+    /**
+     * Debug method to check localStorage content
+     */
+    debugLocalStorage() {
+        try {
+            const savedSettings = localStorage.getItem('shaperEditorSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                console.log('DEBUG: localStorage content:', settings);
+                if (settings.elementData) {
+                    console.log('DEBUG: elementData in localStorage:', settings.elementData);
+                }
+            } else {
+                console.log('DEBUG: No localStorage data found');
+            }
+        } catch (error) {
+            console.warn('DEBUG: Error reading localStorage:', error);
+        }
+    }
 }

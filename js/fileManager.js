@@ -280,13 +280,13 @@ class FileManager {
         const exportNode = this.masterSVGElement.cloneNode(true);
 
         // Clean all elements in the cloned node for export
-        exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
+        exportNode.querySelectorAll('[data-app-id]').forEach(el => {
             // Set namespaced attributes from raw values
             this.updateShaperAttributesForExport(el);
             // Remove all raw attributes
             ShaperUtils.removeAllRawAttributes(el);
             // IMPORTANT: Remove the internal app-id for the final export
-            el.removeAttribute('delta-app-id');
+            el.removeAttribute('data-app-id');
         });
 
         const finalSVGString = new XMLSerializer().serializeToString(exportNode);

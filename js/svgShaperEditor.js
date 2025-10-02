@@ -170,12 +170,12 @@ class SVGShaperEditor {
                 const selectedElementsInfo = Array.from(selectedPaths).map((path, index) => {
                     const attributes = this.attributeSystem.getShaperAttributes(path);
                     return {
-                        id: path.id || `element-${index}`,
+                        appId: path.dataset.appId || `fallback-${index}`,
                         element: path,
                         cutType: attributes.cutType || 'line',
-                        cutDepth: attributes.cutDepth || 0,
-                        toolDia: attributes.toolDia || 0,
-                        cutOffset: attributes.cutOffset || 0
+                        cutDepth: attributes.cutDepth || null,
+                        toolDia: attributes.toolDia || null,
+                        cutOffset: attributes.cutOffset || null
                     };
                 });
 
@@ -1133,13 +1133,13 @@ class SVGShaperEditor {
             const exportNode = this.fileManager.masterSVGElement.cloneNode(true);
 
             // Clean all elements in the cloned node for export (same as exportSVG)
-            exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
+            exportNode.querySelectorAll('[data-app-id]').forEach(el => {
                 // Set namespaced attributes from raw values
                 this.fileManager.updateShaperAttributesForExport(el);
                 // Remove all raw attributes
                 ShaperUtils.removeAllRawAttributes(el);
                 // Remove the internal app-id for the final export
-                el.removeAttribute('delta-app-id');
+                el.removeAttribute('data-app-id');
             });
 
             // Create SVG string
