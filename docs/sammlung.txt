@@ -62,6 +62,13 @@ cut type setzt auch die linien farbe und -füllung entsprechend shaper vorgaben.
 https://support.shapertools.com/hs-fs/hubfs/Knowledge%20Base%20Import/Cut_Style_Guide-2.png?width=1300&height=600&name=Cut_Style_Guide-2.png
 
 
+============================================
+is there a way to automatically test such a web application without manually go through each and every step ?
+This should not interfere with the application, nor include too much manual steps.
+it should also be updated on request for new features.
+is there also ui testing possible klicks and so on?
+
+
 
 
 ============================================
