@@ -198,18 +198,18 @@ class Viewport {
      * @param {WheelEvent} event - The wheel/gesture event to handle
      */
     handleWheel(event) {
-        console.log('🎡 WHEEL EVENT:', {
-            deltaX: event.deltaX,
-            deltaY: event.deltaY,
-            deltaZ: event.deltaZ,
-            deltaMode: event.deltaMode,
-            ctrlKey: event.ctrlKey,
-            metaKey: event.metaKey,
-            shiftKey: event.shiftKey,
-            altKey: event.altKey,
-            type: event.type,
-            target: event.target.tagName
-        });
+        // console.log('🎡 WHEEL EVENT:', {
+        //     deltaX: event.deltaX,
+        //     deltaY: event.deltaY,
+        //     deltaZ: event.deltaZ,
+        //     deltaMode: event.deltaMode,
+        //     ctrlKey: event.ctrlKey,
+        //     metaKey: event.metaKey,
+        //     shiftKey: event.shiftKey,
+        //     altKey: event.altKey,
+        //     type: event.type,
+        //     target: event.target.tagName
+        // });
 
         event.preventDefault();
 
@@ -227,15 +227,15 @@ class Viewport {
             // Trackpad Pinch - use exponential zoom like in the example
             shouldZoom = true;
             zoomFactor = Math.exp(-event.deltaY * 0.01);
-            console.log('🤏 TRACKPAD PINCH ZOOM:', { deltaY: event.deltaY, zoomFactor });
+            // console.log('🤏 TRACKPAD PINCH ZOOM:', { deltaY: event.deltaY, zoomFactor });
         } else if (event.altKey && Math.abs(event.deltaY) > 0) {
             // Mouse wheel zoom (with Alt key modifier)
             shouldZoom = true;
             zoomFactor = Math.exp(-event.deltaY * 0.01);
-            console.log('�️ MOUSE WHEEL ZOOM:', { deltaY: event.deltaY, zoomFactor });
+            // console.log('�️ MOUSE WHEEL ZOOM:', { deltaY: event.deltaY, zoomFactor });
         } else {
             // Everything else is trackpad pan
-            console.log('👆 TRACKPAD PAN:', { deltaX: event.deltaX, deltaY: event.deltaY });
+            // console.log('👆 TRACKPAD PAN:', { deltaX: event.deltaX, deltaY: event.deltaY });
 
             // Show grab cursor during trackpad panning
             if (this.svgContainer) {
@@ -303,21 +303,21 @@ class Viewport {
      * @param {MouseEvent} event - Mouse button press event
      */
     handleMouseDown(event) {
-        console.log('🖱️ MOUSE DOWN:', {
-            button: event.button,
-            buttons: event.buttons,
-            ctrlKey: event.ctrlKey,
-            metaKey: event.metaKey,
-            clientX: event.clientX,
-            clientY: event.clientY
-        });
+        // console.log('🖱️ MOUSE DOWN:', {
+        //     button: event.button,
+        //     buttons: event.buttons,
+        //     ctrlKey: event.ctrlKey,
+        //     metaKey: event.metaKey,
+        //     clientX: event.clientX,
+        //     clientY: event.clientY
+        // });
 
         // Cross-platform pan gesture detection
         const isMiddleButton = event.button === 1; // Universal middle mouse
         const isCtrlDrag = event.ctrlKey && event.button === 0; // Windows/Linux alternative
 
         if (isMiddleButton || isCtrlDrag) {
-            console.log('✅ STARTING MOUSE DRAG');
+            // console.log('✅ STARTING MOUSE DRAG');
             event.preventDefault();
             this.isDragging = true;
             this.lastMouseX = event.clientX;
@@ -337,10 +337,10 @@ class Viewport {
      * @param {TouchEvent} event - Touch start event with finger positions
      */
     handleTouchStart(event) {
-        console.log('👆 TOUCH START:', {
-            touchCount: event.touches.length,
-            touches: Array.from(event.touches).map(t => ({ x: t.clientX, y: t.clientY }))
-        });
+        // console.log('👆 TOUCH START:', {
+        //     touchCount: event.touches.length,
+        //     touches: Array.from(event.touches).map(t => ({ x: t.clientX, y: t.clientY }))
+        // });
 
         if (event.touches.length === 2) {
             console.log('✅ STARTING TOUCH GESTURE');

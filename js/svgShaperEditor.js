@@ -252,7 +252,6 @@ class SVGShaperEditor {
         // Complete save - all settings including SVG data
         // Get raw value in mm for gutter size to maintain precision across unit changes
         const rawGutterSizeMm = this.getRawValue(this.gutterSize);
-
         const settings = {
             gutterEnabled: this.gutterToggle.checked,
             units: this.measurementSystem.units,
@@ -268,15 +267,10 @@ class SVGShaperEditor {
                 elementId: appId,
                 data: data
             })),
-            originalSVG: this.fileManager.svg ? {
-                svg: this.fileManager.svg,
-                fileName: this.currentFileName || 'untitled.svg'
-            } : null,
-            // --- Debugging ---
+            originalSVG: this.fileManager.svg || null,
+            fileName: this.currentFileName || null,
             displayCloneSVG: this.svgContent.innerHTML,
-            measurementCloneSVG: this.measurementSystem.measurementCloneSVG,
-            // Debug: Current boundary dimensions
-            boundaryDebug: this.getBoundaryDebugInfo()
+            measurementCloneSVG: this.measurementSystem.measurementCloneSVG
         };
 
         localStorage.setItem('shaperEditorSettings', JSON.stringify(settings));
@@ -353,14 +347,14 @@ class SVGShaperEditor {
                 }
 
                 // Restore original SVG if available
-                if (settings.originalSVG && settings.originalSVG.svg) {
+                if (settings.originalSVG) {
                     try {
                         // Set flag to indicate we're loading from localStorage
                         this.isLoadingFromLocalStorage = true;
 
-                        this.currentFileName = settings.originalSVG.fileName || 'untitled.svg';
+                        this.currentFileName = settings.fileName || 'untitled.svg';
                         this.updateFileNameDisplay();
-                        this.fileManager.parseSVG(settings.originalSVG.svg, this.currentFileName);
+                        this.fileManager.parseSVG(settings.originalSVG, this.currentFileName);
 
                         // CRITICAL: Event loop deferral trick for proper initialization sequence
                         //
@@ -1204,55 +1198,6 @@ class SVGShaperEditor {
         const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
 
         input.value = formattedValue;
-    }
-
-    // Get boundary debug information for localStorage debugging
-    getBoundaryDebugInfo() {
-        try {
-            const svgElement = this.svgContent.querySelector('svg');
-            if (!svgElement) {
-                return { error: 'No SVG element found' };
-            }
-
-            // Get boundary using measuring clone with fileManager for clean original
-            const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement, this.fileManager);
-
-            // Convert to both mm and inches for debugging
-            const widthMm = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'mm');
-            const heightMm = this.measurementSystem.convertBetweenUnits(boundingBox.height, 'px', 'mm');
-            const widthIn = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'in');
-            const heightIn = this.measurementSystem.convertBetweenUnits(boundingBox.height, 'px', 'in');
-
-            // Get SVG attributes for comparison
-            const viewBox = svgElement.getAttribute('viewBox');
-            const svgWidth = svgElement.getAttribute('width');
-            const svgHeight = svgElement.getAttribute('height');
-
-            return {
-                measuringClone: {
-                    pixelWidth: boundingBox.width,
-                    pixelHeight: boundingBox.height,
-                    widthMm: widthMm,
-                    heightMm: heightMm,
-                    widthIn: widthIn,
-                    heightIn: heightIn
-                },
-                svgAttributes: {
-                    viewBox: viewBox,
-                    width: svgWidth,
-                    height: svgHeight
-                },
-                detectedUnits: this.measurementSystem.detectedUnits,
-                currentUnits: this.measurementSystem.units,
-                dpi: this.measurementSystem.dpi,
-                // ADD: Debug comparison from measureSVGBoundaryWithClone
-                debugComparison: boundingBox.debugComparison || null,
-                measurementMethod: boundingBox.method || 'unknown',
-                timestamp: new Date().toISOString()
-            };
-        } catch (error) {
-            return { error: error.message, timestamp: new Date().toISOString() };
-        }
     }
 
     // Copy SVG to clipboard
