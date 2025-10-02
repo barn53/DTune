@@ -16,11 +16,13 @@ class AttributeSystem {
      * @param {MeasurementSystem} measurementSystem - Handles unit conversions and formatting
      * @param {FileManager} fileManager - Manages SVG file operations
      * @param {ElementManager} elementManager - Manages element selection and data
+     * @param {MetaData} metaData - Centralized data management for persistence
      */
-    constructor(measurementSystem, fileManager, elementManager) {
+    constructor(measurementSystem, fileManager, elementManager, metaData = null) {
         this.measurementSystem = measurementSystem;
         this.fileManager = fileManager;
         this.elementManager = elementManager;
+        this.metaData = metaData;
     }
 
     /**
@@ -85,6 +87,8 @@ class AttributeSystem {
 
         // Update internal SVG data representation for export preparation
         this.fileManager.updateSVGData();
+
+        // MetaData automatically handles persistence when element data changes
     }
 
     /**

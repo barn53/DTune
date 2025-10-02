@@ -61,11 +61,11 @@ class FileManager {
      */
     _addAppIds(svgElement) {
         // Target specific graphical elements, excluding structural groups
-        const relevantElements = svgElement.querySelectorAll('path, rect, circle, ellipse, line, polygon, polyline');
+        const relevantElements = svgElement.querySelectorAll(ShaperConstants.ELEMENT_SELECTORS);
         relevantElements.forEach(el => {
             // Only add ID if not already present
             if (!el.dataset.appId) {
-                el.dataset.appId = `app-id-${Math.random().toString(36).slice(2, 11)}`;
+                el.dataset.appId = Math.random().toString(36).slice(2, 11);
             }
         });
         return svgElement;
@@ -280,13 +280,13 @@ class FileManager {
         const exportNode = this.masterSVGElement.cloneNode(true);
 
         // Clean all elements in the cloned node for export
-        exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
+        exportNode.querySelectorAll('[data-app-id]').forEach(el => {
             // Set namespaced attributes from raw values
             this.updateShaperAttributesForExport(el);
             // Remove all raw attributes
             ShaperUtils.removeAllRawAttributes(el);
             // IMPORTANT: Remove the internal app-id for the final export
-            el.removeAttribute('delta-app-id');
+            el.removeAttribute('data-app-id');
         });
 
         const finalSVGString = new XMLSerializer().serializeToString(exportNode);

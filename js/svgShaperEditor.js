@@ -27,16 +27,17 @@ class SVGShaperEditor {
     constructor() {
         // Core subsystem initialization with dependency injection
         this.measurementSystem = new MeasurementSystem();
+
+        // Centralized data management - single source of truth
+        this.metaData = new MetaData(this.measurementSystem);
+
         this.fileManager = new FileManager(this.measurementSystem);
 
-        // Element data cache for performance optimization
-        this.elementDataMap = new Map();
-
-        // Module initialization with dependency wiring
-        this.elementManager = new ElementManager(this.measurementSystem, this.fileManager, this.elementDataMap);
+        // Module initialization with centralized data access
+        this.elementManager = new ElementManager(this.measurementSystem, this.fileManager, this.metaData.getElementDataMap());
         this.viewport = new Viewport();
         this.uiComponents = new UIComponents(this.measurementSystem, this.elementManager);
-        this.attributeSystem = new AttributeSystem(this.measurementSystem, this.fileManager, this.elementManager);
+        this.attributeSystem = new AttributeSystem(this.measurementSystem, this.fileManager, this.elementManager, this.metaData);
 
         // SVG processing utilities
         this.svgHelper = new SVGHelper();
@@ -45,11 +46,9 @@ class SVGShaperEditor {
         this.initializeElements();
         this.bindEvents();
         this.setupModuleConnections();
-
-        // Application state tracking
-        this.boundaryTooltipActive = false;
-        this.isLoadingFromLocalStorage = false;
     }
+
+
 
     /**
      * Initialize DOM element references and UI components
@@ -109,39 +108,31 @@ class SVGShaperEditor {
 
         // Establish SVG loading pipeline with comprehensive callback handling
         this.fileManager.setLoadCallback((svgElement, svgData, fileName) => {
-            this.currentFileName = fileName;
+            this.metaData.setCurrentFileName(fileName);
             this.updateFileNameDisplay();
             this.showEditor();
 
-            // --- NEW: Analyze the SVG and populate the data map ---
-            // This is the one-time measurement of all elements
-            if (!this.isLoadingFromLocalStorage) {
-                // Only clear and re-analyze when loading a new file, not from localStorage
-                this.elementDataMap.clear(); // Clear old data
-                const newMap = this.measurementSystem.analyzeSVG(svgElement);
-                newMap.forEach((value, key) => this.elementDataMap.set(key, value));
-            } else {
-                // When loading from localStorage, merge new measurements with existing shaper attributes
-                const newMap = this.measurementSystem.analyzeSVG(svgElement);
-                newMap.forEach((newData, appId) => {
-                    const existingData = this.elementDataMap.get(appId);
-                    if (existingData && existingData.shaperAttributes) {
-                        // Keep the shaper attributes from localStorage, update measurements
-                        newData.shaperAttributes = existingData.shaperAttributes;
-                    }
-                    this.elementDataMap.set(appId, newData);
-                });
-            }
+            // Store the SVG content in MetaData for persistence
+            this.metaData.setOriginalSVG(svgData);
 
+            // --- Analyze the SVG and populate the data map ---
+            // Always analyze the SVG to get measurements and shaper attributes from the file
+            this.metaData.clearElementData(); // Clear old data
+            const newMap = this.measurementSystem.analyzeSVG(svgElement);            // Use batch method for efficient bulk insertion (automatically saves)
+            this.metaData.setElementDataBatch(newMap);
+
+            // Store the measurement clone SVG if it was created during analysis
+            if (this.measurementSystem.measurementCloneSVG) {
+                this.metaData.setMeasurementCloneSVG(this.measurementSystem.measurementCloneSVG);
+            }
 
             this.displaySVG(svgElement);
 
             // Only reset viewport when loading a new file (not from localStorage)
-            if (!this.isLoadingFromLocalStorage) {
+            if (!this.metaData.isLoadingFromLocalStorage()) {
                 this.viewport.resetViewport();
-                // Save data immediately for new files
-                this.saveToLocalStorage();
             }
+            // MetaData automatically handles persistence when data changes
             // For localStorage loading, saveToLocalStorage will be called after viewport restoration
         });
 
@@ -149,9 +140,8 @@ class SVGShaperEditor {
         this.uiComponents.saveAttributes = () => {
             this.attributeSystem.saveAttributes();
 
-            // Update SVG data to match what would be exported, then save to localStorage
+            // Update SVG data to match what would be exported
             this.fileManager.updateSVGData();
-            this.saveToLocalStorage();
 
             // Refresh tooltip BEFORE closing modal (while selection is still active)
             this.uiComponents.refreshTooltipIfVisible();
@@ -167,10 +157,12 @@ class SVGShaperEditor {
             this.updateGutterSize();
         };
 
-        // Connect viewport changes to localStorage persistence
+        // Connect viewport changes to MetaData
         this.viewport.onViewportChange = () => {
-            // Full save for zoom and other viewport changes
-            this.saveToLocalStorage();
+            // Update MetaData with viewport changes (automatically saves)
+            const zoom = this.viewport.getZoom();
+            const pan = this.viewport.getPan();
+            this.metaData.setViewportState(zoom, pan.x, pan.y);
         };
 
         this.viewport.onViewportDragEnd = () => {
@@ -179,7 +171,29 @@ class SVGShaperEditor {
         };
 
         // Connect context menu actions
-        this.uiComponents.onExportSVG = () => {
+        this.uiComponents.onEditAttributes = () => {
+            const selectedPaths = this.elementManager.getSelectedPaths();
+            if (selectedPaths.size > 0) {
+                // Collect information for all selected elements
+                const selectedElementsInfo = Array.from(selectedPaths).map((path, index) => {
+                    const attributes = this.attributeSystem.getShaperAttributes(path);
+                    return {
+                        appId: path.dataset.appId || `fallback-${index}`,
+                        element: path,
+                        cutType: attributes.cutType || 'line',
+                        cutDepth: attributes.cutDepth || null,
+                        toolDia: attributes.toolDia || null,
+                        cutOffset: attributes.cutOffset || null
+                    };
+                });
+
+                // Open modal with information about all selected elements
+                this.uiComponents.openAttributeModal(selectedElementsInfo[0].element, selectedElementsInfo);
+            } else {
+                // This shouldn't happen since the menu item should be disabled
+                console.warn('No elements selected when trying to open Plan Cuts dialog');
+            }
+        };        this.uiComponents.onExportSVG = () => {
             this.fileManager.exportSVG();
         };
 
@@ -203,164 +217,97 @@ class SVGShaperEditor {
         this.loadFromLocalStorage();
     }
 
-    // localStorage persistence methods
-    saveToLocalStorage() {
-        // Save full settings including SVG data
-        this.saveFullSettings();
-    }
-
+    // Viewport state synchronization
     saveViewportOnly() {
-        // Lightweight save - only viewport changes, triggered on mouse release
-        try {
-            const savedSettings = localStorage.getItem('shaperEditorSettings');
-            let settings = savedSettings ? JSON.parse(savedSettings) : {};
+        // Update viewport state in MetaData (automatically saves)
+        const zoom = this.viewport.getZoom();
+        const pan = this.viewport.getPan();
+        this.metaData.setViewportState(zoom, pan.x, pan.y);
+    }
 
-            // Update only viewport state
-            settings.zoom = this.viewport.getZoom();
-            settings.panX = this.viewport.getPan().x;
-            settings.panY = this.viewport.getPan().y;
 
-            localStorage.setItem('shaperEditorSettings', JSON.stringify(settings));
-        } catch (error) {
-            console.warn('Failed to save viewport state:', error);
+
+    /**
+     * Synchronize MetaData state to current UI components
+     */
+    syncFromMetaData() {
+        // Apply measurement system settings
+        this.measurementSystem.setUnits(this.metaData.getUnits());
+        this.measurementSystem.setDecimalSeparator(this.metaData.getDecimalSeparator());
+
+        // Apply gutter settings
+        const gutterSettings = this.metaData.getGutterSettings();
+        this.gutterToggle.checked = gutterSettings.enabled;
+        this.gutterOverlay.style.display = gutterSettings.enabled ? 'block' : 'none';
+
+        // Update UI toggles to match settings
+        if (this.unitsToggle) {
+            this.unitsToggle.checked = this.metaData.getUnits() === 'in';
         }
+        if (this.decimalToggle) {
+            this.decimalToggle.checked = this.metaData.getDecimalSeparator() === ',';
+        }
+
+        // Update displays
+        this.updateUnitDisplay();
     }
 
-    saveFullSettings() {
-        // Complete save - all settings including SVG data
-        // Get raw value in mm for gutter size to maintain precision across unit changes
-        const rawGutterSizeMm = this.getRawValue(this.gutterSize);
 
-        const settings = {
-            gutterEnabled: this.gutterToggle.checked,
-            units: this.measurementSystem.units,
-            decimalSeparator: this.measurementSystem.decimalSeparator,
-            gutterSizeRawMm: !isNaN(rawGutterSizeMm) ? rawGutterSizeMm : parseFloat(this.gutterSize.value) || 10,
-            // Save viewport state
-            zoom: this.viewport.getZoom(),
-            panX: this.viewport.getPan().x,
-            panY: this.viewport.getPan().y,
-            // Save measurement data for debugging
-            dpi: this.measurementSystem.dpi,
-            elementData: Array.from(this.elementDataMap.entries()).map(([appId, data]) => ({
-                elementId: appId,
-                data: data
-            })),
-            originalSVG: this.fileManager.svg ? {
-                svg: this.fileManager.svg,
-                fileName: this.currentFileName || 'untitled.svg'
-            } : null,
-            // --- Debugging ---
-            displayCloneSVG: this.svgContent.innerHTML,
-            measurementCloneSVG: this.measurementSystem.measurementCloneSVG,
-            // Debug: Current boundary dimensions
-            boundaryDebug: this.getBoundaryDebugInfo()
-        };
 
-        localStorage.setItem('shaperEditorSettings', JSON.stringify(settings));
-    }
-
+    /**
+     * Load all data from localStorage through MetaData and apply to UI
+     */
     loadFromLocalStorage() {
         try {
-            const savedSettings = localStorage.getItem('shaperEditorSettings');
-            if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
+            // Load data from localStorage into MetaData
+            const settings = this.metaData.loadFromLocalStorage();
+            if (!settings) return; // No saved data
 
-                // Apply gutter toggle
-                if (typeof settings.gutterEnabled === 'boolean') {
-                    this.gutterToggle.checked = settings.gutterEnabled;
-                    this.gutterOverlay.style.display = settings.gutterEnabled ? 'block' : 'none';
-                }
+            // Apply MetaData state to UI components
+            this.syncFromMetaData();
 
-                // ...existing code...
+            // Apply gutter size from MetaData
+            const gutterSettings = this.metaData.getGutterSettings();
+            if (gutterSettings.sizeRawMm && !isNaN(gutterSettings.sizeRawMm)) {
+                // Set the raw value first
+                this.setRawValue(this.gutterSize, gutterSettings.sizeRawMm);
 
-                // Apply units with toggle synchronization
-                this.applySetting(
-                    settings.units,
-                    ['mm', 'in'],
-                    (units) => {
-                        this.measurementSystem.setUnits(units);
-                        this.updateUnitDisplay();
-                    },
-                    this.unitsToggle,
-                    (units) => units === 'in'
+                // Convert from raw mm to current unit and display
+                const displayValue = this.measurementSystem.convertBetweenUnits(
+                    gutterSettings.sizeRawMm, 'mm', this.measurementSystem.units
                 );
+                this.gutterSize.value = this.measurementSystem.formatDisplayNumber(displayValue);
+            }
 
-                // Apply decimal separator with toggle synchronization
-                this.applySetting(
-                    settings.decimalSeparator,
-                    ['.', ','],
-                    (separator) => this.measurementSystem.setDecimalSeparator(separator),
-                    this.decimalToggle,
-                    (separator) => separator === ','
-                );
+            // Update gutter display with loaded values
+            this.updateGutterSize();
 
-                // Apply gutter size from raw value
-                let gutterSizeRawMm = settings.gutterSizeRawMm;
+            // Restore original SVG if available
+            const originalSVG = this.metaData.getOriginalSVG();
+            if (originalSVG) {
+                try {
+                    // Set flag to indicate we're loading from localStorage
+                    this.metaData.setLoadingFromLocalStorage(true);
 
-                // Handle backwards compatibility with old gutterSize format
-                if (!gutterSizeRawMm && settings.gutterSize && !isNaN(parseFloat(settings.gutterSize))) {
-                    // Convert old display value to raw mm if we had old format
-                    gutterSizeRawMm = parseFloat(settings.gutterSize);
-                    // If it was saved in inches, convert to mm (assuming default was mm)
-                    if (settings.units === 'in' && gutterSizeRawMm < 5) {
-                        gutterSizeRawMm = gutterSizeRawMm * 25.4;
-                    }
-                }
+                    this.updateFileNameDisplay();
+                    this.fileManager.parseSVG(originalSVG, this.metaData.getCurrentFileName());
 
-                if (gutterSizeRawMm && !isNaN(parseFloat(gutterSizeRawMm))) {
-                    // Set the raw value first
-                    this.setRawValue(this.gutterSize, gutterSizeRawMm);
+                    // CRITICAL: Event loop deferral trick for proper initialization sequence
+                    setTimeout(() => {
+                        this.restoreViewportState(settings);
+                        this.metaData.setLoadingFromLocalStorage(false);
+                    }, 0);
+                } catch (error) {
+                    console.error('Error restoring last opened file:', error);
+                    console.warn('Clearing corrupted SVG data from localStorage');
 
-                    // Convert from raw mm to current unit and display
-                    const displayValue = this.measurementSystem.convertBetweenUnits(gutterSizeRawMm, 'mm', this.measurementSystem.units);
-                    this.gutterSize.value = this.measurementSystem.formatDisplayNumber(displayValue);
-                }
+                    // Clear the corrupted SVG data
+                    this.metaData.setOriginalSVG(null);
+                    this.metaData.setDisplayCloneSVG(null);
+                    this.metaData.setMeasurementCloneSVG(null);
+                    this.metaData.setCurrentFileName(null);
 
-                // Update gutter display with loaded values
-                this.updateGutterSize();
-
-                // Restore elementData if available
-                if (settings.elementData && Array.isArray(settings.elementData)) {
-                    this.elementDataMap.clear();
-                    settings.elementData.forEach(item => {
-                        if (item.elementId && item.data) {
-                            this.elementDataMap.set(item.elementId, item.data);
-                        }
-                    });
-                }
-
-                // Restore original SVG if available
-                if (settings.originalSVG && settings.originalSVG.svg) {
-                    try {
-                        // Set flag to indicate we're loading from localStorage
-                        this.isLoadingFromLocalStorage = true;
-
-                        this.currentFileName = settings.originalSVG.fileName || 'untitled.svg';
-                        this.updateFileNameDisplay();
-                        this.fileManager.parseSVG(settings.originalSVG.svg, this.currentFileName);
-
-                        // CRITICAL: Event loop deferral trick for proper initialization sequence
-                        //
-                        // Why setTimeout(0) is necessary here:
-                        // 1. parseSVG() triggers the fileManager.setLoadCallback() asynchronously
-                        // 2. The load callback modifies DOM, measures elements, and updates viewport
-                        // 3. We need viewport restoration to happen AFTER the load callback completes
-                        // 4. setTimeout(0) defers execution to the next event loop cycle
-                        // 5. This ensures the load callback's DOM modifications are complete before restoration
-                        //
-                        // Without this pattern: Race condition where viewport gets restored before
-                        // SVG is properly loaded and measured, leading to incorrect zoom/pan state.
-                        setTimeout(() => {
-                            this.restoreViewportState(settings);
-                            this.isLoadingFromLocalStorage = false;
-                            // Save data after viewport is properly restored
-                            this.saveToLocalStorage();
-                        }, 0);
-                    } catch (error) {
-                        console.error('Error restoring last opened file:', error);
-                        this.isLoadingFromLocalStorage = false;
-                    }
+                    this.metaData.setLoadingFromLocalStorage(false);
                 }
             }
         } catch (error) {
@@ -393,12 +340,12 @@ class SVGShaperEditor {
     applySetting(settingValue, validValues, applyFn, toggleElement, toggleCondition) {
         if (validValues.includes(settingValue)) {
             // Prevent toggle override during localStorage load
-            const wasLoadingFromLocalStorage = this.isLoadingFromLocalStorage;
-            this.isLoadingFromLocalStorage = true;
+            const wasLoadingFromLocalStorage = this.metaData.isLoadingFromLocalStorage();
+            this.metaData.setLoadingFromLocalStorage(true);
 
             applyFn(settingValue);
 
-            this.isLoadingFromLocalStorage = wasLoadingFromLocalStorage;
+            this.metaData.setLoadingFromLocalStorage(wasLoadingFromLocalStorage);
 
             // Set toggle state after setting is applied
             if (toggleElement) {
@@ -525,6 +472,10 @@ class SVGShaperEditor {
         // Add boundary outline to show SVG boundaries
         this.addBoundaryOutline(displayClone);
 
+        // Store the display clone in MetaData for persistence
+        const displayCloneString = new XMLSerializer().serializeToString(displayClone);
+        this.metaData.setDisplayCloneSVG(displayCloneString);
+
         // Now add the fully normalized SVG to the DOM
         this.svgContent.appendChild(displayClone);
 
@@ -635,7 +586,9 @@ class SVGShaperEditor {
             // Add event handlers to overlay
             overlay.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.uiComponents.openAttributeModal(path);
+                // Multi-selection support: Ctrl/Cmd/Shift for multi-select
+                const multiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
+                this.elementManager.selectPath(path, multiSelect);
             });
 
             // Allow mousedown events to bubble up for panning functionality
@@ -690,6 +643,30 @@ class SVGShaperEditor {
             }
         });
         this.svgWrapper.addEventListener('mouseup', (e) => this.viewport.handleMouseUp(e));
+
+        // Add click handler for clearing selection on empty canvas
+        this.svgWrapper.addEventListener('click', (e) => {
+            // Only clear selection if clicking on empty canvas (not on elements)
+            // The element overlays call stopPropagation(), so this only fires for empty areas
+
+            // Check if click is on background elements (not interactive overlays)
+            const isBackgroundClick = (
+                e.target === this.svgWrapper ||
+                e.target.classList.contains('svg-content') ||
+                e.target.classList.contains('gutter-overlay') ||
+                (e.target.tagName === 'svg' && e.target.parentElement.classList.contains('svg-content')) ||
+                // Also check for normalized SVG elements (they have pointer-events: none, so clicks bubble up)
+                (e.target.classList && (
+                    e.target.classList.contains('normalized-path') ||
+                    e.target.classList.contains('normalized-text') ||
+                    e.target.classList.contains('svg-boundary-outline')
+                ))
+            );
+
+            if (isBackgroundClick) {
+                this.elementManager.clearSelection();
+            }
+        });
     }
 
     addBoundaryOutlineEvents(boundaryPath) {
@@ -782,12 +759,13 @@ class SVGShaperEditor {
     updateFileNameDisplay() {
         if (this.currentFileNameDisplay) {
             const textSpan = this.currentFileNameDisplay.querySelector('.filename-text');
-            if (this.currentFileName) {
+            const currentFileName = this.metaData.getCurrentFileName();
+            if (currentFileName) {
                 if (textSpan) {
-                    textSpan.textContent = this.currentFileName;
+                    textSpan.textContent = currentFileName;
                 } else {
                     // fallback legacy
-                    this.currentFileNameDisplay.textContent = this.currentFileName;
+                    this.currentFileNameDisplay.textContent = currentFileName;
                 }
                 this.currentFileNameDisplay.style.display = 'inline-flex';
             } else {
@@ -800,9 +778,9 @@ class SVGShaperEditor {
         // Clear current state
         this.fileManager.clearSVG();
         this.svgContent.innerHTML = '';
-        this.elementManager.selectPath(null);
+        this.elementManager.clearSelection();
         this.fileInput.value = '';
-        this.currentFileName = null;
+        this.metaData.setCurrentFileName(null);
         this.updateFileNameDisplay();
         this.uiComponents.closeModal();
 
@@ -821,8 +799,8 @@ class SVGShaperEditor {
         } else {
             this.gutterOverlay.style.setProperty('display', 'none', 'important');
         }
-        // Save data to localStorage
-        this.saveToLocalStorage();
+        // Update MetaData (automatically saves)
+        this.metaData.setGutterSettings(this.gutterToggle.checked, this.metaData.getGutterSettings().sizeRawMm);
     }
 
     handleGutterInput() {
@@ -835,8 +813,12 @@ class SVGShaperEditor {
         }
 
         this.updateGutterSize();
-        // Save data to localStorage
-        this.saveToLocalStorage();
+        // Update MetaData with new gutter size (automatically saves)
+        const rawGutterSizeMm = this.getRawValue(this.gutterSize);
+        this.metaData.setGutterSettings(
+            this.gutterToggle.checked,
+            !isNaN(rawGutterSizeMm) ? rawGutterSizeMm : parseFloat(this.gutterSize.value) || 10
+        );
     }
 
     // Normalize decimal separator in input field on blur
@@ -897,6 +879,11 @@ class SVGShaperEditor {
             if (m && m.width) {
                 boundaryPx = m.width;
                 measurementMethod = m.method;
+            }
+
+            // Store the measurement clone SVG that was created during boundary measurement
+            if (this.measurementSystem.measurementCloneSVG) {
+                this.metaData.setMeasurementCloneSVG(this.measurementSystem.measurementCloneSVG);
             }
         }
 
@@ -976,12 +963,12 @@ class SVGShaperEditor {
         }
 
         // Update the units toggle to reflect current state (unless loading from localStorage)
-        if (this.unitsToggle && !this.isLoadingFromLocalStorage) {
+        if (this.unitsToggle && !this.metaData.isLoadingFromLocalStorage()) {
             this.unitsToggle.checked = (this.measurementSystem.units === 'in');
         }
 
         // Update decimal separator toggle (unless loading from localStorage)
-        if (this.decimalToggle && !this.isLoadingFromLocalStorage) {
+        if (this.decimalToggle && !this.metaData.isLoadingFromLocalStorage()) {
             this.decimalToggle.checked = (this.measurementSystem.decimalSeparator === ',');
         }
 
@@ -1015,8 +1002,8 @@ class SVGShaperEditor {
         // Refresh tooltip to show converted values
         this.uiComponents.refreshTooltip();
 
-        // Save data to localStorage
-        this.saveToLocalStorage();
+        // Update MetaData with new units (automatically saves)
+        this.metaData.setUnits(newUnits);
     }
 
     toggleDecimalSeparator() {
@@ -1046,8 +1033,8 @@ class SVGShaperEditor {
         // Refresh tooltip
         this.uiComponents.refreshTooltip();
 
-        // Save data to localStorage
-        this.saveToLocalStorage();
+        // Update MetaData with new decimal separator (automatically saves)
+        this.metaData.setDecimalSeparator(this.decimalToggle.checked ? ',' : '.');
     }
 
     convertGutterSize(fromUnit, toUnit) {
@@ -1158,55 +1145,6 @@ class SVGShaperEditor {
         input.value = formattedValue;
     }
 
-    // Get boundary debug information for localStorage debugging
-    getBoundaryDebugInfo() {
-        try {
-            const svgElement = this.svgContent.querySelector('svg');
-            if (!svgElement) {
-                return { error: 'No SVG element found' };
-            }
-
-            // Get boundary using measuring clone with fileManager for clean original
-            const boundingBox = this.measurementSystem.measureSVGBoundaryWithClone(svgElement, this.fileManager);
-
-            // Convert to both mm and inches for debugging
-            const widthMm = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'mm');
-            const heightMm = this.measurementSystem.convertBetweenUnits(boundingBox.height, 'px', 'mm');
-            const widthIn = this.measurementSystem.convertBetweenUnits(boundingBox.width, 'px', 'in');
-            const heightIn = this.measurementSystem.convertBetweenUnits(boundingBox.height, 'px', 'in');
-
-            // Get SVG attributes for comparison
-            const viewBox = svgElement.getAttribute('viewBox');
-            const svgWidth = svgElement.getAttribute('width');
-            const svgHeight = svgElement.getAttribute('height');
-
-            return {
-                measuringClone: {
-                    pixelWidth: boundingBox.width,
-                    pixelHeight: boundingBox.height,
-                    widthMm: widthMm,
-                    heightMm: heightMm,
-                    widthIn: widthIn,
-                    heightIn: heightIn
-                },
-                svgAttributes: {
-                    viewBox: viewBox,
-                    width: svgWidth,
-                    height: svgHeight
-                },
-                detectedUnits: this.measurementSystem.detectedUnits,
-                currentUnits: this.measurementSystem.units,
-                dpi: this.measurementSystem.dpi,
-                // ADD: Debug comparison from measureSVGBoundaryWithClone
-                debugComparison: boundingBox.debugComparison || null,
-                measurementMethod: boundingBox.method || 'unknown',
-                timestamp: new Date().toISOString()
-            };
-        } catch (error) {
-            return { error: error.message, timestamp: new Date().toISOString() };
-        }
-    }
-
     // Copy SVG to clipboard
     async copyToClipboard() {
         try {
@@ -1220,13 +1158,13 @@ class SVGShaperEditor {
             const exportNode = this.fileManager.masterSVGElement.cloneNode(true);
 
             // Clean all elements in the cloned node for export (same as exportSVG)
-            exportNode.querySelectorAll('[delta-app-id]').forEach(el => {
+            exportNode.querySelectorAll('[data-app-id]').forEach(el => {
                 // Set namespaced attributes from raw values
                 this.fileManager.updateShaperAttributesForExport(el);
                 // Remove all raw attributes
                 ShaperUtils.removeAllRawAttributes(el);
                 // Remove the internal app-id for the final export
-                el.removeAttribute('delta-app-id');
+                el.removeAttribute('data-app-id');
             });
 
             // Create SVG string
@@ -1303,9 +1241,15 @@ class SVGShaperEditor {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Initializing SVG Shaper Editor...');
     try {
         window.shaperEditor = new SVGShaperEditor();
+        console.log('✅ SVG Shaper Editor initialized successfully');
+
+        // Also create alias for backward compatibility
+        window.svgShaperEditor = window.shaperEditor;
     } catch (error) {
-        console.error('Error initializing SVG Shaper Editor:', error);
+        console.error('❌ Error initializing SVG Shaper Editor:', error);
+        console.error('Stack trace:', error.stack);
     }
 });

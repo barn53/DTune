@@ -372,7 +372,7 @@ class MeasurementSystem {
             }
             tempContainer.appendChild(measurementClone);
             document.body.appendChild(tempContainer);
-            const elementInClone = measurementClone.querySelector(`[delta-app-id="${appId}"]`);
+            const elementInClone = measurementClone.querySelector(`[data-app-id="${appId}"]`);
             if (elementInClone) {
                 const bbox = elementInClone.getBoundingClientRect();
                 this.measurementCloneSVG = measurementClone.outerHTML;
@@ -397,7 +397,7 @@ class MeasurementSystem {
             return elementDataMap;
         }
 
-        const elementsToAnalyze = masterSVGElement.querySelectorAll('[delta-app-id]');
+        const elementsToAnalyze = masterSVGElement.querySelectorAll('[data-app-id]');
 
         elementsToAnalyze.forEach(element => {
             const appId = element.dataset.appId;
