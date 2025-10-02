@@ -397,7 +397,7 @@ class MeasurementSystem {
             return elementDataMap;
         }
 
-        const elementsToAnalyze = masterSVGElement.querySelectorAll('[delta-app-id]');
+        const elementsToAnalyze = masterSVGElement.querySelectorAll('[data-app-id]');
 
         elementsToAnalyze.forEach(element => {
             const appId = element.dataset.appId;

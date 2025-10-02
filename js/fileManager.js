@@ -61,11 +61,11 @@ class FileManager {
      */
     _addAppIds(svgElement) {
         // Target specific graphical elements, excluding structural groups
-        const relevantElements = svgElement.querySelectorAll('path, rect, circle, ellipse, line, polygon, polyline');
+        const relevantElements = svgElement.querySelectorAll(ShaperConstants.ELEMENT_SELECTORS);
         relevantElements.forEach(el => {
             // Only add ID if not already present
             if (!el.dataset.appId) {
-                el.dataset.appId = `app-id-${Math.random().toString(36).slice(2, 11)}`;
+                el.dataset.appId = Math.random().toString(36).slice(2, 11);
             }
         });
         return svgElement;
