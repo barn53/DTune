@@ -80,8 +80,10 @@ class UIComponents {
 
         // Log selected elements info for debugging
         if (selectedElementsInfo) {
-            console.log('Planning cuts for elements:', selectedElementsInfo);
+            console.log('DEBUG openAttributeModal - Planning cuts for elements:', selectedElementsInfo);
         }
+        console.log('DEBUG openAttributeModal - Primary path element:', path);
+        console.log('DEBUG openAttributeModal - Primary path appId:', path.dataset.appId);
     }
 
     /**

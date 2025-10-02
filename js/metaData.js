@@ -129,12 +129,45 @@ class MetaData {
     // ============================================================================
 
     /**
-     * Set original SVG data
+     * Set original SVG data with validation
      * @param {string} svgContent - Original SVG content
      */
     setOriginalSVG(svgContent) {
+        // Validate SVG content if not null
+        if (svgContent !== null && !this.isValidSVGContent(svgContent)) {
+            console.warn('Invalid SVG content detected, not storing');
+            return;
+        }
         this.svgData.originalSVG = svgContent;
         this.scheduleSave();
+    }
+
+    /**
+     * Validate SVG content
+     * @param {string} svgContent - SVG content to validate
+     * @returns {boolean} True if valid SVG
+     */
+    isValidSVGContent(svgContent) {
+        if (!svgContent || typeof svgContent !== 'string') {
+            return false;
+        }
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+
+            // Check for parser errors
+            const parseError = doc.querySelector('parsererror');
+            if (parseError) {
+                return false;
+            }
+
+            // Check if it contains an SVG root element
+            const svgElement = doc.querySelector('svg');
+            return svgElement !== null;
+        } catch (error) {
+            return false;
+        }
     }
 
     /**
@@ -515,5 +548,29 @@ class MetaData {
         } catch (error) {
             console.warn('DEBUG: Error reading localStorage:', error);
         }
+    }
+
+    /**
+     * Clear corrupted data and reset to clean state
+     */
+    clearCorruptedData() {
+        console.log('Clearing corrupted application data...');
+
+        // Clear SVG data
+        this.svgData.originalSVG = null;
+        this.svgData.displayCloneSVG = null;
+        this.svgData.measurementCloneSVG = null;
+
+        // Clear file state
+        this.applicationState.currentFileName = null;
+
+        // Clear element data
+        this.elementData.elementDataMap.clear();
+        this.elementData.shaperAttributes.clear();
+
+        // Force save to localStorage
+        this.forceSave();
+
+        console.log('Corrupted data cleared. Please reload a fresh SVG file.');
     }
 }

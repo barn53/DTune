@@ -112,11 +112,19 @@ class SVGShaperEditor {
             this.updateFileNameDisplay();
             this.showEditor();
 
+            // Store the SVG content in MetaData for persistence
+            this.metaData.setOriginalSVG(svgData);
+
             // --- Analyze the SVG and populate the data map ---
             // Always analyze the SVG to get measurements and shaper attributes from the file
             this.metaData.clearElementData(); // Clear old data
             const newMap = this.measurementSystem.analyzeSVG(svgElement);            // Use batch method for efficient bulk insertion (automatically saves)
             this.metaData.setElementDataBatch(newMap);
+
+            // Store the measurement clone SVG if it was created during analysis
+            if (this.measurementSystem.measurementCloneSVG) {
+                this.metaData.setMeasurementCloneSVG(this.measurementSystem.measurementCloneSVG);
+            }
 
             this.displaySVG(svgElement);
 
@@ -291,6 +299,14 @@ class SVGShaperEditor {
                     }, 0);
                 } catch (error) {
                     console.error('Error restoring last opened file:', error);
+                    console.warn('Clearing corrupted SVG data from localStorage');
+
+                    // Clear the corrupted SVG data
+                    this.metaData.setOriginalSVG(null);
+                    this.metaData.setDisplayCloneSVG(null);
+                    this.metaData.setMeasurementCloneSVG(null);
+                    this.metaData.setCurrentFileName(null);
+
                     this.metaData.setLoadingFromLocalStorage(false);
                 }
             }
@@ -455,6 +471,10 @@ class SVGShaperEditor {
 
         // Add boundary outline to show SVG boundaries
         this.addBoundaryOutline(displayClone);
+
+        // Store the display clone in MetaData for persistence
+        const displayCloneString = new XMLSerializer().serializeToString(displayClone);
+        this.metaData.setDisplayCloneSVG(displayCloneString);
 
         // Now add the fully normalized SVG to the DOM
         this.svgContent.appendChild(displayClone);
@@ -860,6 +880,11 @@ class SVGShaperEditor {
                 boundaryPx = m.width;
                 measurementMethod = m.method;
             }
+
+            // Store the measurement clone SVG that was created during boundary measurement
+            if (this.measurementSystem.measurementCloneSVG) {
+                this.metaData.setMeasurementCloneSVG(this.measurementSystem.measurementCloneSVG);
+            }
         }
 
         // 4. Erwartete und tatsächliche Zellanzahl (reine Boundary-Messung maßgeblich)
@@ -1216,9 +1241,15 @@ class SVGShaperEditor {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Initializing SVG Shaper Editor...');
     try {
         window.shaperEditor = new SVGShaperEditor();
+        console.log('✅ SVG Shaper Editor initialized successfully');
+
+        // Also create alias for backward compatibility
+        window.svgShaperEditor = window.shaperEditor;
     } catch (error) {
-        console.error('Error initializing SVG Shaper Editor:', error);
+        console.error('❌ Error initializing SVG Shaper Editor:', error);
+        console.error('Stack trace:', error.stack);
     }
 });
