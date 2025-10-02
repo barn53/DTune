@@ -6,13 +6,18 @@
 }
 
 body {
-    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: transparent;
     min-height: 100vh;
     color: #333;
     margin: 0;
         padding: 0;
         overflow: hidden;
+}
+
+/* Ensure consistent font across all UI elements */
+input, button, select, textarea, label, .btn, .modal, .tooltip, .context-menu {
+    font-family: inherit;
 }
 
 /* Utility Classes */
@@ -820,6 +825,40 @@ header p {
     margin-bottom: 20px;
 }
 
+/* Modal Title with Icon */
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 24px !important;
+    font-weight: 600;
+    color: #333;
+}
+
+.modal-icon {
+    width: 28px;
+    height: 28px;
+    opacity: 0.8;
+}
+
+/* Batch Counter */
+.batch-counter {
+    background: rgba(243, 156, 18, 0.15);
+    border: 1px solid #f39c12;
+    color: #f39c12;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-left: 12px;
+    min-width: 24px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .form-group label {
     display: block;
     margin-bottom: 6px;
@@ -828,12 +867,37 @@ header p {
     font-size: 14px;
 }
 
+/* Form Labels with Icons (Großschrift) */
+.form-label {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    font-size: 18px !important; /* Großschrift */
+}
+
+.label-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+/* Large Inputs (Großschrift) */
 .form-group input {
     width: 100%;
     padding: 10px 12px;
     border-radius: 6px;
     font-size: 14px;
     /* Uses utility classes: .border-light .transition-fast */
+}
+
+.large-input {
+    font-size: 16px !important; /* Großschrift für Input-Felder */
+    padding: 12px 14px !important;
+    font-weight: 500;
 }
 
 .form-group input:focus {
@@ -874,6 +938,48 @@ header p {
     padding: 2px 4px;
     border-radius: 3px;
 }
+
+/* Input Container mit Buttons */
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+}
+
+/* Auswahl-Werte als Buttons */
+.value-btn {
+    padding: 6px 12px;
+    background: #f1f3f4;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.value-btn:hover {
+    background: #3498db;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.value-btn:active {
+    background: #3498db;
+    color: white;
+    transform: translateY(0);
+}
+
+
 
 .modal-footer {
     padding: 20px;
@@ -938,12 +1044,12 @@ header p {
 /* Tooltip for shaper attributes */
 .shaper-tooltip {
     position: absolute;
-    background: linear-gradient(145deg, #2c3e50, #34495e);
+    background: linear-gradient(145deg, #1a252f, #2c3e50);
     color: white;
     padding: 12px 16px;
     border-radius: 8px;
-    font-size: 13px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 15px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     font-weight: 500;
     line-height: 1.5;
     max-width: 280px;
@@ -1285,18 +1391,18 @@ header p {
 
 .custom-context-menu {
     position: fixed;
-    background: linear-gradient(145deg, #2c3e50, #34495e);
+    background: linear-gradient(145deg, #1a252f, #2c3e50);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     backdrop-filter: blur(12px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     padding: 12px 8px;
-    min-width: 200px;
-    max-width: 200px;
+    min-width: 280px;
+    max-width: 280px;
     z-index: 10000;
     display: none;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    font-size: 13px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 15px;
     animation: contextMenuAppear 0.2s ease-out;
 }
 
@@ -1305,26 +1411,27 @@ header p {
     align-items: center;
     justify-content: flex-start;
     width: calc(100% - 12px);
-    padding: 10px 14px;
-    margin: 6px 6px;
-    border: none;
+    margin: 12px 6px;
+    border: 1px solid transparent;
     border-radius: 8px;
-    background: rgba(52, 73, 94, 0.6);
+    background: rgb(75, 85, 95);
     color: #ecf0f1;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    padding: 14px 14px;
+    letter-spacing: 0.5px;
 }
 
 .context-menu-item:hover {
     transform: scale(1.02);
-    background: rgba(52, 152, 219, 0.8);
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid #3498db;
     color: white;
-    border: 1px solid rgba(52, 152, 219, 0.3);
 }
 
 .context-menu-item:hover .context-menu-icon {
@@ -1333,7 +1440,9 @@ header p {
 
 .context-menu-item:active {
     transform: scale(0.98);
-    background: rgba(41, 128, 185, 0.9);
+    background: rgba(52, 152, 219, 0.4);
+    border: 1px solid #3498db;
+    color: white;
 }
 
 .context-menu-item.disabled {
@@ -1356,9 +1465,26 @@ header p {
     filter: brightness(0) invert(1);
 }
 
+/* Context Menu Batch Counter */
+.context-menu-batch-counter {
+    background: rgba(243, 156, 18, 0.15);
+    border: 1px solid #f39c12;
+    color: #f39c12;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: auto;
+    min-width: 20px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .context-menu-separator {
-    height: 1px;
-    background: rgba(236, 240, 241, 0.3);
+    height: 2px;
+    background: #3498db;
     margin: 8px 12px;
     border: none;
 }

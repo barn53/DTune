@@ -74,6 +74,13 @@ class UIComponents {
         // Store selected elements info for use in form handling
         this.selectedElementsInfo = selectedElementsInfo;
 
+        // Update batch counter in modal
+        const batchCounter = document.getElementById('batchCounter');
+        const count = selectedElementsInfo ? selectedElementsInfo.length : 1;
+        if (batchCounter) {
+            batchCounter.textContent = count;
+        }
+
         // Populate form with primary element's data
         this.populateAttributeForm(path);
         this.modal.style.display = 'flex';
@@ -295,7 +302,7 @@ class UIComponents {
         const attributes = this.getShaperAttributes(path);
 
         if (attributes.length === 0) {
-            content += '<div class="no-attributes">No shaper attributes defined<br>- click to change</div>';
+            content += '<div class="no-attributes">No Shaper Attributes Defined<br>- Click to Select Path<br>- Double Click to Plan Cut</div>';
         } else {
             attributes.forEach(attr => {
                 content += `
@@ -576,6 +583,10 @@ class UIComponents {
      * @param {KeyboardEvent} event - Keyboard event to process
      */
     handleKeyDown(event) {
+        // Skip if user is typing in input fields
+        const tag = (event.target && event.target.tagName) ? event.target.tagName.toLowerCase() : '';
+        const isInputActive = tag === 'input' || tag === 'textarea' || event.target.isContentEditable;
+
         // Escape key always closes modal
         if (event.key === 'Escape') {
             if (this.modal && this.modal.style.display !== 'none') {
@@ -590,6 +601,32 @@ class UIComponents {
                 if (event.target.tagName !== 'INPUT') {
                     this.saveAttributes();
                 }
+            }
+        }
+
+        // Ctrl/Cmd+A: Select all elements with app-id
+        if ((event.metaKey || event.ctrlKey) && event.key === 'a' && !isInputActive) {
+            event.preventDefault();
+            this.selectAllElements();
+        }
+    }
+
+    /**
+     * Select all elements with data-app-id attribute
+     * Called by Ctrl/Cmd+A shortcut
+     */
+    selectAllElements() {
+        if (this.elementManager) {
+            // Clear current selection first
+            this.elementManager.clearSelection();
+
+            // Find all elements with app-id in the current SVG
+            const svgContent = document.getElementById('svgContent');
+            if (svgContent) {
+                const allElements = svgContent.querySelectorAll('[data-app-id]');
+                allElements.forEach(element => {
+                    this.elementManager.selectPath(element, true); // true = multiselect mode
+                });
             }
         }
     }
@@ -619,6 +656,8 @@ class UIComponents {
         this.lastMouseX = x;
         this.lastMouseY = y;
     }
+
+
 
     /**
      * Initialize custom context menu with backdrop and menu items
@@ -653,7 +692,7 @@ class UIComponents {
                 icon: 'icons/export.svg'
             },
             {
-                label: 'Copy to Clipboard',
+                label: 'Copy SVG to Clipboard',
                 action: 'copy',
                 icon: 'icons/clipboard.svg'
             },
@@ -702,6 +741,15 @@ class UIComponents {
                 menuItem.appendChild(iconImg);
                 menuItem.appendChild(label);
 
+                // Add batch counter for Cut Planning button
+                if (item.action === 'editAttributes') {
+                    const batchCounter = document.createElement('span');
+                    batchCounter.className = 'context-menu-batch-counter';
+                    batchCounter.id = 'contextMenuBatchCounter';
+                    batchCounter.textContent = '1';
+                    menuItem.appendChild(batchCounter);
+                }
+
                 // Connect click handler for menu action
                 menuItem.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -740,6 +788,24 @@ class UIComponents {
                     return; // Suppress context menu in excluded areas
                 }
                 element = element.parentElement;
+            }
+
+            // Use currently hovered path from existing hover system
+            const hoveredPath = this.elementManager ? this.elementManager.getHoveredPath() : null;
+            if (hoveredPath) {
+                // Store the right-clicked path for temporary selection
+                this.rightClickedPath = hoveredPath;
+
+                // Add to selection if not already selected
+                if (!this.elementManager.getSelectedPaths().has(hoveredPath)) {
+                    this.elementManager.selectPath(hoveredPath, true); // true for multi-select
+                    this.isTemporarySelection = true;
+                } else {
+                    this.isTemporarySelection = false;
+                }
+            } else {
+                this.rightClickedPath = null;
+                this.isTemporarySelection = false;
             }
 
             // Show custom context menu only in SVG viewport areas
@@ -817,6 +883,13 @@ class UIComponents {
             this.contextMenu.style.display = 'none';
             this.contextMenuBackdrop.style.display = 'none';
             this.contextMenuVisible = false;
+
+            // Remove temporary selection if it was added by right-click
+            if (this.isTemporarySelection && this.rightClickedPath && this.elementManager) {
+                this.elementManager.deselectPath(this.rightClickedPath);
+                this.isTemporarySelection = false;
+                this.rightClickedPath = null;
+            }
         }
     }
 
@@ -830,6 +903,7 @@ class UIComponents {
 
         const selectedPaths = this.elementManager.getSelectedPaths();
         const hasSelection = selectedPaths && selectedPaths.size > 0;
+        const selectionCount = selectedPaths ? selectedPaths.size : 0;
 
         // Find and update the Plan Cuts menu item
         const planCutsItem = this.contextMenu.querySelector('[data-action="editAttributes"]');
@@ -842,6 +916,12 @@ class UIComponents {
                 planCutsItem.classList.add('disabled');
                 planCutsItem.style.opacity = '0.5';
                 planCutsItem.style.pointerEvents = 'none';
+            }
+
+            // Update batch counter
+            const batchCounter = planCutsItem.querySelector('.context-menu-batch-counter');
+            if (batchCounter) {
+                batchCounter.textContent = selectionCount > 0 ? selectionCount : '0';
             }
         }
     }
@@ -857,6 +937,10 @@ class UIComponents {
         // Callback connections established in svgShaperEditor.js setupModuleConnections()
         switch (action) {
             case 'editAttributes':
+                // Keep temporary selection when opening planning dialog
+                if (this.isTemporarySelection) {
+                    this.isTemporarySelection = false; // Convert to permanent selection
+                }
                 if (this.onEditAttributes) this.onEditAttributes();
                 break;
             case 'export':

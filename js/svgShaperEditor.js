@@ -437,6 +437,22 @@ class SVGShaperEditor {
             }
         });
 
+        // Value button handlers (Auswahl-Werte als Buttons)
+        document.addEventListener('click', (event) => {
+            if (event.target.classList.contains('value-btn')) {
+                const targetInputId = event.target.dataset.target;
+                const value = event.target.dataset.value;
+                const targetInput = document.getElementById(targetInputId);
+
+                if (targetInput && value !== undefined) {
+                    targetInput.value = value;
+                    targetInput.focus();
+                    // Trigger change event to update any listeners
+                    targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.uiComponents.handleKeyDown(e));
         // Global shortcut listener (in separater Listener um bestehende Logik nicht zu stören)
@@ -589,6 +605,22 @@ class SVGShaperEditor {
                 // Multi-selection support: Ctrl/Cmd/Shift for multi-select
                 const multiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
                 this.elementManager.selectPath(path, multiSelect);
+            });
+
+            // Double-click to open modal for single element
+            overlay.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                // Clear current selection and select only this element
+                this.elementManager.clearSelection();
+                this.elementManager.selectPath(path, false);
+
+                // Open modal for this single element
+                const selectedElementsInfo = [{
+                    element: path,
+                    appId: path.dataset.appId,
+                    index: 0
+                }];
+                this.uiComponents.openAttributeModal(path, selectedElementsInfo);
             });
 
             // Allow mousedown events to bubble up for panning functionality
