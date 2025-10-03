@@ -23,6 +23,9 @@ class UIComponents {
         this.measurementSystem = measurementSystem;
         this.elementManager = elementManager;
 
+        // Initialize DRY utilities helper
+        this.dryUtils = new DRYUtilities(measurementSystem);
+
         // Modal dialog manager
         this.modalDialog = new ModalDialog(measurementSystem, elementManager);
 
@@ -262,48 +265,18 @@ class UIComponents {
             this.tooltip.style.display = 'block';
         }
 
-        // Measure tooltip dimensions for positioning calculations
-        const tooltipRect = this.tooltip.getBoundingClientRect();
-        const tooltipWidth = tooltipRect.width;
-        const tooltipHeight = tooltipRect.height;
-
-        // Restore previous visibility state
+        // Restore previous visibility state for accurate measurements
         if (wasHidden) {
             this.tooltip.style.display = 'none';
             this.tooltip.style.visibility = 'visible';
         }
 
-        // Get viewport boundaries
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // Start with default positioning (bottom-right of cursor)
-        let left = mouseX + 10;
-        let top = mouseY - 10;
-
-        // Adjust horizontally if tooltip exceeds right viewport edge
-        if (left + tooltipWidth > viewportWidth) {
-            left = mouseX - tooltipWidth - 10; // Position left of cursor
-        }
-
-        // Adjust vertically if tooltip exceeds bottom viewport edge
-        if (top + tooltipHeight > viewportHeight) {
-            top = mouseY - tooltipHeight - 10; // Position above cursor
-        }
-
-        // Ensure tooltip stays within left viewport boundary
-        if (left < 0) {
-            left = 5; // Small margin from edge
-        }
-
-        // Ensure tooltip stays within top viewport boundary
-        if (top < 0) {
-            top = 5; // Small margin from edge
-        }
-
-        // Apply calculated position
-        this.tooltip.style.left = `${left}px`;
-        this.tooltip.style.top = `${top}px`;
+        // Use DRY utility for smart positioning with bounds checking
+        DRYUtilities.positionElement(this.tooltip, mouseX, mouseY, {
+            offsetX: 10,
+            offsetY: -10,
+            margin: 5
+        });
     }
 
     /**
@@ -686,26 +659,14 @@ class UIComponents {
         // Activate backdrop for modal behavior
         this.contextMenuBackdrop.style.display = 'block';
 
-        // Position menu at cursor location
-        this.contextMenu.style.left = `${x}px`;
-        this.contextMenu.style.top = `${y}px`;
+        // Show context menu and position with bounds checking
         this.contextMenu.style.display = 'block';
         this.contextMenuVisible = true;
 
-        // Prevent menu from extending beyond viewport boundaries
-        const rect = this.contextMenu.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // Adjust horizontal position if needed
-        if (rect.right > viewportWidth) {
-            this.contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
-        }
-
-        // Adjust vertical position if needed
-        if (rect.bottom > viewportHeight) {
-            this.contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
-        }
+        // Use DRY utility for smart positioning with bounds checking
+        DRYUtilities.positionElement(this.contextMenu, x, y, {
+            margin: 10
+        });
     }
 
     /**

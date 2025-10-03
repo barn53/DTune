@@ -1417,13 +1417,13 @@ header p {
     background: rgb(75, 85, 95);
     color: #ecf0f1;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
     text-transform: uppercase;
-    padding: 14px 14px;
+    padding: 8px 8px;
     letter-spacing: 0.5px;
 }
 

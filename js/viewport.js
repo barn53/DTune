@@ -599,8 +599,7 @@ class Viewport {
             svgContent.style.transformOrigin = '0 0';
         }
 
-        const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
-        svgContent.style.transform = transform;
+        svgContent.style.transform = DRYUtilities.createTransform(this.panX, this.panY, this.zoom);
 
         // Update grid overlay without direct transformation (simulated infinite grid)
         this.updateInfiniteGrid();

@@ -57,39 +57,42 @@ class SVGShaperEditor {
      * throughout the application lifecycle. Sets up UI component initialization.
      */
     initializeElements() {
-        // Main application sections
-        this.uploadSection = document.getElementById('uploadSection');
-        this.editorSection = document.getElementById('editorSection');
+        // Bind all DOM elements at once using DRY utilities
+        DRYUtilities.bindElements({
+            // Main application sections
+            uploadSection: 'uploadSection',
+            editorSection: 'editorSection',
 
-        // File upload interface elements
-        this.fileInput = document.getElementById('fileInput');
-        this.uploadArea = document.getElementById('uploadArea');
-        this.uploadButton = document.getElementById('uploadBtn');
-        this.floatingImportBtn = document.getElementById('floatingImportBtn');
-        this.floatingExportBtn = document.getElementById('floatingExportBtn');
+            // File upload interface elements
+            fileInput: 'fileInput',
+            uploadArea: 'uploadArea',
+            uploadButton: 'uploadBtn',
+            floatingImportBtn: 'floatingImportBtn',
+            floatingExportBtn: 'floatingExportBtn',
 
-        // SVG viewport and display elements
-        this.svgContainer = document.getElementById('svgContainer');
-        this.svgWrapper = document.getElementById('svgWrapper');
-        this.svgContent = document.getElementById('svgContent');
-        this.gutterOverlay = document.getElementById('gutterOverlay');
+            // SVG viewport and display elements
+            svgContainer: 'svgContainer',
+            svgWrapper: 'svgWrapper',
+            svgContent: 'svgContent',
+            gutterOverlay: 'gutterOverlay',
 
-        // User control elements
-        this.unitsToggle = document.getElementById('unitToggle');
-        this.decimalToggle = document.getElementById('decimalToggle');
-        this.gutterToggle = document.getElementById('gutterToggle');
-        this.gutterSize = document.getElementById('gutterSize');
-        this.gutterUnitLabel = document.getElementById('gutterUnitLabel');
+            // User control elements
+            unitsToggle: 'unitToggle',
+            decimalToggle: 'decimalToggle',
+            gutterToggle: 'gutterToggle',
+            gutterSize: 'gutterSize',
+            gutterUnitLabel: 'gutterUnitLabel',
 
-        // Viewport control buttons
-        this.zoomInBtn = document.getElementById('zoomIn');
-        this.zoomOutBtn = document.getElementById('zoomOut');
-        this.zoom100Btn = document.getElementById('zoom100');
-        this.zoomFitBtn = document.getElementById('zoomFit');
-        this.centerViewBtn = document.getElementById('centerView');
+            // Viewport control buttons
+            zoomInBtn: 'zoomIn',
+            zoomOutBtn: 'zoomOut',
+            zoom100Btn: 'zoom100',
+            zoomFitBtn: 'zoomFit',
+            centerViewBtn: 'centerView',
 
-        // Application state display
-        this.currentFileNameDisplay = document.getElementById('titlebarFilename');
+            // Application state display
+            currentFileNameDisplay: 'titlebarFilename'
+        }, this);
 
         // Initialize complex UI components
         this.uiComponents.initializeElements();
@@ -323,7 +326,7 @@ class SVGShaperEditor {
 
         // Restore viewport state (zoom and pan) only when loading from localStorage
         if (typeof settings.zoom === 'number' && !isNaN(settings.zoom)) {
-            this.viewport.setZoom(Math.max(0.1, Math.min(settings.zoom, 10))); // Clamp to valid range
+            this.viewport.setZoom(DRYUtilities.clamp(settings.zoom, 0.1, 10)); // Clamp to valid range
         }
         if (typeof settings.panX === 'number' && !isNaN(settings.panX)) {
             this.viewport.setPan(settings.panX, settings.panY || 0);
@@ -953,14 +956,14 @@ class SVGShaperEditor {
         const viewBox = svgElement.getAttribute('viewBox');
         if (viewBox) {
             const vbParts = viewBox.split(/\s+/);
-            boundaryX = parseFloat(vbParts[0]) || 0;
-            boundaryY = parseFloat(vbParts[1]) || 0;
-            boundaryWidth = parseFloat(vbParts[2]) || 0;
-            boundaryHeight = parseFloat(vbParts[3]) || 0;
+            boundaryX = DRYUtilities.parseNumericValue(vbParts[0]);
+            boundaryY = DRYUtilities.parseNumericValue(vbParts[1]);
+            boundaryWidth = DRYUtilities.parseNumericValue(vbParts[2]);
+            boundaryHeight = DRYUtilities.parseNumericValue(vbParts[3]);
         } else {
             // Fallback to width/height attributes
-            boundaryWidth = parseFloat(svgElement.getAttribute('width')) || 0;
-            boundaryHeight = parseFloat(svgElement.getAttribute('height')) || 0;
+            boundaryWidth = DRYUtilities.parseNumericValue(svgElement.getAttribute('width'));
+            boundaryHeight = DRYUtilities.parseNumericValue(svgElement.getAttribute('height'));
         }
 
         // Get the SVG position within the viewport

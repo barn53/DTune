@@ -23,6 +23,9 @@ class ModalDialog {
         this.measurementSystem = measurementSystem;
         this.elementManager = elementManager;
 
+        // Initialize DRY utilities helper
+        this.dryUtils = new DRYUtilities(measurementSystem);
+
         // Modal dialog elements
         this.modal = null;
         this.selectedPathInfo = null;
@@ -42,9 +45,11 @@ class ModalDialog {
      * Must be called after DOM is fully loaded.
      */
     initialize() {
-        // Connect modal dialog elements
-        this.modal = document.getElementById('attributeModal');
-        this.selectedPathInfo = document.getElementById('selectedPathInfo');
+        // Bind modal dialog elements using DRY utilities
+        DRYUtilities.bindElements({
+            modal: 'attributeModal',
+            selectedPathInfo: 'selectedPathInfo'
+        }, this);
 
         // Initialize cut type slider
         this.initializeCutTypeSlider();
@@ -128,10 +133,11 @@ class ModalDialog {
 
             if (value && value.trim() !== '') {
                 // Convert from pixel storage to current display units
-                const pixelValue = parseFloat(value);
-                if (!isNaN(pixelValue)) {
-                    const convertedValue = this.measurementSystem.convertPixelsToCurrentUnit(pixelValue);
-                    const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
+                const pixelValue = DRYUtilities.parseNumericValue(value);
+                if (pixelValue !== 0 || value === '0') {
+                    const formattedValue = this.measurementSystem.formatDisplayNumber(
+                        this.measurementSystem.convertPixelsToCurrentUnit(pixelValue)
+                    );
                     input.value = formattedValue;
                 } else {
                     input.value = '';
