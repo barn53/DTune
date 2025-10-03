@@ -28,7 +28,6 @@ class ModalDialog {
 
         // Modal dialog elements
         this.modal = null;
-        this.selectedPathInfo = null;
         this.selectedElementsInfo = null;
 
         // Cut type slider components
@@ -47,12 +46,14 @@ class ModalDialog {
     initialize() {
         // Bind modal dialog elements using DRY utilities
         DRYUtilities.bindElements({
-            modal: 'attributeModal',
-            selectedPathInfo: 'selectedPathInfo'
+            modal: 'attributeModal'
         }, this);
 
         // Initialize cut type slider
         this.initializeCutTypeSlider();
+
+        // Initialize value button handlers
+        this.initializeValueButtons();
     }
 
     /**
@@ -78,6 +79,10 @@ class ModalDialog {
         // Populate form with primary element's data
         this.populateAttributeForm(path);
         this.modal.style.display = 'flex';
+
+        // With equal-slot slider logic a single positioning pass is sufficient
+        const active = Array.from(this.cutTypeOptions || []).findIndex(opt => opt.classList.contains('active'));
+        if (active >= 0) this.updateCutTypeUI(active);
 
         // Log selected elements info for debugging
         if (selectedElementsInfo) {
@@ -113,11 +118,6 @@ class ModalDialog {
      * @param {Element} path - SVG path element to read attributes from
      */
     populateAttributeForm(path) {
-        // Display path identification in modal header
-        if (this.selectedPathInfo) {
-            this.selectedPathInfo.textContent = this.elementManager.getElementDescription(path);
-        }
-
         // Extract shaper attributes from cached element data
         const dimensions = this.elementManager.getElementDimensions(path);
         const shaperAttrs = dimensions.shaperAttributes || {};
@@ -165,6 +165,101 @@ class ModalDialog {
         unitLabels.forEach(label => {
             label.textContent = this.measurementSystem.units;
         });
+
+        // Update suggestion button values and displays based on current unit
+        this.updateSuggestionButtons();
+    }
+
+    /**
+     * Update suggestion button values and displays based on current unit system
+     *
+     * Shows appropriate values for mm vs inches with proper fraction display
+     * for imperial measurements.
+     */
+    updateSuggestionButtons() {
+        const buttons = document.querySelectorAll('.value-btn');
+        const currentUnit = this.measurementSystem.units;
+
+        buttons.forEach(button => {
+            // Remove fraction class first
+            button.classList.remove('fraction');
+
+            if (currentUnit === 'mm') {
+                // Use millimeter values
+                const mmValue = button.dataset.valueMm;
+                if (mmValue !== undefined) {
+                    button.dataset.value = mmValue;
+                    button.textContent = parseFloat(mmValue).toFixed(1);
+                }
+            } else {
+                // Use inch values with HTML fraction display
+                const inValue = button.dataset.valueIn;
+                const fraction = button.dataset.fraction;
+
+                if (inValue !== undefined && fraction !== undefined) {
+                    button.dataset.value = inValue;
+
+                    if (fraction === '0') {
+                        button.textContent = '0';
+                    } else if (this.isCommonFraction(fraction)) {
+                        // Convert fraction to HTML format
+                        const htmlFraction = this.convertToHTMLFraction(fraction);
+                        button.innerHTML = htmlFraction;
+                        button.classList.add('fraction');
+                    } else {
+                        button.textContent = parseFloat(inValue).toFixed(3);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Convert fraction string to HTML with sup/sub formatting
+     *
+     * @param {string} fraction - The fraction string to convert
+     * @returns {string} HTML formatted fraction
+     */
+    convertToHTMLFraction(fraction) {
+        // Handle common Unicode fractions first
+        const unicodeFractions = {
+            '⅛': '<sup>1</sup>&frasl;<sub>8</sub>',
+            '¼': '<sup>1</sup>&frasl;<sub>4</sub>',
+            '⅜': '<sup>3</sup>&frasl;<sub>8</sub>',
+            '½': '<sup>1</sup>&frasl;<sub>2</sub>',
+            '⅝': '<sup>5</sup>&frasl;<sub>8</sub>',
+            '¾': '<sup>3</sup>&frasl;<sub>4</sub>',
+            '⅞': '<sup>7</sup>&frasl;<sub>8</sub>'
+        };
+
+        if (unicodeFractions[fraction]) {
+            return unicodeFractions[fraction];
+        }
+
+        // Handle slash notation fractions
+        if (fraction.includes('/')) {
+            const parts = fraction.split('/');
+            if (parts.length === 2) {
+                const numerator = parts[0].trim();
+                const denominator = parts[1].trim();
+                return `<sup>${numerator}</sup>&frasl;<sub>${denominator}</sub>`;
+            }
+        }
+
+        // Fallback to original fraction string
+        return fraction;
+    }
+
+    /**
+     * Check if fraction should be displayed as fraction vs decimal
+     *
+     * @param {string} fraction - The fraction string to check
+     * @returns {boolean} True if should display as fraction
+     */
+    isCommonFraction(fraction) {
+        // Common fractions that look good as Unicode symbols
+        const commonFractions = ['⅛', '¼', '⅜', '½', '⅝', '¾', '⅞', '1/16', '3/16', '5/8', '1/32', '1/64'];
+        return commonFractions.includes(fraction);
     }
 
     /**
@@ -230,15 +325,22 @@ class ModalDialog {
      * Update cut type slider visual indicator position
      *
      * Animates slider indicator to match active option position.
-     * Calculates position and width based on option layout.
+     * Calculates position and width based on actual button dimensions.
      *
      * @param {number} activeIndex - Index of currently selected option
      */
     updateCutTypeUI(activeIndex) {
-        if (this.cutTypeIndicator) {
-            this.cutTypeIndicator.style.left = `${activeIndex * this.optionWidth}%`;
-            this.cutTypeIndicator.style.width = `${this.optionWidth}%`;
-        }
+        if (!this.cutTypeIndicator) return;
+        const total = this.cutTypeOptions.length;
+        if (activeIndex < 0 || activeIndex >= total) return;
+
+        // Equal slot model: each option gets same horizontal slice (simplest + stable)
+        const slotWidthPct = 100 / total;
+        const leftPct = slotWidthPct * activeIndex;
+
+        // Direct percentage positioning eliminates layout timing & font metric issues
+        this.cutTypeIndicator.style.left = leftPct + '%';
+        this.cutTypeIndicator.style.width = slotWidthPct + '%';
     }
 
     /**
@@ -257,5 +359,31 @@ class ModalDialog {
      */
     isVisible() {
         return this.modal && this.modal.style.display === 'flex';
+    }
+
+    /**
+     * Initialize value button click handlers
+     *
+     * Attaches direct click handlers to each value button for reliable input updates
+     */
+    initializeValueButtons() {
+        const valueButtons = document.querySelectorAll('.value-btn');
+
+        valueButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const targetInputId = button.dataset.target;
+                const value = button.dataset.value;
+                const targetInput = document.getElementById(targetInputId);
+
+                if (targetInput && value) {
+                    const numericValue = parseFloat(value);
+                    const formattedValue = this.measurementSystem.formatDisplayNumber(numericValue);
+                    targetInput.value = formattedValue;
+                }
+            });
+        });
     }
 }

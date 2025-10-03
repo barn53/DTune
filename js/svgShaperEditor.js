@@ -440,21 +440,7 @@ class SVGShaperEditor {
             }
         });
 
-        // Value button handlers (Auswahl-Werte als Buttons)
-        document.addEventListener('click', (event) => {
-            if (event.target.classList.contains('value-btn')) {
-                const targetInputId = event.target.dataset.target;
-                const value = event.target.dataset.value;
-                const targetInput = document.getElementById(targetInputId);
-
-                if (targetInput && value !== undefined) {
-                    targetInput.value = value;
-                    targetInput.focus();
-                    // Trigger change event to update any listeners
-                    targetInput.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            }
-        });
+        // Value buttons will be handled directly in modal dialog initialization
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.uiComponents.handleKeyDown(e));

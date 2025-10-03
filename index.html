@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="modal.css">
     <link rel="stylesheet" href="displaysvg.css">
 </head>
 
@@ -145,10 +146,6 @@
                     <button class="modal-close" id="modalClose">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="path-info">
-                        <strong>Selected Path:</strong>
-                        <span id="selectedPathInfo"></span>
-                    </div>
                     <form id="attributeForm">
                         <div class="form-group">
                             <label for="cutType" class="form-label">
@@ -180,11 +177,13 @@
                                     <span class="input-unit">mm</span>
                                 </div>
                                 <div class="input-buttons">
-                                    <button type="button" class="value-btn" data-target="cutDepth" data-value="3">3mm</button>
-                                    <button type="button" class="value-btn" data-target="cutDepth" data-value="6">6mm</button>
-                                    <button type="button" class="value-btn" data-target="cutDepth" data-value="10">10mm</button>
-                                    <button type="button" class="value-btn" data-target="cutDepth" data-value="15">15mm</button>
-                                    <button type="button" class="value-btn" data-target="cutDepth" data-value="20">20mm</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="1" data-value-in="0.0625" data-fraction="1/16">1.0</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="2" data-value-in="0.125" data-fraction="⅛">2.0</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="5" data-value-in="0.1875" data-fraction="3/16">5.0</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="8" data-value-in="0.25" data-fraction="¼">8.0</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="10" data-value-in="0.375" data-fraction="⅜">10.0</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="12" data-value-in="0.5" data-fraction="½">12.0</button>
+                                    <button type="button" class="value-btn" data-target="cutDepth" data-value-mm="15" data-value-in="0.625" data-fraction="5/8">15.0</button>
                                 </div>
                             </div>
                         </div>
@@ -200,11 +199,11 @@
                                     <span class="input-unit">mm</span>
                                 </div>
                                 <div class="input-buttons">
-                                    <button type="button" class="value-btn" data-target="cutOffset" data-value="0">0mm</button>
-                                    <button type="button" class="value-btn" data-target="cutOffset" data-value="0.5">0.5mm</button>
-                                    <button type="button" class="value-btn" data-target="cutOffset" data-value="1">1mm</button>
-                                    <button type="button" class="value-btn" data-target="cutOffset" data-value="2">2mm</button>
-                                    <button type="button" class="value-btn" data-target="cutOffset" data-value="3">3mm</button>
+                                    <button type="button" class="value-btn" data-target="cutOffset" data-value-mm="0" data-value-in="0" data-fraction="0">0.0</button>
+                                    <button type="button" class="value-btn" data-target="cutOffset" data-value-mm="0.5" data-value-in="0.0156" data-fraction="1/64">0.5</button>
+                                    <button type="button" class="value-btn" data-target="cutOffset" data-value-mm="1" data-value-in="0.0313" data-fraction="1/32">1.0</button>
+                                    <button type="button" class="value-btn" data-target="cutOffset" data-value-mm="1.5" data-value-in="0.0625" data-fraction="1/16">1.5</button>
+                                    <button type="button" class="value-btn" data-target="cutOffset" data-value-mm="2" data-value-in="0.125" data-fraction="⅛">2.0</button>
                                 </div>
                             </div>
                         </div>
@@ -220,11 +219,11 @@
                                     <span class="input-unit">mm</span>
                                 </div>
                                 <div class="input-buttons">
-                                    <button type="button" class="value-btn" data-target="toolDia" data-value="3">3mm</button>
-                                    <button type="button" class="value-btn" data-target="toolDia" data-value="6">6mm</button>
-                                    <button type="button" class="value-btn" data-target="toolDia" data-value="8">8mm</button>
-                                    <button type="button" class="value-btn" data-target="toolDia" data-value="10">10mm</button>
-                                    <button type="button" class="value-btn" data-target="toolDia" data-value="12">12mm</button>
+                                    <button type="button" class="value-btn" data-target="toolDia" data-value-mm="3" data-value-in="0.125" data-fraction="⅛">3.0</button>
+                                    <button type="button" class="value-btn" data-target="toolDia" data-value-mm="6" data-value-in="0.25" data-fraction="¼">6.0</button>
+                                    <button type="button" class="value-btn" data-target="toolDia" data-value-mm="8" data-value-in="0.375" data-fraction="⅜">8.0</button>
+                                    <button type="button" class="value-btn" data-target="toolDia" data-value-mm="10" data-value-in="0.5" data-fraction="½">10.0</button>
+                                    <button type="button" class="value-btn" data-target="toolDia" data-value-mm="12" data-value-in="0.625" data-fraction="⅝">12.0</button>
                                 </div>
                             </div>
                         </div>
