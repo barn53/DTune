@@ -1088,7 +1088,10 @@ class SVGShaperEditor {
     initializeRawValue(input, displayValue, currentUnit) {
         if (!input.dataset.rawValueMm) {
             const parsedValue = this.measurementSystem.parseValueWithUnits(displayValue);
-            if (parsedValue !== null && parsedValue > 0) {
+            const allowNegative = ShaperConstants.allowsNegativeValues(input.id);
+            const isValidValue = parsedValue !== null && (allowNegative || parsedValue > 0);
+
+            if (isValidValue) {
                 const rawValueMm = this.measurementSystem.convertBetweenUnits(parsedValue, currentUnit, 'mm');
                 this.setRawValue(input, rawValueMm);
                 return rawValueMm;
@@ -1126,7 +1129,11 @@ class SVGShaperEditor {
             const [, numStr, unit] = match;
             const numValue = parseFloat(numStr);
 
-            if (!isNaN(numValue) && numValue > 0) {
+            // Check if this attribute allows negative values
+            const allowNegative = ShaperConstants.allowsNegativeValues(input.id);
+            const isValidValue = !isNaN(numValue) && (allowNegative || numValue > 0);
+
+            if (isValidValue) {
                 let rawValueMm;
 
                 if (unit === 'mm') {
@@ -1145,7 +1152,8 @@ class SVGShaperEditor {
             }
         }
 
-        return this.getRawValue(input);
+        const fallbackValue = this.getRawValue(input);
+        return fallbackValue;
     }
 
     convertInputWithRawValue(input, inputId, fromUnit, toUnit) {

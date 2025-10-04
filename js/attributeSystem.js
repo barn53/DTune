@@ -148,10 +148,11 @@ class AttributeSystem {
                 // Remove empty values from element data
                 delete dimensions.shaperAttributes[attrName];
             } else {
-                // Convert display value (with current units) to pixels for internal storage
-                const numValue = this.measurementSystem.stripUnitsFromValue(inputValue);
-                if (!isNaN(numValue)) {
-                    const pixelValue = this.measurementSystem.unitsToPixels(numValue);
+                // Use raw value (in mm) and convert to pixels
+                const rawValueMm = parseFloat(input.dataset.rawValueMm);
+
+                if (!isNaN(rawValueMm)) {
+                    const pixelValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', 'pixels');
                     dimensions.shaperAttributes[attrName] = pixelValue.toString();
                 }
             }

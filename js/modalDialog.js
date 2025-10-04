@@ -30,6 +30,64 @@ class ModalDialog {
         this.modal = null;
         this.selectedElementsInfo = null;
 
+        // Dynamic suggestion button configuration
+        // Only specify one value (mm OR in), the other gets calculated automatically
+        this.suggestionButtons = {
+            cutDepth: {
+                mm: [
+                    { valueMm: 1, buttonText: '1.0' },
+                    { valueMm: 2, buttonText: '2.0' },
+                    { valueMm: 5, buttonText: '5.0' },
+                    { valueMm: 8, buttonText: '8.0' },
+                    { valueMm: 10, buttonText: '10.0' },
+                    { valueMm: 12, buttonText: '12.0' },
+                    { valueMm: 15, buttonText: '15.0' }
+                ],
+                in: [
+                    { valueIn: (1/16), buttonText: '1/16' },
+                    { valueIn: (1/8), buttonText: '1/8' },
+                    { valueIn: (3/16), buttonText: '3/16' },
+                    { valueIn: (1/4), buttonText: '1/4' },
+                    { valueIn: (3/8), buttonText: '3/8' },
+                    { valueIn: (1/2), buttonText: '1/2' },
+                ]
+            },
+            cutOffset: {
+                mm: [
+                    { valueMm: 0, buttonText: '0.0' },
+                    { valueMm: 0.02, buttonText: '0.02' },
+                    { valueMm: 0.1, buttonText: '0.1' },
+                    { valueMm: 0.5, buttonText: '0.5' },
+                    { valueMm: 1, buttonText: '1.0' },
+                    { valueMm: 2, buttonText: '2.0' },
+                    { valueMm: 5, buttonText: '5.0' }
+                ],
+                in: [
+                    { valueIn: 0, buttonText: '0.0' },
+                    { valueIn: 0.001, buttonText: '0.001' },
+                    { valueIn: 0.005, buttonText: '0.005' },
+                    { valueIn: 0.01, buttonText: '0.01' },
+                    { valueIn: (1/32), buttonText: '1/32' },
+                    { valueIn: (1/16), buttonText: '1/16' },
+                    { valueIn: (1/8), buttonText: '1/8' }
+                ]
+            },
+            toolDia: {
+                mm: [
+                    { valueMm: 0.5, buttonText: '0.5' },
+                    { valueMm: 3, buttonText: '3.0' },
+                    { valueMm: 6, buttonText: '6.0' },
+                    { valueMm: 8, buttonText: '8.0' },
+                ],
+                in: [
+                    { valueIn: 0.02, buttonText: '0.02' },
+                    { valueIn: (1/8), buttonText: '1/8' },
+                    { valueIn: (1/4), buttonText: '1/4' },
+                    { valueIn: (5/16), buttonText: '5/16' },
+                ]
+            }
+        };
+
         // Cut type slider components
         this.cutTypeOptions = null;
         this.cutTypeIndicator = null;
@@ -139,6 +197,11 @@ class ModalDialog {
                         this.measurementSystem.convertPixelsToCurrentUnit(pixelValue)
                     );
                     input.value = formattedValue;
+
+                    // Initialize raw value for focus loss handling
+                    if (window.svgShaperEditor && window.svgShaperEditor.initializeRawValue) {
+                        window.svgShaperEditor.initializeRawValue(input, formattedValue, this.measurementSystem.units);
+                    }
                 } else {
                     input.value = '';
                 }
@@ -171,47 +234,92 @@ class ModalDialog {
     }
 
     /**
-     * Update suggestion button values and displays based on current unit system
+     * Create and update suggestion buttons dynamically based on configuration
      *
-     * Shows appropriate values for mm vs inches with proper fraction display
-     * for imperial measurements.
+     * Generates buttons from suggestionButtons object with different sets
+     * for mm vs inches based on current unit system.
      */
     updateSuggestionButtons() {
-        const buttons = document.querySelectorAll('.value-btn');
         const currentUnit = this.measurementSystem.units;
 
-        buttons.forEach(button => {
-            // Remove fraction class first
-            button.classList.remove('fraction');
+        // Process each field that has suggestion buttons
+        Object.keys(this.suggestionButtons).forEach(fieldName => {
+            const container = document.querySelector(`#${fieldName}`).closest('.input-container').querySelector('.input-buttons');
+            if (!container) return;
 
-            if (currentUnit === 'mm') {
-                // Use millimeter values
-                const mmValue = button.dataset.valueMm;
-                if (mmValue !== undefined) {
-                    button.dataset.value = mmValue;
-                    button.textContent = parseFloat(mmValue).toFixed(1);
-                }
-            } else {
-                // Use inch values with HTML fraction display
-                const inValue = button.dataset.valueIn;
-                const fraction = button.dataset.fraction;
+            // Clear existing buttons
+            container.innerHTML = '';
 
-                if (inValue !== undefined && fraction !== undefined) {
-                    button.dataset.value = inValue;
-
-                    if (fraction === '0') {
-                        button.textContent = '0';
-                    } else if (this.isCommonFraction(fraction)) {
-                        // Convert fraction to HTML format
-                        const htmlFraction = this.convertToHTMLFraction(fraction);
-                        button.innerHTML = htmlFraction;
-                        button.classList.add('fraction');
-                    } else {
-                        button.textContent = parseFloat(inValue).toFixed(3);
-                    }
-                }
+            // Add sign toggle button for cutOffset as first button
+            if (fieldName === 'cutOffset') {
+                const toggleButton = document.createElement('button');
+                toggleButton.type = 'button';
+                toggleButton.className = 'value-btn sign-toggle-btn';
+                toggleButton.innerHTML = `
+                    <svg width="17" height="13" viewBox="0 0 17 13" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12.8837 0.375L16.375 3.875L12.8837 7.375V4.75H6.75V3H12.8837V0.375ZM0.625 9.125L4.11625 5.625V8.25H10.25V10H4.11625V12.625L0.625 9.125Z" fill="currentColor"></path>
+                    </svg>
+                `;
+                toggleButton.title = 'Toggle sign (positive/negative)';
+                toggleButton.dataset.target = fieldName;
+                toggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.toggleInputSign(fieldName);
+                });
+                container.appendChild(toggleButton);
             }
+
+            // Get configuration for current unit
+            const buttonConfigs = this.suggestionButtons[fieldName][currentUnit] || [];
+
+            // Create buttons dynamically
+            buttonConfigs.forEach(config => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'value-btn';
+                button.dataset.target = fieldName;
+
+                // Calculate missing value using measurement system conversion
+                let valueMm, valueIn;
+                if (config.valueMm !== undefined) {
+                    valueMm = config.valueMm;
+                    // Convert from mm to inches
+                    valueIn = this.measurementSystem.convertBetweenUnits(valueMm, 'mm', 'in');
+                } else {
+                    valueIn = config.valueIn;
+                    // Convert from inches to mm
+                    valueMm = this.measurementSystem.convertBetweenUnits(valueIn, 'in', 'mm');
+                }
+
+                // Set both mm and inch values as data attributes
+                button.dataset.valueMm = valueMm.toString();
+                button.dataset.valueIn = valueIn.toString();
+
+                // Set the value that goes into input field based on current unit
+                button.dataset.value = currentUnit === 'mm' ? valueMm.toString() : valueIn.toString();
+
+                // Set display text - for inches, always use HTML fraction formatting if it contains a fraction
+                if (currentUnit === 'in' && config.buttonText.includes('/')) {
+                    const htmlFraction = this.convertToHTMLFraction(config.buttonText);
+                    button.innerHTML = htmlFraction;
+                    button.classList.add('fraction');
+                } else {
+                    // For decimal values, respect the current decimal separator
+                    let displayText = config.buttonText;
+                    if (displayText.includes('.')) {
+                        // Replace decimal point with current decimal separator
+                        displayText = displayText.replace('.', this.measurementSystem.decimalSeparator);
+                    }
+                    button.textContent = displayText;
+                }
+
+                container.appendChild(button);
+            });
         });
+
+        // Reinitialize button event handlers after creating new buttons
+        this.initializeValueButtons();
     }
 
     /**
@@ -221,22 +329,7 @@ class ModalDialog {
      * @returns {string} HTML formatted fraction
      */
     convertToHTMLFraction(fraction) {
-        // Handle common Unicode fractions first
-        const unicodeFractions = {
-            '⅛': '<sup>1</sup>&frasl;<sub>8</sub>',
-            '¼': '<sup>1</sup>&frasl;<sub>4</sub>',
-            '⅜': '<sup>3</sup>&frasl;<sub>8</sub>',
-            '½': '<sup>1</sup>&frasl;<sub>2</sub>',
-            '⅝': '<sup>5</sup>&frasl;<sub>8</sub>',
-            '¾': '<sup>3</sup>&frasl;<sub>4</sub>',
-            '⅞': '<sup>7</sup>&frasl;<sub>8</sub>'
-        };
-
-        if (unicodeFractions[fraction]) {
-            return unicodeFractions[fraction];
-        }
-
-        // Handle slash notation fractions
+        // Handle slash notation fractions only
         if (fraction.includes('/')) {
             const parts = fraction.split('/');
             if (parts.length === 2) {
@@ -250,17 +343,7 @@ class ModalDialog {
         return fraction;
     }
 
-    /**
-     * Check if fraction should be displayed as fraction vs decimal
-     *
-     * @param {string} fraction - The fraction string to check
-     * @returns {boolean} True if should display as fraction
-     */
-    isCommonFraction(fraction) {
-        // Common fractions that look good as Unicode symbols
-        const commonFractions = ['⅛', '¼', '⅜', '½', '⅝', '¾', '⅞', '1/16', '3/16', '5/8', '1/32', '1/64'];
-        return commonFractions.includes(fraction);
-    }
+
 
     /**
      * Initialize custom cut type slider control
@@ -364,26 +447,103 @@ class ModalDialog {
     /**
      * Initialize value button click handlers
      *
-     * Attaches direct click handlers to each value button for reliable input updates
+     * Attaches direct click handlers to each value button for reliable input updates.
+     * Uses individual button handlers for maximum reliability.
      */
     initializeValueButtons() {
-        const valueButtons = document.querySelectorAll('.value-btn');
+        // Find all value buttons (excluding sign toggle buttons)
+        const valueButtons = document.querySelectorAll('.value-btn:not(.sign-toggle-btn)');
 
+        // Remove any existing listeners and attach new ones
         valueButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
+            // Clone button to remove all existing event listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+
+            // Add fresh event listener
+            newButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const targetInputId = button.dataset.target;
-                const value = button.dataset.value;
+                console.log('Button clicked:', newButton); // Debug log
+
+                const targetInputId = newButton.dataset.target;
+                const value = newButton.dataset.value;
                 const targetInput = document.getElementById(targetInputId);
 
+                console.log('Target:', targetInputId, 'Value:', value, 'Input found:', !!targetInput); // Debug log
+
                 if (targetInput && value) {
-                    const numericValue = parseFloat(value);
+                    let numericValue = parseFloat(value);
+
+                    // For cutOffset, preserve the current sign if input has negative value
+                    if (targetInputId === 'cutOffset') {
+                        const currentSign = this.getCurrentOffsetSign();
+                        if (currentSign === -1 && numericValue > 0) {
+                            numericValue = -numericValue;
+                        }
+                        console.log('Offset sign preserved:', currentSign, 'Final value:', numericValue); // Debug log
+                    }
+
                     const formattedValue = this.measurementSystem.formatDisplayNumber(numericValue);
                     targetInput.value = formattedValue;
+
+                    console.log('Value set:', formattedValue); // Debug log
+
+                    // Trigger input event to notify other systems
+                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                } else {
+                    console.warn('Failed to set value - missing input or value:', targetInputId, value); // Debug log
                 }
             });
         });
+    }
+
+    /**
+     * Toggle the sign of a numeric input value
+     *
+     * @param {string} inputId - The ID of the input field to toggle
+     */
+    toggleInputSign(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        let currentValue = input.value.trim();
+        if (!currentValue || currentValue === '') {
+            // If empty, set to 0
+            input.value = '0';
+            return;
+        }
+
+        // Handle both decimal separators (. and ,)
+        const normalizedValue = currentValue.replace(',', '.');
+
+        // Parse the current numeric value
+        const numericValue = parseFloat(normalizedValue);
+        if (isNaN(numericValue)) return;
+
+        // Toggle the sign
+        const newValue = -numericValue;
+        const formattedValue = this.measurementSystem.formatDisplayNumber(newValue);
+        input.value = formattedValue;
+    }
+
+    /**
+     * Get the current sign of the cutOffset input field
+     *
+     * @returns {number} -1 for negative, 1 for positive/zero
+     */
+    getCurrentOffsetSign() {
+        const input = document.getElementById('cutOffset');
+        if (!input) return 1;
+
+        const currentValue = input.value.trim();
+        if (!currentValue || currentValue === '') return 1;
+
+        // Handle both decimal separators
+        const normalizedValue = currentValue.replace(',', '.');
+        const numericValue = parseFloat(normalizedValue);
+
+        return (numericValue < 0) ? -1 : 1;
     }
 }

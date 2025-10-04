@@ -347,6 +347,38 @@
     color: white;
 }
 
+/* Sign Toggle Button - SVG Icon */
+.sign-toggle-btn {
+    min-width: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.sign-toggle-btn svg {
+    width: 16px;
+    height: 12px;
+    color: inherit;
+}
+
+.sign-toggle-btn:hover {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid #27ae60;
+    color: #2ecc71;
+    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+}
+
+.sign-toggle-btn:hover svg {
+    color: #2ecc71;
+}
+
+.sign-toggle-btn:active {
+    background: rgba(46, 204, 113, 0.4);
+    border: 1px solid #229954;
+    color: white;
+}
+
 /* ==========================================================================
    Cut Type Slider Component
    ========================================================================== */

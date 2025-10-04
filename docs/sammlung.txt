@@ -10,6 +10,9 @@ Namen:
 Δ Measure
 
 
+============================================
+Mehrere Pfade editieren!
+Implementieren!
 
 ============================================
 Hah, klick auf Pfad öffnet nicht den dialog, sondern markiert den Pfad

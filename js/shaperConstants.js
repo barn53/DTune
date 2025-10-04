@@ -27,6 +27,9 @@ class ShaperConstants {
     /** Attributes that contain numeric values requiring unit conversion */
     static MEASUREMENT_ATTRIBUTES = ['cutDepth', 'cutOffset', 'toolDia'];
 
+    /** Attributes that can accept negative values */
+    static NEGATIVE_ALLOWED_ATTRIBUTES = ['cutOffset'];
+
     /** Attributes that contain string values stored without conversion */
     static SIMPLE_ATTRIBUTES = ['cutType'];
 
@@ -66,6 +69,16 @@ class ShaperConstants {
      */
     static isEmptyValue(value) {
         return this.EMPTY_VALUES.includes(value?.trim?.() || '');
+    }
+
+    /**
+     * Check if an attribute allows negative values
+     *
+     * @param {string} attributeName - Name of the attribute to check
+     * @returns {boolean} True if the attribute can have negative values
+     */
+    static allowsNegativeValues(attributeName) {
+        return this.NEGATIVE_ALLOWED_ATTRIBUTES.includes(attributeName);
     }
 
     /** CSS class names used throughout the application for consistent styling */
@@ -132,7 +145,8 @@ class ShaperUtils {
     /**
      * Set or remove a raw (legacy) attribute based on value validity
      *
-     * Sets the attribute if the value is valid and positive, removes it otherwise.
+     * Sets the attribute if the value is valid, removes it otherwise.
+     * Respects negative value allowance based on attribute configuration.
      * Uses the legacy hyphenated attribute naming format.
      *
      * @param {Element} element - SVG element to modify
@@ -142,8 +156,15 @@ class ShaperUtils {
     static setRawAttribute(element, attr, rawValue) {
         const attrName = ShaperConstants.getRawAttributeName(attr);
 
-        if (rawValue !== null && rawValue !== undefined && rawValue > 0) {
-            element.setAttribute(attrName, rawValue.toString());
+        if (rawValue !== null && rawValue !== undefined) {
+            const allowNegative = ShaperConstants.allowsNegativeValues(attr);
+            const isValidValue = allowNegative || rawValue > 0;
+
+            if (isValidValue) {
+                element.setAttribute(attrName, rawValue.toString());
+            } else {
+                element.removeAttribute(attrName);
+            }
         } else {
             element.removeAttribute(attrName);
         }
