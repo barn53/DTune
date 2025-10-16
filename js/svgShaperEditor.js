@@ -177,18 +177,28 @@ class SVGShaperEditor {
         this.uiComponents.onEditAttributes = () => {
             const selectedPaths = this.elementManager.getSelectedPaths();
             if (selectedPaths.size > 0) {
+                console.log('=== DIALOG OPENING - ELEMENT DATA TRACE ===');
+                console.log(`Selected ${selectedPaths.size} elements for editing`);
+
                 // Collect information for all selected elements
                 const selectedElementsInfo = Array.from(selectedPaths).map((path, index) => {
-                    const attributes = this.attributeSystem.getShaperAttributes(path);
+                    const dimensions = this.elementManager.getElementDimensions(path);
+                    const shaperAttributes = dimensions.shaperAttributes || {};
+
+                    console.log(`Element ${index + 1}:`);
+                    console.log(`  appId: ${path.dataset.appId}`);
+                    console.log(`  Element dimensions:`, dimensions);
+                    console.log(`  Shaper attributes:`, shaperAttributes);
+
                     return {
                         appId: path.dataset.appId || `fallback-${index}`,
                         element: path,
-                        cutType: attributes.cutType || 'line',
-                        cutDepth: attributes.cutDepth || null,
-                        toolDia: attributes.toolDia || null,
-                        cutOffset: attributes.cutOffset || null
+                        shaperAttributes: shaperAttributes
                     };
                 });
+
+                console.log('Complete selectedElementsInfo:', selectedElementsInfo);
+                console.log('=== END DIALOG OPENING TRACE ===');
 
                 // Open modal with information about all selected elements
                 this.uiComponents.openAttributeModal(selectedElementsInfo[0].element, selectedElementsInfo);

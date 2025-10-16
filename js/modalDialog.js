@@ -124,6 +124,10 @@ class ModalDialog {
      * @param {Array} selectedElementsInfo - Array of selected elements with their attributes
      */
     openAttributeModal(path, selectedElementsInfo = null) {
+        console.log('=== MODAL DIALOG OPENING ===');
+        console.log('Primary path:', path);
+        console.log('Selected elements info:', selectedElementsInfo);
+
         // Store selected elements info for use in form handling
         this.selectedElementsInfo = selectedElementsInfo;
 
@@ -134,20 +138,64 @@ class ModalDialog {
             batchCounter.textContent = count;
         }
 
-        // Populate form with primary element's data
-        this.populateAttributeForm(path);
-        this.modal.style.display = 'flex';
+        // Handle multi-element editing mode
+        if (selectedElementsInfo && selectedElementsInfo.length > 1) {
+            console.log('Setting up MULTI-element form');
+            this.setupMultiElementForm(selectedElementsInfo);
+        } else {
+            console.log('Setting up SINGLE-element form');
+            this.setupSingleElementForm(path);
+        }
 
-        // With equal-slot slider logic a single positioning pass is sufficient
+        this.modal.style.display = 'flex';
+        console.log('=== MODAL DIALOG OPENED ===');
+    }
+
+    /**
+     * Setup form for single element editing
+     *
+     * @param {Element} path - Primary SVG path element for editing
+     */
+    setupSingleElementForm(path) {
+        // Hide no-modify elements for single selection
+        this.hideNoModifyElements();
+
+        // Ensure all inputs are enabled for single-element editing
+        this.enableAllInputs();
+
+        // Populate form with element data
+        this.populateAttributeForm(path);
+
+        // Position cut type slider
         const active = Array.from(this.cutTypeOptions || []).findIndex(opt => opt.classList.contains('active'));
         if (active >= 0) this.updateCutTypeUI(active);
+    }
 
-        // Log selected elements info for debugging
-        if (selectedElementsInfo) {
-            console.log('DEBUG openAttributeModal - Planning cuts for elements:', selectedElementsInfo);
-        }
-        console.log('DEBUG openAttributeModal - Primary path element:', path);
-        console.log('DEBUG openAttributeModal - Primary path appId:', path.dataset.appId);
+    /**
+     * Setup form for multi-element editing
+     *
+     * @param {Array} selectedElementsInfo - Array of selected elements with their attributes
+     */
+    setupMultiElementForm(selectedElementsInfo) {
+        console.log('=== MULTI-ELEMENT FORM SETUP ===');
+
+        // Show no-modify elements for multi-selection
+        this.showNoModifyElements();
+
+        // Analyze common values across selected elements
+        console.log('Analyzing common values from:', selectedElementsInfo);
+        const commonValues = this.analyzeCommonValues(selectedElementsInfo);
+        console.log('Common values analyzed:', commonValues);
+
+        // Populate form with common values
+        console.log('Populating form with common values...');
+        this.populateMultiElementForm(commonValues);
+
+        // Setup cut type with no-modify option
+        console.log('Setting up cut type for multi-element...');
+        this.setupCutTypeForMultiElement(commonValues.cutType);
+
+        console.log('=== MULTI-ELEMENT FORM SETUP COMPLETE ===');
     }
 
     /**
@@ -451,8 +499,8 @@ class ModalDialog {
      * Uses individual button handlers for maximum reliability.
      */
     initializeValueButtons() {
-        // Find all value buttons (excluding sign toggle buttons)
-        const valueButtons = document.querySelectorAll('.value-btn:not(.sign-toggle-btn)');
+        // Find all value buttons (excluding sign toggle buttons and no-modify buttons)
+        const valueButtons = document.querySelectorAll('.value-btn:not(.sign-toggle-btn):not(.no-modify-btn)');
 
         // Remove any existing listeners and attach new ones
         valueButtons.forEach(button => {
@@ -472,6 +520,12 @@ class ModalDialog {
                 const targetInput = document.getElementById(targetInputId);
 
                 console.log('Target:', targetInputId, 'Value:', value, 'Input found:', !!targetInput); // Debug log
+
+                // Check if target field is in no-modify state
+                if (this.isNoModify(targetInputId)) {
+                    console.log(`Suggestion button blocked - ${targetInputId} is in no-modify state`);
+                    return; // Don't set value if field is in no-modify state
+                }
 
                 if (targetInput && value) {
                     let numericValue = parseFloat(value);
@@ -505,6 +559,12 @@ class ModalDialog {
      * @param {string} inputId - The ID of the input field to toggle
      */
     toggleInputSign(inputId) {
+        // Check if field is in no-modify state
+        if (this.isNoModify(inputId)) {
+            console.log(`Sign toggle blocked - ${inputId} is in no-modify state`);
+            return; // Don't toggle if field is in no-modify state
+        }
+
         const input = document.getElementById(inputId);
         if (!input) return;
 
@@ -545,5 +605,306 @@ class ModalDialog {
         const numericValue = parseFloat(normalizedValue);
 
         return (numericValue < 0) ? -1 : 1;
+    }
+
+    /**
+     * Hide no-modify elements for single element editing
+     */
+    hideNoModifyElements() {
+        // Hide no-modify buttons in input fields
+        document.querySelectorAll('.no-modify-btn').forEach(btn => btn.style.display = 'none');
+
+        // Hide no-modify option in cut type slider
+        const noModifyOption = document.querySelector('.no-modify-option');
+        if (noModifyOption) {
+            noModifyOption.style.display = 'none';
+        }
+
+        // Update cut type slider layout
+        this.updateCutTypeLayout();
+    }
+
+    /**
+     * Show no-modify elements for multi-element editing
+     */
+    showNoModifyElements() {
+        // Add no-modify buttons to measurement inputs
+        ['cutDepth', 'cutOffset', 'toolDia'].forEach(inputId => {
+            this.addNoModifyButton(inputId);
+        });
+
+        // Show no-modify option in cut type slider
+        const noModifyOption = document.querySelector('.no-modify-option');
+        if (noModifyOption) {
+            noModifyOption.style.display = 'block';
+        }
+
+        // Update cut type slider layout
+        this.updateCutTypeLayout();
+    }
+
+    /**
+     * Add no-modify button to an input field
+     *
+     * @param {string} inputId - The ID of the input field
+     */
+    addNoModifyButton(inputId) {
+        const inputContainer = document.querySelector(`#${inputId}`).closest('.input-container');
+        const buttonsContainer = inputContainer.querySelector('.input-buttons');
+
+        // Check if no-modify button already exists
+        let noModifyBtn = buttonsContainer.querySelector('.no-modify-btn[data-target="' + inputId + '"]');
+
+        if (!noModifyBtn) {
+            // Create no-modify button
+            noModifyBtn = document.createElement('button');
+            noModifyBtn.type = 'button';
+            noModifyBtn.className = 'value-btn no-modify-btn';
+            noModifyBtn.textContent = '—';
+            noModifyBtn.title = 'Don\'t modify this value';
+            noModifyBtn.dataset.target = inputId;
+
+            // Add click handler
+            noModifyBtn.onclick = () => this.toggleNoModify(inputId);
+
+            // Insert as last button
+            buttonsContainer.appendChild(noModifyBtn);
+        }
+
+        // Show the button
+        noModifyBtn.style.display = 'block';
+    }
+
+    /**
+     * Toggle no-modify state for an input field
+     *
+     * @param {string} inputId - The ID of the input field
+     */
+    toggleNoModify(inputId) {
+        const button = document.querySelector(`.no-modify-btn[data-target="${inputId}"]`);
+        const input = document.getElementById(inputId);
+
+        if (!button || !input) return;
+
+        if (button.classList.contains('active')) {
+            // Deactivate no-modify
+            button.classList.remove('active');
+            input.disabled = false;
+            console.log(`${inputId}: No-modify deactivated, input enabled`);
+        } else {
+            // Activate no-modify
+            button.classList.add('active');
+            input.disabled = true;
+            console.log(`${inputId}: No-modify activated, input disabled`);
+        }
+    }
+
+    /**
+     * Activate no-modify state for an input field
+     *
+     * @param {string} inputId - The ID of the input field
+     */
+    activateNoModify(inputId) {
+        const button = document.querySelector(`.no-modify-btn[data-target="${inputId}"]`);
+        const input = document.getElementById(inputId);
+
+        if (!button || !input) return;
+
+        // Activate no-modify
+        button.classList.add('active');
+        input.disabled = true;
+        console.log(`${inputId}: No-modify automatically activated, input disabled`);
+    }
+
+    /**
+     * Check if a field is marked as no-modify
+     *
+     * @param {string} inputId - The ID of the input field
+     * @returns {boolean} True if field is marked as no-modify
+     */
+    isNoModify(inputId) {
+        const button = document.querySelector(`.no-modify-btn[data-target="${inputId}"]`);
+        return button && button.classList.contains('active');
+    }
+
+    /**
+     * Get form values, excluding no-modify fields
+     *
+     * @returns {Object} Form values object with only modifiable fields
+     */
+    getFormValues() {
+        const values = {};
+
+        // Check measurement inputs
+        ['cutDepth', 'cutOffset', 'toolDia'].forEach(inputId => {
+            if (!this.isNoModify(inputId)) {
+                const input = document.getElementById(inputId);
+                if (input && input.value.trim() !== '') {
+                    values[inputId] = input.value;
+                }
+            }
+        });
+
+        // Check cut type (only if no-modify option is not selected)
+        const cutTypeValue = this.cutTypeInput ? this.cutTypeInput.value : '';
+        if (cutTypeValue !== 'no-modify') {
+            values.cutType = cutTypeValue;
+        }
+
+        return values;
+    }
+
+    /**
+     * Analyze common values across selected elements
+     *
+     * @param {Array} selectedElementsInfo - Array of selected elements
+     * @returns {Object} Common values object
+     */
+    analyzeCommonValues(selectedElementsInfo) {
+        console.log('--- Analyzing Common Values ---');
+        const commonValues = {};
+        const attributes = ['cutDepth', 'cutOffset', 'toolDia', 'cutType'];
+
+        attributes.forEach(attr => {
+            console.log(`Processing attribute: ${attr}`);
+            const values = selectedElementsInfo.map((info, index) => {
+                const shaperAttr = attr === 'cutType' ? 'shaper:cutType' : `shaper:${attr}`;
+                // Safely access shaperAttributes with fallback to empty object
+                const shaperAttributes = info.shaperAttributes || {};
+                const value = shaperAttributes[shaperAttr] || '';
+                console.log(`  Element ${index + 1} (${info.appId}): ${shaperAttr} = "${value}"`);
+                return value;
+            });
+
+            // Check if all values are the same
+            const uniqueValues = [...new Set(values)];
+            const isCommon = uniqueValues.length === 1;
+            const commonValue = isCommon ? uniqueValues[0] : null;
+
+            console.log(`  Values: [${values.join(', ')}]`);
+            console.log(`  Unique values: [${uniqueValues.join(', ')}]`);
+            console.log(`  Is common: ${isCommon}, Common value: "${commonValue}"`);
+
+            commonValues[attr] = commonValue;
+        });
+
+        console.log('Final common values:', commonValues);
+        console.log('--- End Analyzing Common Values ---');
+        return commonValues;
+    }    /**
+     * Populate form for multi-element editing
+     *
+     * @param {Object} commonValues - Common values across selected elements
+     */
+    populateMultiElementForm(commonValues) {
+        console.log('--- Populating Multi-Element Form ---');
+        // Populate measurement inputs
+        ['cutDepth', 'cutOffset', 'toolDia'].forEach(inputId => {
+            const input = document.getElementById(inputId);
+            const commonValue = commonValues[inputId];
+
+            console.log(`Processing ${inputId}: commonValue = "${commonValue}"`);
+
+            if (commonValue !== null) {
+                // All elements have the same value - show it and keep field editable
+                console.log(`  Common value found for ${inputId}`);
+                if (commonValue.trim() !== '') {
+                    // Convert from pixel storage to display units
+                    const pixelValue = DRYUtilities.parseNumericValue(commonValue);
+                    if (pixelValue !== 0 || commonValue === '0') {
+                        const formattedValue = this.measurementSystem.formatDisplayNumber(
+                            this.measurementSystem.convertPixelsToCurrentUnit(pixelValue)
+                        );
+                        input.value = formattedValue;
+                        console.log(`  Set ${inputId} value to: ${formattedValue}`);
+                    } else {
+                        input.value = '';
+                        console.log(`  Set ${inputId} to empty (zero pixel value)`);
+                    }
+                } else {
+                    input.value = '';
+                    console.log(`  Set ${inputId} to empty (empty common value)`);
+                }
+                // Don't activate no-modify for common values
+            } else {
+                // Different values across elements - activate no-modify by default
+                console.log(`  Different values for ${inputId} - activating no-modify`);
+                input.value = '';
+                // Use setTimeout to ensure DOM is ready
+                setTimeout(() => {
+                    this.activateNoModify(inputId);
+                }, 10);
+            }
+        });
+        console.log('--- End Populating Multi-Element Form ---');
+    }
+
+    /**
+     * Setup cut type for multi-element editing
+     *
+     * @param {string|null} commonCutType - Common cut type or null if different
+     */
+    setupCutTypeForMultiElement(commonCutType) {
+        if (commonCutType !== null) {
+            // All elements have the same cut type
+            this.setCutTypeSlider(commonCutType);
+        } else {
+            // Different cut types - select no-modify option
+            this.selectNoModifyCutType();
+        }
+    }
+
+    /**
+     * Select the no-modify option in cut type slider
+     */
+    selectNoModifyCutType() {
+        const noModifyOption = document.querySelector('.no-modify-option');
+        if (noModifyOption) {
+            const index = Array.from(this.cutTypeOptions).indexOf(noModifyOption);
+            this.selectCutType(index);
+        }
+    }
+
+    /**
+     * Update cut type slider layout based on visible options
+     */
+    updateCutTypeLayout() {
+        const visibleOptions = Array.from(this.cutTypeOptions).filter(opt =>
+            opt.style.display !== 'none'
+        );
+
+        // Update CSS custom property for dynamic width
+        const slider = document.querySelector('.cut-type-options');
+        if (slider) {
+            slider.style.setProperty('--visible-option-count', visibleOptions.length);
+        }
+
+        // Reinitialize cut type options list
+        this.cutTypeOptions = document.querySelectorAll('.cut-type-option:not([style*="display: none"])');
+        this.optionWidth = 100 / this.cutTypeOptions.length;
+    }
+
+    /**
+     * Enable all input fields for single-element editing
+     *
+     * Ensures all input fields are enabled and no-modify buttons are deactivated.
+     * Used when switching from multi-element mode to single-element mode.
+     */
+    enableAllInputs() {
+        // Enable all measurement inputs
+        ['cutDepth', 'cutOffset', 'toolDia'].forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.disabled = false;
+            }
+
+            // Deactivate any no-modify buttons
+            const button = document.querySelector(`.no-modify-btn[data-target="${inputId}"]`);
+            if (button) {
+                button.classList.remove('active');
+            }
+        });
+
+        console.log('All inputs enabled for single-element editing');
     }
 }

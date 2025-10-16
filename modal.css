@@ -180,10 +180,6 @@
     filter: brightness(0) invert(1);
 }
 
-/* ==========================================================================
-   Input Fields and Controls
-   ========================================================================== */
-
 /* Large Inputs (Großschrift) */
 .form-group input {
     width: 100%;
@@ -213,11 +209,61 @@
     background: rgba(0, 0, 0, 0.3);
 }
 
+/* Disabled input styling with higher specificity */
+.modal .form-group input:disabled,
+.modal .large-input:disabled,
+input.large-input:disabled {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+.modal .form-group input:disabled:focus,
+.modal .large-input:disabled:focus,
+input.large-input:disabled:focus {
+    outline: none !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: none !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Additional specificity for input containers with disabled inputs */
+.input-container .input-with-unit input:disabled {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+/* Ultimate specificity override for all disabled inputs */
+input[disabled], input:disabled,
+.modal input[disabled], .modal input:disabled,
+.modal-content input[disabled], .modal-content input:disabled,
+.modal-body input[disabled], .modal-body input:disabled {
+    opacity: 0.6 !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
 /* Placeholder styling */
 .form-group input::placeholder,
 .large-input::placeholder {
     color: #95a5a6;
     opacity: 0.8;
+}
+
+.form-group input:disabled::placeholder,
+.large-input:disabled::placeholder {
+    color: #7f8c8d;
+    opacity: 0.5;
 }
 
 .input-with-unit {
@@ -530,4 +576,80 @@
     background: rgba(231, 76, 60, 0.2);
     border: 1px solid #e74c3c;
     color: white;
+}
+
+/* ==========================================================================
+   No-Modify Functionality for Multi-Element Editing
+   ========================================================================== */
+
+/* No-Modify Button for Input Fields */
+.no-modify-btn {
+    background: rgba(231, 76, 60, 0.2) !important;
+    border: 1px solid #e74c3c !important;
+    color: #e74c3c !important;
+    font-weight: 700 !important;
+    min-width: 35px !important;
+}
+
+.no-modify-btn:hover {
+    background: rgba(231, 76, 60, 0.3) !important;
+    border: 1px solid #c0392b !important;
+    color: #ff6b6b !important;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4) !important;
+}
+
+.no-modify-btn.active {
+    background: rgba(231, 76, 60, 0.6) !important;
+    border: 1px solid #c0392b !important;
+    color: white !important;
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.6) !important;
+}
+
+/* No-Modify Option in Cut Type Slider */
+.cut-type-option.no-modify-option {
+    background: rgba(231, 76, 60, 0.2) !important;
+    border: 1px solid #e74c3c !important;
+    color: #e74c3c !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+}
+
+.cut-type-option.no-modify-option:hover {
+    background: rgba(231, 76, 60, 0.3) !important;
+    color: #ff6b6b !important;
+}
+
+.cut-type-option.no-modify-option.active {
+    background: rgba(231, 76, 60, 0.6) !important;
+    color: white !important;
+}
+
+/* Dynamic Cut Type Slider Width */
+.cut-type-options {
+    width: calc(var(--visible-option-count, 6) * 16.666667%);
+}
+
+/* ========================================
+   ULTIMATE SPECIFICITY OVERRIDES
+   ======================================== */
+
+/* Ultra-high specificity disabled input styling */
+#attributeModal .modal-content .input-container input[disabled],
+#attributeModal .modal-content .input-container input:disabled,
+#attributeModal .modal-content .input-with-unit input[disabled],
+#attributeModal .modal-content .input-with-unit input:disabled,
+#attributeModal .modal-content .form-group input[disabled],
+#attributeModal .modal-content .form-group input:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    pointer-events: none !important;
+}
+
+/* Absolute final fallback with maximum specificity */
+html body .modal#attributeModal .modal-content input[disabled],
+html body .modal#attributeModal .modal-content input:disabled {
+    opacity: 0.6 !important;
 }

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Element Modal Test</title>
+    <link rel="stylesheet" href="../modal.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1e2a3a;
+            color: white;
+            padding: 20px;
+        }
+        .test-results {
+            background: #2a3b4d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-item {
+            margin: 8px 0;
+            padding: 4px 0;
+        }
+        .test-item.pass {
+            color: #2ecc71;
+        }
+        .test-item.fail {
+            color: #e74c3c;
+        }
+        .test-item.info {
+            color: #3498db;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Single Element Modal Input Test</h1>
+
+    <div class="test-results">
+        <h3>Test Results:</h3>
+        <div class="test-item pass">✅ Test page loaded successfully</div>
+    </div>
+
+    <button onclick="openSingleElementModal()">Open Single Element Modal</button>
+    <button onclick="runInputTests()">Run Input Tests</button>
+
+    <!-- Modal HTML -->
+    <div id="attributeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <img src="../icons/plan.svg" alt="Cut Planning" class="modal-icon">
+                    Cut Planning
+                    <span id="batchCounter" class="batch-counter">1</span>
+                </div>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+
+            <div class="modal-body">
+                <!-- Cut Type Selection -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <img src="../icons/cutType.svg" alt="Cut Type" class="label-icon">
+                        Cut Type:
+                    </label>
+                    <div class="cut-type-slider">
+                        <div class="cut-type-options">
+                            <div class="cut-type-option" data-type="">NONE</div>
+                            <div class="cut-type-option" data-type="online">ONLINE</div>
+                            <div class="cut-type-option" data-type="inside">INSIDE</div>
+                            <div class="cut-type-option" data-type="outside">OUTSIDE</div>
+                            <div class="cut-type-option" data-type="pocket">POCKET</div>
+                            <div class="cut-type-option" data-type="guide">GUIDE</div>
+                            <div class="cut-type-option no-modify-option" data-type="no-modify" style="display: none;">—</div>
+                        </div>
+                        <div class="cut-type-indicator"></div>
+                    </div>
+                    <input type="hidden" id="cutType" name="cutType" value="">
+                </div>
+
+                <!-- Cut Depth -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <img src="../icons/cutDepth.svg" alt="Cut Depth" class="label-icon">
+                        Cut Depth:
+                    </label>
+                    <div class="input-container">
+                        <div class="input-with-unit">
+                            <input type="text" id="cutDepth" name="cutDepth" class="large-input" placeholder="0.0">
+                            <span class="input-unit">mm</span>
+                        </div>
+                        <div class="input-buttons">
+                            <button type="button" class="value-btn" data-target="cutDepth" data-value="1">1.0</button>
+                            <button type="button" class="value-btn" data-target="cutDepth" data-value="2">2.0</button>
+                            <button type="button" class="value-btn" data-target="cutDepth" data-value="5">5.0</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cut Offset -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <img src="../icons/cutOffset.svg" alt="Cut Offset" class="label-icon">
+                        Cut Offset:
+                    </label>
+                    <div class="input-container">
+                        <div class="input-with-unit">
+                            <input type="text" id="cutOffset" name="cutOffset" class="large-input" placeholder="0.0">
+                            <span class="input-unit">mm</span>
+                        </div>
+                        <div class="input-buttons">
+                            <button type="button" class="value-btn" data-target="cutOffset" data-value="0">0.0</button>
+                            <button type="button" class="value-btn" data-target="cutOffset" data-value="0.1">0.1</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tool Diameter -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <img src="../icons/toolDia.svg" alt="Tool Diameter" class="label-icon">
+                        Tool Diameter:
+                    </label>
+                    <div class="input-container">
+                        <div class="input-with-unit">
+                            <input type="text" id="toolDia" name="toolDia" class="large-input" placeholder="0.0">
+                            <span class="input-unit">mm</span>
+                        </div>
+                        <div class="input-buttons">
+                            <button type="button" class="value-btn" data-target="toolDia" data-value="3">3.0</button>
+                            <button type="button" class="value-btn" data-target="toolDia" data-value="6">6.0</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="closeModal()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/dryUtilities.js"></script>
+    <script src="../js/measurementSystem.js"></script>
+    <script src="../js/elementManager.js"></script>
+    <script src="../js/modalDialog.js"></script>
+
+    <script>
+        // Initialize components
+        const measurementSystem = new MeasurementSystem();
+        const elementManager = new ElementManager(measurementSystem);
+        const modalDialog = new ModalDialog(measurementSystem, elementManager);
+        modalDialog.initialize();
+
+        function openSingleElementModal() {
+            // Create a mock single path element
+            const mockPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            mockPath.setAttribute('d', 'M 10 10 L 50 50');
+
+            // Open modal for single element (no selectedElementsInfo array)
+            modalDialog.openAttributeModal(mockPath, null);
+
+            updateTestResults('info', '🔍 Single element modal opened');
+
+            // Run input tests after a short delay to ensure modal is fully initialized
+            setTimeout(runInputTests, 100);
+        }
+
+        function closeModal() {
+            modalDialog.closeModal();
+        }
+
+        function runInputTests() {
+            const testResults = [];
+
+            // Test if modal is visible
+            const modal = document.getElementById('attributeModal');
+            const isVisible = modal && modal.style.display === 'flex';
+            testResults.push({
+                test: 'Modal visibility',
+                result: isVisible,
+                message: isVisible ? 'Modal is visible' : 'Modal is not visible'
+            });
+
+            if (!isVisible) {
+                updateTestResults('fail', '❌ Modal not visible - cannot run input tests');
+                return;
+            }
+
+            // Test batch counter shows "1" for single element
+            const batchCounter = document.getElementById('batchCounter');
+            const counterValue = batchCounter ? batchCounter.textContent : 'not found';
+            testResults.push({
+                test: 'Batch counter',
+                result: counterValue === '1',
+                message: `Batch counter shows: "${counterValue}", expected: "1"`
+            });
+
+            // Test that no-modify buttons are hidden
+            const noModifyButtons = document.querySelectorAll('.no-modify-btn');
+            const noModifyVisible = Array.from(noModifyButtons).some(btn =>
+                btn.style.display !== 'none' &&
+                getComputedStyle(btn).display !== 'none'
+            );
+            testResults.push({
+                test: 'No-modify buttons hidden',
+                result: !noModifyVisible,
+                message: noModifyVisible ? 'No-modify buttons are visible (should be hidden)' : 'No-modify buttons are properly hidden'
+            });
+
+            // Test that no-modify option in cut type is hidden
+            const noModifyOption = document.querySelector('.no-modify-option');
+            const noModifyOptionHidden = noModifyOption && noModifyOption.style.display === 'none';
+            testResults.push({
+                test: 'No-modify cut type option hidden',
+                result: noModifyOptionHidden,
+                message: noModifyOptionHidden ? 'No-modify cut type option is hidden' : 'No-modify cut type option is visible (should be hidden)'
+            });
+
+            // Test that all inputs are enabled
+            const inputIds = ['cutDepth', 'cutOffset', 'toolDia'];
+            const inputResults = inputIds.map(inputId => {
+                const input = document.getElementById(inputId);
+                const isEnabled = input && !input.disabled;
+                return {
+                    test: `${inputId} input enabled`,
+                    result: isEnabled,
+                    message: isEnabled ? `${inputId} input is enabled` : `${inputId} input is disabled (should be enabled)`
+                };
+            });
+            testResults.push(...inputResults);
+
+            // Test that inputs are editable (can receive focus and typing)
+            const editabilityResults = inputIds.map(inputId => {
+                const input = document.getElementById(inputId);
+                if (!input) return { test: `${inputId} editability`, result: false, message: `${inputId} input not found` };
+
+                // Try to focus and type in input
+                try {
+                    input.focus();
+                    input.value = 'test';
+                    const canType = input.value === 'test';
+                    input.value = ''; // Clear test value
+                    return {
+                        test: `${inputId} editability`,
+                        result: canType,
+                        message: canType ? `${inputId} input accepts typing` : `${inputId} input does not accept typing`
+                    };
+                } catch (e) {
+                    return {
+                        test: `${inputId} editability`,
+                        result: false,
+                        message: `${inputId} input error: ${e.message}`
+                    };
+                }
+            });
+            testResults.push(...editabilityResults);
+
+            // Display results
+            displayTestResults(testResults);
+        }
+
+        function displayTestResults(results) {
+            const container = document.querySelector('.test-results');
+            // Clear previous results except the first line
+            const firstLine = container.querySelector('.test-item');
+            container.innerHTML = '<h3>Test Results:</h3>';
+            container.appendChild(firstLine);
+
+            results.forEach(result => {
+                updateTestResults(result.result ? 'pass' : 'fail',
+                    `${result.result ? '✅' : '❌'} ${result.test}: ${result.message}`);
+            });
+
+            // Summary
+            const passCount = results.filter(r => r.result).length;
+            const totalCount = results.length;
+            const summaryClass = passCount === totalCount ? 'pass' : (passCount > 0 ? 'info' : 'fail');
+            updateTestResults(summaryClass, `🎯 Tests completed: ${passCount}/${totalCount} passed`);
+        }
+
+        function updateTestResults(type, message) {
+            const container = document.querySelector('.test-results');
+            const testItem = document.createElement('div');
+            testItem.className = `test-item ${type}`;
+            testItem.textContent = message;
+            container.appendChild(testItem);
+        }
+    </script>
+</body>
+</html>

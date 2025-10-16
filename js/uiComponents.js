@@ -29,6 +29,9 @@ class UIComponents {
         // Modal dialog manager
         this.modalDialog = new ModalDialog(measurementSystem, elementManager);
 
+        // Make modal dialog globally accessible for multi-element functionality
+        window.globalModalDialog = this.modalDialog;
+
         // Tooltip system for contextual help
         this.tooltip = null;
         this.tooltipHideTimeout = null;
