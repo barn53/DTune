@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="modal.css">
     <link rel="stylesheet" href="displaysvg.css">
 </head>
 
@@ -137,17 +138,20 @@
         <div class="modal no-context-menu" id="attributeModal" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Edit Shaper Attributes</h3>
+                    <h2 class="modal-title">
+                        <img src="icons/plan.svg" class="modal-icon" alt="Cut Planning">
+                        Cut Planning
+                        <span class="batch-counter" id="batchCounter">1</span>
+                    </h2>
                     <button class="modal-close" id="modalClose">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="path-info">
-                        <strong>Selected Path:</strong>
-                        <span id="selectedPathInfo"></span>
-                    </div>
                     <form id="attributeForm">
                         <div class="form-group">
-                            <label for="cutType">Cut Type:</label>
+                            <label for="cutType" class="form-label">
+                                <img src="icons/cutType.svg" class="label-icon" alt="Cut Type">
+                                Cut Type:
+                            </label>
                             <div class="cut-type-slider">
                                 <div class="cut-type-options">
                                     <div class="cut-type-option" data-type="">none</div>
@@ -156,33 +160,58 @@
                                     <div class="cut-type-option" data-type="outside">Outside</div>
                                     <div class="cut-type-option" data-type="pocket">Pocket</div>
                                     <div class="cut-type-option" data-type="guide">Guide</div>
+                                    <div class="cut-type-option no-modify-option" data-type="no-modify" style="display: none;">—</div>
                                 </div>
                                 <div class="cut-type-indicator"></div>
                             </div>
                             <input type="hidden" id="cutType" name="cutType" value="">
                         </div>
                         <div class="form-group">
-                            <label for="cutDepth">Cut Depth:</label>
-                            <div class="input-with-unit">
-                                <input type="text" id="cutDepth" name="cutDepth" placeholder="15"
-                                    class="border-light rounded-sm">
-                                <span class="input-unit">mm</span>
+                            <label for="cutDepth" class="form-label">
+                                <img src="icons/cutDepth.svg" class="label-icon" alt="Cut Depth">
+                                Cut Depth:
+                            </label>
+                            <div class="input-container">
+                                <div class="input-with-unit">
+                                    <input type="text" id="cutDepth" name="cutDepth" placeholder="15"
+                                        class="border-light rounded-sm large-input">
+                                    <span class="input-unit">mm</span>
+                                </div>
+                                <div class="input-buttons">
+                                    <!-- Dynamic suggestion buttons will be created here by modalDialog.js -->
+                                </div>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="cutOffset">Cut Offset:</label>
-                            <div class="input-with-unit">
-                                <input type="text" id="cutOffset" name="cutOffset" placeholder="0"
-                                    class="border-light rounded-sm">
-                                <span class="input-unit">mm</span>
+                            <label for="cutOffset" class="form-label">
+                                <img src="icons/cutOffset.svg" class="label-icon" alt="Cut Offset">
+                                Cut Offset:
+                            </label>
+                            <div class="input-container">
+                                <div class="input-with-unit">
+                                    <input type="text" id="cutOffset" name="cutOffset" placeholder="0"
+                                        class="border-light rounded-sm large-input">
+                                    <span class="input-unit">mm</span>
+                                </div>
+                                <div class="input-buttons">
+                                    <!-- Dynamic suggestion buttons will be created here by modalDialog.js -->
+                                </div>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="toolDia">Tool Diameter:</label>
-                            <div class="input-with-unit">
-                                <input type="text" id="toolDia" name="toolDia" placeholder="6"
-                                    class="border-light rounded-sm">
-                                <span class="input-unit">mm</span>
+                            <label for="toolDia" class="form-label">
+                                <img src="icons/toolDia.svg" class="label-icon" alt="Tool Diameter">
+                                Tool Diameter:
+                            </label>
+                            <div class="input-container">
+                                <div class="input-with-unit">
+                                    <input type="text" id="toolDia" name="toolDia" placeholder="6"
+                                        class="border-light rounded-sm large-input">
+                                    <span class="input-unit">mm</span>
+                                </div>
+                                <div class="input-buttons">
+                                    <!-- Dynamic suggestion buttons will be created here by modalDialog.js -->
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -198,11 +227,13 @@
     </div>
 
     <!-- Modular JavaScript files -->
+    <script src="js/dryUtilities.js"></script>
     <script src="js/shaperConstants.js"></script>
     <script src="js/measurementSystem.js"></script>
     <script src="js/metaData.js"></script>
     <script src="js/elementManager.js"></script>
     <script src="js/viewport.js"></script>
+    <script src="js/modalDialog.js"></script>
     <script src="js/uiComponents.js"></script>
     <script src="js/svgHelper.js"></script>
     <script src="js/fileManager.js"></script>

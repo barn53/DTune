@@ -57,39 +57,42 @@ class SVGShaperEditor {
      * throughout the application lifecycle. Sets up UI component initialization.
      */
     initializeElements() {
-        // Main application sections
-        this.uploadSection = document.getElementById('uploadSection');
-        this.editorSection = document.getElementById('editorSection');
+        // Bind all DOM elements at once using DRY utilities
+        DRYUtilities.bindElements({
+            // Main application sections
+            uploadSection: 'uploadSection',
+            editorSection: 'editorSection',
 
-        // File upload interface elements
-        this.fileInput = document.getElementById('fileInput');
-        this.uploadArea = document.getElementById('uploadArea');
-        this.uploadButton = document.getElementById('uploadBtn');
-        this.floatingImportBtn = document.getElementById('floatingImportBtn');
-        this.floatingExportBtn = document.getElementById('floatingExportBtn');
+            // File upload interface elements
+            fileInput: 'fileInput',
+            uploadArea: 'uploadArea',
+            uploadButton: 'uploadBtn',
+            floatingImportBtn: 'floatingImportBtn',
+            floatingExportBtn: 'floatingExportBtn',
 
-        // SVG viewport and display elements
-        this.svgContainer = document.getElementById('svgContainer');
-        this.svgWrapper = document.getElementById('svgWrapper');
-        this.svgContent = document.getElementById('svgContent');
-        this.gutterOverlay = document.getElementById('gutterOverlay');
+            // SVG viewport and display elements
+            svgContainer: 'svgContainer',
+            svgWrapper: 'svgWrapper',
+            svgContent: 'svgContent',
+            gutterOverlay: 'gutterOverlay',
 
-        // User control elements
-        this.unitsToggle = document.getElementById('unitToggle');
-        this.decimalToggle = document.getElementById('decimalToggle');
-        this.gutterToggle = document.getElementById('gutterToggle');
-        this.gutterSize = document.getElementById('gutterSize');
-        this.gutterUnitLabel = document.getElementById('gutterUnitLabel');
+            // User control elements
+            unitsToggle: 'unitToggle',
+            decimalToggle: 'decimalToggle',
+            gutterToggle: 'gutterToggle',
+            gutterSize: 'gutterSize',
+            gutterUnitLabel: 'gutterUnitLabel',
 
-        // Viewport control buttons
-        this.zoomInBtn = document.getElementById('zoomIn');
-        this.zoomOutBtn = document.getElementById('zoomOut');
-        this.zoom100Btn = document.getElementById('zoom100');
-        this.zoomFitBtn = document.getElementById('zoomFit');
-        this.centerViewBtn = document.getElementById('centerView');
+            // Viewport control buttons
+            zoomInBtn: 'zoomIn',
+            zoomOutBtn: 'zoomOut',
+            zoom100Btn: 'zoom100',
+            zoomFitBtn: 'zoomFit',
+            centerViewBtn: 'centerView',
 
-        // Application state display
-        this.currentFileNameDisplay = document.getElementById('titlebarFilename');
+            // Application state display
+            currentFileNameDisplay: 'titlebarFilename'
+        }, this);
 
         // Initialize complex UI components
         this.uiComponents.initializeElements();
@@ -174,18 +177,28 @@ class SVGShaperEditor {
         this.uiComponents.onEditAttributes = () => {
             const selectedPaths = this.elementManager.getSelectedPaths();
             if (selectedPaths.size > 0) {
+                console.log('=== DIALOG OPENING - ELEMENT DATA TRACE ===');
+                console.log(`Selected ${selectedPaths.size} elements for editing`);
+
                 // Collect information for all selected elements
                 const selectedElementsInfo = Array.from(selectedPaths).map((path, index) => {
-                    const attributes = this.attributeSystem.getShaperAttributes(path);
+                    const dimensions = this.elementManager.getElementDimensions(path);
+                    const shaperAttributes = dimensions.shaperAttributes || {};
+
+                    console.log(`Element ${index + 1}:`);
+                    console.log(`  appId: ${path.dataset.appId}`);
+                    console.log(`  Element dimensions:`, dimensions);
+                    console.log(`  Shaper attributes:`, shaperAttributes);
+
                     return {
                         appId: path.dataset.appId || `fallback-${index}`,
                         element: path,
-                        cutType: attributes.cutType || 'line',
-                        cutDepth: attributes.cutDepth || null,
-                        toolDia: attributes.toolDia || null,
-                        cutOffset: attributes.cutOffset || null
+                        shaperAttributes: shaperAttributes
                     };
                 });
+
+                console.log('Complete selectedElementsInfo:', selectedElementsInfo);
+                console.log('=== END DIALOG OPENING TRACE ===');
 
                 // Open modal with information about all selected elements
                 this.uiComponents.openAttributeModal(selectedElementsInfo[0].element, selectedElementsInfo);
@@ -323,7 +336,7 @@ class SVGShaperEditor {
 
         // Restore viewport state (zoom and pan) only when loading from localStorage
         if (typeof settings.zoom === 'number' && !isNaN(settings.zoom)) {
-            this.viewport.setZoom(Math.max(0.1, Math.min(settings.zoom, 10))); // Clamp to valid range
+            this.viewport.setZoom(DRYUtilities.clamp(settings.zoom, 0.1, 10)); // Clamp to valid range
         }
         if (typeof settings.panX === 'number' && !isNaN(settings.panX)) {
             this.viewport.setPan(settings.panX, settings.panY || 0);
@@ -436,6 +449,8 @@ class SVGShaperEditor {
                 console.error(`Could not find input element: ${inputId}`);
             }
         });
+
+        // Value buttons will be handled directly in modal dialog initialization
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.uiComponents.handleKeyDown(e));
@@ -589,6 +604,22 @@ class SVGShaperEditor {
                 // Multi-selection support: Ctrl/Cmd/Shift for multi-select
                 const multiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
                 this.elementManager.selectPath(path, multiSelect);
+            });
+
+            // Double-click to open modal for single element
+            overlay.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                // Clear current selection and select only this element
+                this.elementManager.clearSelection();
+                this.elementManager.selectPath(path, false);
+
+                // Open modal for this single element
+                const selectedElementsInfo = [{
+                    element: path,
+                    appId: path.dataset.appId,
+                    index: 0
+                }];
+                this.uiComponents.openAttributeModal(path, selectedElementsInfo);
             });
 
             // Allow mousedown events to bubble up for panning functionality
@@ -921,14 +952,14 @@ class SVGShaperEditor {
         const viewBox = svgElement.getAttribute('viewBox');
         if (viewBox) {
             const vbParts = viewBox.split(/\s+/);
-            boundaryX = parseFloat(vbParts[0]) || 0;
-            boundaryY = parseFloat(vbParts[1]) || 0;
-            boundaryWidth = parseFloat(vbParts[2]) || 0;
-            boundaryHeight = parseFloat(vbParts[3]) || 0;
+            boundaryX = DRYUtilities.parseNumericValue(vbParts[0]);
+            boundaryY = DRYUtilities.parseNumericValue(vbParts[1]);
+            boundaryWidth = DRYUtilities.parseNumericValue(vbParts[2]);
+            boundaryHeight = DRYUtilities.parseNumericValue(vbParts[3]);
         } else {
             // Fallback to width/height attributes
-            boundaryWidth = parseFloat(svgElement.getAttribute('width')) || 0;
-            boundaryHeight = parseFloat(svgElement.getAttribute('height')) || 0;
+            boundaryWidth = DRYUtilities.parseNumericValue(svgElement.getAttribute('width'));
+            boundaryHeight = DRYUtilities.parseNumericValue(svgElement.getAttribute('height'));
         }
 
         // Get the SVG position within the viewport
@@ -1067,7 +1098,10 @@ class SVGShaperEditor {
     initializeRawValue(input, displayValue, currentUnit) {
         if (!input.dataset.rawValueMm) {
             const parsedValue = this.measurementSystem.parseValueWithUnits(displayValue);
-            if (parsedValue !== null && parsedValue > 0) {
+            const allowNegative = ShaperConstants.allowsNegativeValues(input.id);
+            const isValidValue = parsedValue !== null && (allowNegative || parsedValue > 0);
+
+            if (isValidValue) {
                 const rawValueMm = this.measurementSystem.convertBetweenUnits(parsedValue, currentUnit, 'mm');
                 this.setRawValue(input, rawValueMm);
                 return rawValueMm;
@@ -1105,7 +1139,11 @@ class SVGShaperEditor {
             const [, numStr, unit] = match;
             const numValue = parseFloat(numStr);
 
-            if (!isNaN(numValue) && numValue > 0) {
+            // Check if this attribute allows negative values
+            const allowNegative = ShaperConstants.allowsNegativeValues(input.id);
+            const isValidValue = !isNaN(numValue) && (allowNegative || numValue > 0);
+
+            if (isValidValue) {
                 let rawValueMm;
 
                 if (unit === 'mm') {
@@ -1124,7 +1162,8 @@ class SVGShaperEditor {
             }
         }
 
-        return this.getRawValue(input);
+        const fallbackValue = this.getRawValue(input);
+        return fallbackValue;
     }
 
     convertInputWithRawValue(input, inputId, fromUnit, toUnit) {

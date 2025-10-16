@@ -27,6 +27,9 @@ class ElementManager {
         this.selectedPaths = new Set(); // Multiple selection support
         this.hoveredPath = null;
         this.svgHelper = new SVGHelper();
+
+        // Initialize DRY utilities helper
+        this.dryUtils = new DRYUtilities(measurementSystem);
     }
 
     /**
@@ -171,9 +174,9 @@ class ElementManager {
                 {
                     // Calculate line length and angle from bounding box dimensions
                     const { width, height } = dimensions;
-                    const length = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
-                    const angle = Math.atan2(height, width) * (180 / Math.PI);
-                    return `Line - Length: ${this.measurementSystem.formatDisplayNumber(length)}${this.measurementSystem.units}; Angle: ${this.measurementSystem.formatAngle(angle)}°`;
+                    const length = DRYUtilities.calculateDistance(0, 0, width, height);
+                    const angle = DRYUtilities.calculateAngle(0, 0, width, height);
+                    return this.dryUtils.formatElementDescription('line', { length, angle });
                 }
             default:
                 return `${tagName.charAt(0).toUpperCase() + tagName.slice(1)} element`;
@@ -200,11 +203,9 @@ class ElementManager {
         // Special measurement handling for circular elements
         if (dimensions.isCircle) {
             const { diameterPx, radiusPx } = dimensions;
-            const diameter = this.measurementSystem.convertPixelsToCurrentUnit(diameterPx);
-            const radius = this.measurementSystem.convertPixelsToCurrentUnit(radiusPx);
             measurements.push(
-                { name: 'Diameter', value: `${this.measurementSystem.formatDisplayNumber(diameter)}${this.measurementSystem.units}` },
-                { name: 'Radius', value: `${this.measurementSystem.formatDisplayNumber(radius)}${this.measurementSystem.units}` }
+                this.dryUtils.createMeasurement('Diameter', diameterPx),
+                this.dryUtils.createMeasurement('Radius', radiusPx)
             );
             return measurements;
         }
@@ -220,12 +221,10 @@ class ElementManager {
                     // Standard width/height measurements for bounding box elements
                     const { widthPx, heightPx } = dimensions;
                     if (widthPx > 0) {
-                        const width = this.measurementSystem.convertPixelsToCurrentUnit(widthPx);
-                        measurements.push({ name: 'Width', value: `${this.measurementSystem.formatDisplayNumber(width)}${this.measurementSystem.units}` });
+                        measurements.push(this.dryUtils.createMeasurement('Width', widthPx));
                     }
                     if (heightPx > 0) {
-                        const height = this.measurementSystem.convertPixelsToCurrentUnit(heightPx);
-                        measurements.push({ name: 'Height', value: `${this.measurementSystem.formatDisplayNumber(height)}${this.measurementSystem.units}` });
+                        measurements.push(this.dryUtils.createMeasurement('Height', heightPx));
                     }
                     break;
                 }
@@ -233,11 +232,10 @@ class ElementManager {
                 {
                     // Line-specific measurements: length and angle
                     const { widthPx, heightPx } = dimensions;
-                    const lengthPx = Math.sqrt(Math.pow(widthPx, 2) + Math.pow(heightPx, 2));
-                    const length = this.measurementSystem.convertPixelsToCurrentUnit(lengthPx);
-                    const angle = Math.atan2(heightPx, widthPx) * (180 / Math.PI);
+                    const lengthPx = DRYUtilities.calculateDistance(0, 0, widthPx, heightPx);
+                    const angle = DRYUtilities.calculateAngle(0, 0, widthPx, heightPx);
                     measurements.push(
-                        { name: 'Length', value: `${this.measurementSystem.formatDisplayNumber(length)}${this.measurementSystem.units}` },
+                        this.dryUtils.createMeasurement('Length', lengthPx),
                         { name: 'Angle', value: `${this.measurementSystem.formatAngle(angle)}°` }
                     );
                     break;

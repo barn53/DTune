@@ -10,6 +10,9 @@ Namen:
 Δ Measure
 
 
+============================================
+Mehrere Pfade editieren!
+Implementieren!
 
 ============================================
 Hah, klick auf Pfad öffnet nicht den dialog, sondern markiert den Pfad
@@ -51,7 +54,7 @@ Erweiterung innen/außen oder beidseitig, Tasche über füllung...
 attribut-modal schöner machen:
 mini svg vom element im attribute editor statt sperriger zu technischer überschrift
 Wie kontext menü oder sogar tool tips.
-icons verwenden für tie attribute.
+icons verwenden für die shaper attribute.
 Großschrift
 Auswahl werte für die input Felder als buttons im Textfeld
 
@@ -75,6 +78,12 @@ is there also ui testing possible klicks and so on?
 Internationalisierung: DE EN FR
 
 
+
+============================================
+Möglichkeit zur Nullpunkt Anker setzen kleines rotes Dreieck
+Erkennen des Ankers in der SVG Quelle.
+
+
 ============================================
 Gitter skalierung ist wieder durcheinander gekommen!
 Scheiße - wann ist das passiert?
@@ -82,12 +91,13 @@ Mit Änderung: 7840a57315dbf4c3fdff43c64c595e822aad720b FullscreenEditor
 styles.css
 
 
+
 ============================================
 Gitter gestrichelt machen
 
 
 ============================================
-Gitter über Zoom Buttons!
+Gitter liegt über Zoom Buttons -> ändern!
 
 
 ============================================

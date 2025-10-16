@@ -1,0 +1,655 @@
+/**
+ * Modal Dialog Styles
+ *
+ * Standalone CSS module for modal dialog components following the dark theme
+ * design language established by the context menu system. This file provides
+ * all styling for modal dialogs, forms, buttons, and interactive elements.
+ *
+ * Design Language:
+ * - Dark gradient backgrounds (#1a252f to #2c3e50)
+ * - Blue accent color (#3498db) for highlights and borders
+ * - Context menu-inspired button styling
+ * - IBM Plex Sans typography
+ * - Smooth transitions and hover effects
+ */
+
+/* ==========================================================================
+   Modal Container and Backdrop
+   ========================================================================== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: linear-gradient(145deg, #1a252f, #2c3e50);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+    max-width: 540px; /* was 650px */
+    width: 88%; /* slightly less to emphasize compactness */
+    max-height: 80vh;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==========================================================================
+   Modal Header
+   ========================================================================== */
+
+.modal-header {
+    padding: 20px 20px 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #3498db;
+    margin-bottom: 16px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #ecf0f1;
+}
+
+.modal-close {
+    background: rgba(75, 85, 95, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 24px;
+    cursor: pointer;
+    color: #ecf0f1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(52, 152, 219, 0.3);
+    border-color: #3498db;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Modal Title with Icon */
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 24px !important;
+    font-weight: 600;
+    color: #ecf0f1;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.modal-icon {
+    width: 28px;
+    height: 28px;
+    opacity: 0.9;
+    filter: brightness(0) invert(1);
+}
+
+/* Batch Counter - Context Menu Style */
+.batch-counter {
+    background: rgba(243, 156, 18, 0.15);
+    border: 1px solid #f39c12;
+    color: #f39c12;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-left: 12px;
+    min-width: 24px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* ==========================================================================
+   Modal Body and Form Elements
+   ========================================================================== */
+
+.modal-body {
+    padding: 0 20px 20px 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+    color: #ecf0f1;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #ecf0f1;
+    font-size: 14px;
+}
+
+/* Form Labels with Icons (Großschrift) */
+.form-label {
+    display: flex !important;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px !important;
+    font-weight: 600 !important;
+    color: #ecf0f1 !important;
+    font-size: 18px !important; /* Großschrift */
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.label-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.9;
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
+}
+
+/* Large Inputs (Großschrift) */
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ecf0f1;
+    transition: all 0.2s ease;
+}
+
+.large-input {
+    font-size: 16px !important; /* Großschrift für Input-Felder */
+    padding: 12px 14px !important;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ecf0f1 !important;
+}
+
+.form-group input:focus,
+.large-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Disabled input styling with higher specificity */
+.modal .form-group input:disabled,
+.modal .large-input:disabled,
+input.large-input:disabled {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+.modal .form-group input:disabled:focus,
+.modal .large-input:disabled:focus,
+input.large-input:disabled:focus {
+    outline: none !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: none !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Additional specificity for input containers with disabled inputs */
+.input-container .input-with-unit input:disabled {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+/* Ultimate specificity override for all disabled inputs */
+input[disabled], input:disabled,
+.modal input[disabled], .modal input:disabled,
+.modal-content input[disabled], .modal-content input:disabled,
+.modal-body input[disabled], .modal-body input:disabled {
+    opacity: 0.6 !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+/* Placeholder styling */
+.form-group input::placeholder,
+.large-input::placeholder {
+    color: #95a5a6;
+    opacity: 0.8;
+}
+
+.form-group input:disabled::placeholder,
+.large-input:disabled::placeholder {
+    color: #7f8c8d;
+    opacity: 0.5;
+}
+
+.input-with-unit {
+    position: relative;
+    display: inline-block;
+    width: 25%;
+    min-width: 120px;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.input-with-unit input {
+    padding-right: 35px !important;
+    width: 100%;
+    border-right: none !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-unit {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #95a5a6;
+    font-weight: 600;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   Input Container and Value Buttons
+   ========================================================================== */
+
+/* Input Container mit Buttons - Horizontal Layout */
+.input-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px;
+}
+
+.input-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+    padding: 0 8px;
+}
+
+/* Auswahl-Werte als Buttons - Yellow Highlight Scheme */
+.value-btn {
+    padding: 6px 10px;
+    background: rgba(75, 85, 95, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ecf0f1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: 0.3px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+}
+
+/* Fraction display styling */
+.value-btn.fraction {
+    font-size: 12px;
+    letter-spacing: 0px;
+    line-height: 1.2;
+}
+
+/* Ensure proper spacing for sup/sub elements in fractions */
+.value-btn.fraction sup {
+    font-size: 11px;
+    line-height: 1;
+    vertical-align: top;
+    font-weight: 700;
+    margin-right: 1px;
+    position: relative;
+    top: -3px;
+}
+
+.value-btn.fraction sub {
+    font-size: 11px;
+    line-height: 1;
+    vertical-align: bottom;
+    font-weight: 700;
+    margin-left: 1px;
+    position: relative;
+    bottom: -3px;
+}
+
+/* Make fraction slash wider and more visible */
+.value-btn.fraction {
+    font-size: 12px;
+    letter-spacing: 1px;
+    line-height: 1.2;
+}
+
+.value-btn:hover {
+    background: rgba(241, 196, 15, 0.2);
+    border: 1px solid #f1c40f;
+    color: #f1c40f;
+    box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3);
+}
+
+.value-btn:active {
+    background: rgba(241, 196, 15, 0.4);
+    border: 1px solid #f39c12;
+    color: white;
+}
+
+/* Sign Toggle Button - SVG Icon */
+.sign-toggle-btn {
+    min-width: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.sign-toggle-btn svg {
+    width: 16px;
+    height: 12px;
+    color: inherit;
+}
+
+.sign-toggle-btn:hover {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid #27ae60;
+    color: #2ecc71;
+    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+}
+
+.sign-toggle-btn:hover svg {
+    color: #2ecc71;
+}
+
+.sign-toggle-btn:active {
+    background: rgba(46, 204, 113, 0.4);
+    border: 1px solid #229954;
+    color: white;
+}
+
+/* ==========================================================================
+   Cut Type Slider Component
+   ========================================================================== */
+
+/* Cut Type Slider - Context Menu Style */
+.cut-type-slider {
+    position: relative;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    /* Remove inner padding so indicator aligns precisely with option margins */
+    padding: 0;
+    margin-top: 8px;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+    height: 40px; /* Match approx input control height */
+}
+
+.cut-type-options {
+    display: flex;
+    position: relative;
+    z-index: 2;
+    justify-content: stretch;
+    width: 100%;
+    height: 100%;
+}
+
+.cut-type-option {
+    flex: 1 1 0;
+    padding: 0 10px; /* vertical height controlled by parent */
+    font-size: 12px;
+    font-weight: 600;
+    color: #95a5a6;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+    user-select: none;
+    text-align: center;
+    background: transparent;
+    border: 1px solid transparent; /* prevent layout shift on hover */
+    outline: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px; /* light rounding for all for consistent hover */
+}
+
+/* Sharper pill ends matching container radius */
+.cut-type-option:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+.cut-type-option:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.cut-type-option:hover {
+    color: #f1c40f;
+    background: rgba(241, 196, 15, 0.2);
+    border-color: #f1c40f; /* color only, no size change */
+    box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3);
+}
+
+.cut-type-option.active {
+    color: white;
+    font-weight: 700;
+}
+
+.cut-type-option.active:hover {
+    color: white;
+    background: transparent;
+    transform: none;
+}
+
+.cut-type-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(145deg, rgba(241, 196, 15, 0.7), rgba(243, 156, 18, 0.7));
+    transition: left 0.25s ease, width 0.25s ease, background 0.25s ease;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 8px; /* pill style */
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(241,196,15,0.25);
+}
+
+/* ==========================================================================
+   Modal Footer and Action Buttons
+   ========================================================================== */
+
+.modal-footer {
+    padding: 20px;
+    border-top: 2px solid #3498db;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Modal Button Styling - Context Menu Style */
+.modal-footer .btn {
+    padding: 10px 20px;
+    background: rgb(75, 85, 95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ecf0f1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    min-width: 100px;
+}
+
+.modal-footer .btn:hover {
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid #3498db;
+    color: white;
+    transform: scale(1.02);
+}
+
+.modal-footer .btn-primary {
+    background: rgba(52, 152, 219, 0.3);
+    border: 1px solid #3498db;
+    color: white;
+}
+
+.modal-footer .btn-primary:hover {
+    background: rgba(52, 152, 219, 0.5);
+    border: 1px solid #2980b9;
+    transform: scale(1.02);
+}
+
+.modal-footer .btn-secondary {
+    background: rgb(75, 85, 95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer .btn-secondary:hover {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid #e74c3c;
+    color: white;
+}
+
+/* ==========================================================================
+   No-Modify Functionality for Multi-Element Editing
+   ========================================================================== */
+
+/* No-Modify Button for Input Fields */
+.no-modify-btn {
+    background: rgba(231, 76, 60, 0.2) !important;
+    border: 1px solid #e74c3c !important;
+    color: #e74c3c !important;
+    font-weight: 700 !important;
+    min-width: 35px !important;
+}
+
+.no-modify-btn:hover {
+    background: rgba(231, 76, 60, 0.3) !important;
+    border: 1px solid #c0392b !important;
+    color: #ff6b6b !important;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4) !important;
+}
+
+.no-modify-btn.active {
+    background: rgba(231, 76, 60, 0.6) !important;
+    border: 1px solid #c0392b !important;
+    color: white !important;
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.6) !important;
+}
+
+/* No-Modify Option in Cut Type Slider */
+.cut-type-option.no-modify-option {
+    background: rgba(231, 76, 60, 0.2) !important;
+    border: 1px solid #e74c3c !important;
+    color: #e74c3c !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+}
+
+.cut-type-option.no-modify-option:hover {
+    background: rgba(231, 76, 60, 0.3) !important;
+    color: #ff6b6b !important;
+}
+
+.cut-type-option.no-modify-option.active {
+    background: rgba(231, 76, 60, 0.6) !important;
+    color: white !important;
+}
+
+/* Dynamic Cut Type Slider Width */
+.cut-type-options {
+    width: calc(var(--visible-option-count, 6) * 16.666667%);
+}
+
+/* ========================================
+   ULTIMATE SPECIFICITY OVERRIDES
+   ======================================== */
+
+/* Ultra-high specificity disabled input styling */
+#attributeModal .modal-content .input-container input[disabled],
+#attributeModal .modal-content .input-container input:disabled,
+#attributeModal .modal-content .input-with-unit input[disabled],
+#attributeModal .modal-content .input-with-unit input:disabled,
+#attributeModal .modal-content .form-group input[disabled],
+#attributeModal .modal-content .form-group input:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #7f8c8d !important;
+    pointer-events: none !important;
+}
+
+/* Absolute final fallback with maximum specificity */
+html body .modal#attributeModal .modal-content input[disabled],
+html body .modal#attributeModal .modal-content input:disabled {
+    opacity: 0.6 !important;
+}

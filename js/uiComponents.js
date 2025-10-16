@@ -23,25 +23,22 @@ class UIComponents {
         this.measurementSystem = measurementSystem;
         this.elementManager = elementManager;
 
-        // Modal dialog elements
-        this.modal = null;
-        this.selectedPathInfo = null;
+        // Initialize DRY utilities helper
+        this.dryUtils = new DRYUtilities(measurementSystem);
+
+        // Modal dialog manager
+        this.modalDialog = new ModalDialog(measurementSystem, elementManager);
+
+        // Make modal dialog globally accessible for multi-element functionality
+        window.globalModalDialog = this.modalDialog;
 
         // Tooltip system for contextual help
         this.tooltip = null;
         this.tooltipHideTimeout = null;
 
-        // Cut type slider components
-        this.cutTypeOptions = null;
-        this.cutTypeIndicator = null;
-        this.cutTypeInput = null;
-
         // Context menu for path operations
         this.contextMenu = null;
         this.contextMenuVisible = false;
-
-        // Layout calculations
-        this.optionWidth = 0;
     }
 
     /**
@@ -51,193 +48,45 @@ class UIComponents {
      * Must be called after DOM is fully loaded.
      */
     initializeElements() {
-        // Connect modal dialog elements
-        this.modal = document.getElementById('attributeModal');
-        this.selectedPathInfo = document.getElementById('selectedPathInfo');
+        // Initialize modal dialog
+        this.modalDialog.initialize();
 
         // Initialize interactive components
         this.createTooltip();
         this.createContextMenu();
-        this.initializeCutTypeSlider();
     }
 
     /**
-     * Open attribute editing modal for selected path(s)
-     *
-     * Loads current shaper attribute data, populates form with existing
-     * attribute values, and displays modal dialog for editing.
-     *
-     * @param {Element} path - Primary SVG path element to edit
+     * Delegate modal opening to ModalDialog instance
+     * @param {Element} path - Primary SVG path element for editing
      * @param {Array} selectedElementsInfo - Array of selected elements with their attributes
      */
     openAttributeModal(path, selectedElementsInfo = null) {
-        // Store selected elements info for use in form handling
-        this.selectedElementsInfo = selectedElementsInfo;
-
-        // Populate form with primary element's data
-        this.populateAttributeForm(path);
-        this.modal.style.display = 'flex';
-
-        // Log selected elements info for debugging
-        if (selectedElementsInfo) {
-            console.log('DEBUG openAttributeModal - Planning cuts for elements:', selectedElementsInfo);
-        }
-        console.log('DEBUG openAttributeModal - Primary path element:', path);
-        console.log('DEBUG openAttributeModal - Primary path appId:', path.dataset.appId);
+        return this.modalDialog.openAttributeModal(path, selectedElementsInfo);
     }
 
     /**
-     * Close attribute modal and clear selection
-     *
-     * Hides modal dialog, deselects current path, and resets
-     * all form fields to empty state for next use.
+     * Delegate modal closing to ModalDialog instance
      */
     closeModal() {
-        this.modal.style.display = 'none';
-        // Don't clear selection when closing modal - keep elements selected
-
-        // Reset form fields to empty state
-        document.getElementById('cutDepth').value = '';
-        document.getElementById('cutOffset').value = '';
-        document.getElementById('toolDia').value = '';
+        return this.modalDialog.closeModal();
     }
 
     /**
-     * Populate attribute form with path's current values
-     *
-     * Extracts stored shaper attributes from path's element data and
-     * populates form fields with user-readable values. Converts pixel-based
-     * storage to current measurement units for display.
-     *
-     * @param {Element} path - SVG path element to read attributes from
-     */
-    populateAttributeForm(path) {
-        // Display path identification in modal header
-        if (this.selectedPathInfo) {
-            this.selectedPathInfo.textContent = this.elementManager.getElementDescription(path);
-        }
-
-        // Extract shaper attributes from cached element data
-        const dimensions = this.elementManager.getElementDimensions(path);
-        const shaperAttrs = dimensions.shaperAttributes || {};
-
-        // Get cut type for slider positioning
-        const cutType = shaperAttrs['shaper:cutType'] || '';
-
-        // Convert pixel-stored values to current units for form display
-        ['cutDepth', 'cutOffset', 'toolDia'].forEach(inputId => {
-            const input = document.getElementById(inputId);
-            const attrName = `shaper:${inputId}`;
-            const value = shaperAttrs[attrName];
-
-            if (value && value.trim() !== '') {
-                // Convert from pixel storage to current display units
-                const pixelValue = parseFloat(value);
-                if (!isNaN(pixelValue)) {
-                    const convertedValue = this.measurementSystem.convertPixelsToCurrentUnit(pixelValue);
-                    const formattedValue = this.measurementSystem.formatDisplayNumber(convertedValue);
-                    input.value = formattedValue;
-                } else {
-                    input.value = '';
-                }
-            } else {
-                input.value = '';
-            }
-        });
-
-        // Position cut type slider based on stored value
-        this.setCutTypeSlider(cutType);
-
-        // Update unit labels to match current measurement system
-        this.updateDialogUnits();
-    }
-
-    /**
-     * Update unit labels throughout modal dialog
-     *
-     * Synchronizes all unit display labels with current measurement
-     * system setting (inches, millimeters, etc.).
+     * Delegate unit label updates to ModalDialog instance
      */
     updateDialogUnits() {
-        const unitLabels = document.querySelectorAll('.input-unit');
-        unitLabels.forEach(label => {
-            label.textContent = this.measurementSystem.units;
-        });
+        return this.modalDialog.updateDialogUnits();
     }
 
     /**
-     * Initialize custom cut type slider control
-     *
-     * Sets up visual slider with click handlers for cut type selection.
-     * Calculates option widths and connects UI to hidden form input.
-     * Provides touch-friendly alternative to standard dropdowns.
+     * Get selected elements info from modal dialog
      */
-    initializeCutTypeSlider() {
-        this.cutTypeOptions = document.querySelectorAll('.cut-type-option');
-        this.cutTypeIndicator = document.querySelector('.cut-type-indicator');
-        this.cutTypeInput = document.getElementById('cutType');
-        this.optionWidth = 100 / this.cutTypeOptions.length;
-
-        // Connect click handlers for each slider option
-        this.cutTypeOptions.forEach((option, index) => {
-            option.addEventListener('click', () => this.selectCutType(index));
-        });
+    getSelectedElementsInfo() {
+        return this.modalDialog.getSelectedElementsInfo();
     }
 
-    /**
-     * Select cut type option and update slider visual state
-     *
-     * Updates slider position, active option highlighting, and underlying
-     * form input value. Provides immediate visual feedback for selection.
-     *
-     * @param {number} index - Zero-based index of cut type option
-     */
-    selectCutType(index) {
-        // Clear previous selection
-        this.cutTypeOptions.forEach(option => option.classList.remove('active'));
-        this.cutTypeOptions[index].classList.add('active');
 
-        // Update slider visual position
-        this.updateCutTypeUI(index);
-
-        // Set hidden form input value
-        this.cutTypeInput.value = this.cutTypeOptions[index].getAttribute('data-type');
-    }
-
-    /**
-     * Set cut type slider position based on stored value
-     *
-     * Finds slider option matching the provided cut type value and
-     * positions slider accordingly. Used when populating form with
-     * existing attribute values.
-     *
-     * @param {string} cutType - Cut type value to match (e.g., 'score', 'cut')
-     */
-    setCutTypeSlider(cutType) {
-        const option = Array.from(this.cutTypeOptions).find(opt =>
-            opt.getAttribute('data-type') === cutType
-        );
-
-        if (option) {
-            const index = Array.from(this.cutTypeOptions).indexOf(option);
-            this.selectCutType(index);
-        }
-    }
-
-    /**
-     * Update cut type slider visual indicator position
-     *
-     * Animates slider indicator to match active option position.
-     * Calculates position and width based on option layout.
-     *
-     * @param {number} activeIndex - Index of currently selected option
-     */
-    updateCutTypeUI(activeIndex) {
-        if (this.cutTypeIndicator) {
-            this.cutTypeIndicator.style.left = `${activeIndex * this.optionWidth}%`;
-            this.cutTypeIndicator.style.width = `${this.optionWidth}%`;
-        }
-    }
 
     /**
      * Create tooltip DOM element for contextual information display
@@ -295,7 +144,7 @@ class UIComponents {
         const attributes = this.getShaperAttributes(path);
 
         if (attributes.length === 0) {
-            content += '<div class="no-attributes">No shaper attributes defined<br>- click to change</div>';
+            content += '<div class="no-attributes">No Shaper Attributes Defined<br>- Click to Select Path<br>- Double Click to Plan Cut</div>';
         } else {
             attributes.forEach(attr => {
                 content += `
@@ -419,48 +268,18 @@ class UIComponents {
             this.tooltip.style.display = 'block';
         }
 
-        // Measure tooltip dimensions for positioning calculations
-        const tooltipRect = this.tooltip.getBoundingClientRect();
-        const tooltipWidth = tooltipRect.width;
-        const tooltipHeight = tooltipRect.height;
-
-        // Restore previous visibility state
+        // Restore previous visibility state for accurate measurements
         if (wasHidden) {
             this.tooltip.style.display = 'none';
             this.tooltip.style.visibility = 'visible';
         }
 
-        // Get viewport boundaries
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // Start with default positioning (bottom-right of cursor)
-        let left = mouseX + 10;
-        let top = mouseY - 10;
-
-        // Adjust horizontally if tooltip exceeds right viewport edge
-        if (left + tooltipWidth > viewportWidth) {
-            left = mouseX - tooltipWidth - 10; // Position left of cursor
-        }
-
-        // Adjust vertically if tooltip exceeds bottom viewport edge
-        if (top + tooltipHeight > viewportHeight) {
-            top = mouseY - tooltipHeight - 10; // Position above cursor
-        }
-
-        // Ensure tooltip stays within left viewport boundary
-        if (left < 0) {
-            left = 5; // Small margin from edge
-        }
-
-        // Ensure tooltip stays within top viewport boundary
-        if (top < 0) {
-            top = 5; // Small margin from edge
-        }
-
-        // Apply calculated position
-        this.tooltip.style.left = `${left}px`;
-        this.tooltip.style.top = `${top}px`;
+        // Use DRY utility for smart positioning with bounds checking
+        DRYUtilities.positionElement(this.tooltip, mouseX, mouseY, {
+            offsetX: 10,
+            offsetY: -10,
+            margin: 5
+        });
     }
 
     /**
@@ -576,6 +395,10 @@ class UIComponents {
      * @param {KeyboardEvent} event - Keyboard event to process
      */
     handleKeyDown(event) {
+        // Skip if user is typing in input fields
+        const tag = (event.target && event.target.tagName) ? event.target.tagName.toLowerCase() : '';
+        const isInputActive = tag === 'input' || tag === 'textarea' || event.target.isContentEditable;
+
         // Escape key always closes modal
         if (event.key === 'Escape') {
             if (this.modal && this.modal.style.display !== 'none') {
@@ -590,6 +413,32 @@ class UIComponents {
                 if (event.target.tagName !== 'INPUT') {
                     this.saveAttributes();
                 }
+            }
+        }
+
+        // Ctrl/Cmd+A: Select all elements with app-id
+        if ((event.metaKey || event.ctrlKey) && event.key === 'a' && !isInputActive) {
+            event.preventDefault();
+            this.selectAllElements();
+        }
+    }
+
+    /**
+     * Select all elements with data-app-id attribute
+     * Called by Ctrl/Cmd+A shortcut
+     */
+    selectAllElements() {
+        if (this.elementManager) {
+            // Clear current selection first
+            this.elementManager.clearSelection();
+
+            // Find all elements with app-id in the current SVG
+            const svgContent = document.getElementById('svgContent');
+            if (svgContent) {
+                const allElements = svgContent.querySelectorAll('[data-app-id]');
+                allElements.forEach(element => {
+                    this.elementManager.selectPath(element, true); // true = multiselect mode
+                });
             }
         }
     }
@@ -619,6 +468,8 @@ class UIComponents {
         this.lastMouseX = x;
         this.lastMouseY = y;
     }
+
+
 
     /**
      * Initialize custom context menu with backdrop and menu items
@@ -653,7 +504,7 @@ class UIComponents {
                 icon: 'icons/export.svg'
             },
             {
-                label: 'Copy to Clipboard',
+                label: 'Copy SVG to Clipboard',
                 action: 'copy',
                 icon: 'icons/clipboard.svg'
             },
@@ -702,6 +553,15 @@ class UIComponents {
                 menuItem.appendChild(iconImg);
                 menuItem.appendChild(label);
 
+                // Add batch counter for Cut Planning button
+                if (item.action === 'editAttributes') {
+                    const batchCounter = document.createElement('span');
+                    batchCounter.className = 'context-menu-batch-counter';
+                    batchCounter.id = 'contextMenuBatchCounter';
+                    batchCounter.textContent = '1';
+                    menuItem.appendChild(batchCounter);
+                }
+
                 // Connect click handler for menu action
                 menuItem.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -740,6 +600,24 @@ class UIComponents {
                     return; // Suppress context menu in excluded areas
                 }
                 element = element.parentElement;
+            }
+
+            // Use currently hovered path from existing hover system
+            const hoveredPath = this.elementManager ? this.elementManager.getHoveredPath() : null;
+            if (hoveredPath) {
+                // Store the right-clicked path for temporary selection
+                this.rightClickedPath = hoveredPath;
+
+                // Add to selection if not already selected
+                if (!this.elementManager.getSelectedPaths().has(hoveredPath)) {
+                    this.elementManager.selectPath(hoveredPath, true); // true for multi-select
+                    this.isTemporarySelection = true;
+                } else {
+                    this.isTemporarySelection = false;
+                }
+            } else {
+                this.rightClickedPath = null;
+                this.isTemporarySelection = false;
             }
 
             // Show custom context menu only in SVG viewport areas
@@ -784,26 +662,14 @@ class UIComponents {
         // Activate backdrop for modal behavior
         this.contextMenuBackdrop.style.display = 'block';
 
-        // Position menu at cursor location
-        this.contextMenu.style.left = `${x}px`;
-        this.contextMenu.style.top = `${y}px`;
+        // Show context menu and position with bounds checking
         this.contextMenu.style.display = 'block';
         this.contextMenuVisible = true;
 
-        // Prevent menu from extending beyond viewport boundaries
-        const rect = this.contextMenu.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // Adjust horizontal position if needed
-        if (rect.right > viewportWidth) {
-            this.contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
-        }
-
-        // Adjust vertical position if needed
-        if (rect.bottom > viewportHeight) {
-            this.contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
-        }
+        // Use DRY utility for smart positioning with bounds checking
+        DRYUtilities.positionElement(this.contextMenu, x, y, {
+            margin: 10
+        });
     }
 
     /**
@@ -817,6 +683,13 @@ class UIComponents {
             this.contextMenu.style.display = 'none';
             this.contextMenuBackdrop.style.display = 'none';
             this.contextMenuVisible = false;
+
+            // Remove temporary selection if it was added by right-click
+            if (this.isTemporarySelection && this.rightClickedPath && this.elementManager) {
+                this.elementManager.deselectPath(this.rightClickedPath);
+                this.isTemporarySelection = false;
+                this.rightClickedPath = null;
+            }
         }
     }
 
@@ -830,6 +703,7 @@ class UIComponents {
 
         const selectedPaths = this.elementManager.getSelectedPaths();
         const hasSelection = selectedPaths && selectedPaths.size > 0;
+        const selectionCount = selectedPaths ? selectedPaths.size : 0;
 
         // Find and update the Plan Cuts menu item
         const planCutsItem = this.contextMenu.querySelector('[data-action="editAttributes"]');
@@ -842,6 +716,12 @@ class UIComponents {
                 planCutsItem.classList.add('disabled');
                 planCutsItem.style.opacity = '0.5';
                 planCutsItem.style.pointerEvents = 'none';
+            }
+
+            // Update batch counter
+            const batchCounter = planCutsItem.querySelector('.context-menu-batch-counter');
+            if (batchCounter) {
+                batchCounter.textContent = selectionCount > 0 ? selectionCount : '0';
             }
         }
     }
@@ -857,6 +737,10 @@ class UIComponents {
         // Callback connections established in svgShaperEditor.js setupModuleConnections()
         switch (action) {
             case 'editAttributes':
+                // Keep temporary selection when opening planning dialog
+                if (this.isTemporarySelection) {
+                    this.isTemporarySelection = false; // Convert to permanent selection
+                }
                 if (this.onEditAttributes) this.onEditAttributes();
                 break;
             case 'export':

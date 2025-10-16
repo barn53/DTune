@@ -6,13 +6,18 @@
 }
 
 body {
-    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: transparent;
     min-height: 100vh;
     color: #333;
     margin: 0;
         padding: 0;
         overflow: hidden;
+}
+
+/* Ensure consistent font across all UI elements */
+input, button, select, textarea, label, .btn, .tooltip, .context-menu {
+    font-family: inherit;
 }
 
 /* Utility Classes */
@@ -731,219 +736,15 @@ header p {
 
 /* Remove redundant zoom-btn hover/active since they inherit from floating-btn */
 
-/* Modal */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
-    max-width: 650px;
-    width: 90%;
-    max-height: 80vh;
-    overflow: hidden;
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px) scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.modal-header {
-    padding: 20px 20px 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-header h3 {
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: #333;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #999;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-}
-
-.modal-close:hover {
-    background: #f5f5f5;
-    color: #333;
-}
-
-.modal-body {
-    padding: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.path-info {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-    color: #333;
-    font-size: 14px;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    /* Uses utility classes: .border-light .transition-fast */
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Placeholder styling */
-.form-group input::placeholder,
-.gutter-input-container input::placeholder,
-.toolbar-right input[type="text"]::placeholder {
-    color: #adb5bd;
-    opacity: 0.7;
-}
-
-.input-with-unit {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-}
-
-.input-with-unit input {
-    padding-right: 35px !important;
-    width: 100%;
-}
-
-.input-unit {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 12px;
-    color: #6c757d;
-    font-weight: 600;
-    pointer-events: none;
-    background: #f8f9fa;
-    padding: 2px 4px;
-    border-radius: 3px;
-}
-
-.modal-footer {
-    padding: 20px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-/* Cut Type Slider */
-.cut-type-slider {
-    position: relative;
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 4px;
-    margin-top: 8px;
-    overflow: hidden;
-}
-
-.cut-type-options {
-    display: flex;
-    position: relative;
-    z-index: 2;
-}
-
-.cut-type-option {
-    flex: 1;
-    padding: 10px 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #6c757d;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    user-select: none;
-    text-align: center;
-    background: transparent;
-    border: none;
-    outline: none;
-}
-
-.cut-type-option:hover {
-    color: #495057;
-}
-
-.cut-type-option.active {
-    color: white;
-}
-
-.cut-type-indicator {
-    position: absolute;
-    top: 4px;
-    left: 0;
-    height: calc(100% - 8px);
-    background: linear-gradient(145deg, #007bff, #0056b3);
-    border-radius: 4px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
-    z-index: 1;
-}
-
 /* Tooltip for shaper attributes */
 .shaper-tooltip {
     position: absolute;
-    background: linear-gradient(145deg, #2c3e50, #34495e);
+    background: linear-gradient(145deg, #1a252f, #2c3e50);
     color: white;
     padding: 12px 16px;
     border-radius: 8px;
-    font-size: 13px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 15px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     font-weight: 500;
     line-height: 1.5;
     max-width: 280px;
@@ -1285,18 +1086,18 @@ header p {
 
 .custom-context-menu {
     position: fixed;
-    background: linear-gradient(145deg, #2c3e50, #34495e);
+    background: linear-gradient(145deg, #1a252f, #2c3e50);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     backdrop-filter: blur(12px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     padding: 12px 8px;
-    min-width: 200px;
-    max-width: 200px;
+    min-width: 280px;
+    max-width: 280px;
     z-index: 10000;
     display: none;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    font-size: 13px;
+    font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 15px;
     animation: contextMenuAppear 0.2s ease-out;
 }
 
@@ -1305,26 +1106,27 @@ header p {
     align-items: center;
     justify-content: flex-start;
     width: calc(100% - 12px);
-    padding: 10px 14px;
-    margin: 6px 6px;
-    border: none;
+    margin: 12px 6px;
+    border: 1px solid transparent;
     border-radius: 8px;
-    background: rgba(52, 73, 94, 0.6);
+    background: rgb(75, 85, 95);
     color: #ecf0f1;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    padding: 8px 8px;
+    letter-spacing: 0.5px;
 }
 
 .context-menu-item:hover {
     transform: scale(1.02);
-    background: rgba(52, 152, 219, 0.8);
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid #3498db;
     color: white;
-    border: 1px solid rgba(52, 152, 219, 0.3);
 }
 
 .context-menu-item:hover .context-menu-icon {
@@ -1333,7 +1135,9 @@ header p {
 
 .context-menu-item:active {
     transform: scale(0.98);
-    background: rgba(41, 128, 185, 0.9);
+    background: rgba(52, 152, 219, 0.4);
+    border: 1px solid #3498db;
+    color: white;
 }
 
 .context-menu-item.disabled {
@@ -1356,9 +1160,26 @@ header p {
     filter: brightness(0) invert(1);
 }
 
+/* Context Menu Batch Counter */
+.context-menu-batch-counter {
+    background: rgba(243, 156, 18, 0.15);
+    border: 1px solid #f39c12;
+    color: #f39c12;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: auto;
+    min-width: 20px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .context-menu-separator {
-    height: 1px;
-    background: rgba(236, 240, 241, 0.3);
+    height: 2px;
+    background: #3498db;
     margin: 8px 12px;
     border: none;
 }

@@ -26,136 +26,96 @@ class AttributeSystem {
     }
 
     /**
-     * Extract shaper attributes from an SVG element's namespace attributes
-     * This method reads directly from the DOM element's namespaced attributes
-     * @param {Element} element - SVG element to extract attributes from
-     * @returns {Object} Map of attribute names to values
-     */
-    getShaperAttributes(element) {
-        const attributes = {};
-
-        ShaperConstants.ALL_ATTRIBUTES.forEach(attr => {
-            const value = element.getAttributeNS(ShaperConstants.NAMESPACE, attr);
-            if (value) {
-                attributes[attr] = value;
-            }
-        });
-
-        return attributes;
-    }
-
-    /**
-     * Set a namespaced shaper attribute on an SVG element
-     * Uses ShaperUtils to ensure proper namespace handling and SVG compliance
-     * @param {Element} element - Target SVG element
-     * @param {string} name - Attribute name (without namespace prefix)
-     * @param {string} value - Attribute value to set
-     */
-    setShaperAttribute(element, name, value) {
-        ShaperUtils.setNamespacedAttribute(element, name, value);
-    }
-
-    /**
      * Save all attributes from the modal form to element data
      *
      * This is the main method called when user clicks "Save" in the attribute modal.
-     * It processes both cut type and measurement attributes, storing them in the
-     * element data map rather than directly in the SVG DOM (for export flexibility).
+     * It processes both cut type (string) and measurement attributes (numbers with units).
+     * Supports both single and multi-element editing with no-modify functionality.
      *
-     * Implementation notes:
-     * - Validates that a path is selected before proceeding
-     * - Stores measurement values as pixels internally for unit-agnostic storage
-     * - Updates SVG data for export preparation
-     * - Does NOT modify the master SVG DOM directly during editing
+     * The implementation stores numeric values in pixels to enable lossless unit conversions.
+     * Cut type is stored as a string directly. Empty values are removed from element data
+     * to keep the data structure clean.
      */
     saveAttributes() {
-        const selectedPath = this.getSelectedPath();
-        if (!selectedPath) {
-            console.error('No selected path found');
-            return;
+        console.log('=== SAVING ATTRIBUTES - ELEMENT DATA TRACE ===');
+
+        // Get form values (excluding no-modify fields) from modal dialog
+        const formValues = window.globalModalDialog?.getFormValues() || {};
+        console.log('Form values from modal (excluding no-modify):', formValues);
+
+        // Check if we're in multi-element mode
+        const selectedElementsInfo = window.globalModalDialog?.getSelectedElementsInfo();
+        console.log('Selected elements info from modal:', selectedElementsInfo);
+
+        if (selectedElementsInfo && selectedElementsInfo.length > 1) {
+            console.log(`MULTI-element save for ${selectedElementsInfo.length} elements`);
+            // Multi-element save
+            this.saveAttributesForMultipleElements(selectedElementsInfo, formValues);
+        } else {
+            console.log('SINGLE-element save');
+            // Single element save
+            const selectedPath = this.getSelectedPath();
+            if (!selectedPath) {
+                console.error('No selected path found');
+                return;
+            }
+            this.saveAttributesForSingleElement(selectedPath, formValues);
         }
 
-        // Process cut type (string attribute, no unit conversion needed)
-        this.saveCutTypeAttribute(selectedPath);
-
-        // Process measurement attributes (convert to pixels for internal storage)
-        this.saveMeasurementAttributes(selectedPath);
-
-        // Important: Shaper attributes are kept only in elementData during editing
-        // This allows for unit conversions and tooltips without polluting the master SVG
-        // Attributes will be properly formatted and added to SVG only during export
-
+        console.log('=== SAVE COMPLETE - UPDATING SVG DATA ===');
         // Update internal SVG data representation for export preparation
         this.fileManager.updateSVGData();
 
         // MetaData automatically handles persistence when element data changes
+        console.log('=== END SAVING ATTRIBUTES ===');
     }
 
     /**
-     * Save cut type attribute from the modal form to element data
-     *
-     * Cut type is a string attribute (online, inside, outside, pocket, guide)
-     * that doesn't require unit conversion. Stored directly in element data.
-     *
-     * @param {Element} element - SVG element to save attribute for
-     */
-    saveCutTypeAttribute(element) {
-        const cutType = document.getElementById('cutType').value.trim();
-
-        // Get element data object and ensure shaper attributes section exists
-        const dimensions = this.elementManager.getElementDimensions(element);
-        if (!dimensions.shaperAttributes) {
-            dimensions.shaperAttributes = {};
-        }
-
-        // Remove empty or 'none' values, otherwise store the cut type
-        if (ShaperConstants.isEmptyValue(cutType) || cutType === 'none') {
-            delete dimensions.shaperAttributes['shaper:cutType'];
-        } else {
-            dimensions.shaperAttributes['shaper:cutType'] = cutType;
-        }
-    }
-
-    /**
-     * Save measurement attributes from modal form, converting to pixels for storage
-     *
-     * This method handles cutDepth, cutOffset, and toolDia attributes that have
-     * numeric values with units. The implementation stores values as pixels internally
-     * to allow lossless unit conversions during editing.
-     *
-     * Implementation details:
-     * - Reads values from DOM input fields
-     * - Strips units and converts to numeric values
-     * - Converts from current display units to pixels for storage
-     * - Removes empty values from element data
+     * Save attributes for a single element
      *
      * @param {Element} element - SVG element to save attributes for
+     * @param {Object} formValues - Form values from modal dialog (excluding no-modify fields)
      */
-    saveMeasurementAttributes(element) {
-        // Get element data object and ensure shaper attributes section exists
-        const dimensions = this.elementManager.getElementDimensions(element);
-        if (!dimensions.shaperAttributes) {
-            dimensions.shaperAttributes = {};
-        }
+    saveAttributesForSingleElement(element, formValues) {
+        // Process cut type (string attribute, no unit conversion needed)
+        this.saveCutTypeAttribute(element, formValues);
 
-        // Process each measurement attribute (cutDepth, cutOffset, toolDia)
-        ShaperConstants.MEASUREMENT_ATTRIBUTES.forEach(attr => {
-            const input = document.getElementById(attr);
-            const inputValue = input.value.trim();
-            const attrName = `shaper:${attr}`;
+        // Process measurement attributes (convert to pixels for internal storage)
+        this.saveMeasurementAttributes(element, formValues);
+    }
 
-            if (ShaperConstants.isEmptyValue(inputValue)) {
-                // Remove empty values from element data
-                delete dimensions.shaperAttributes[attrName];
-            } else {
-                // Convert display value (with current units) to pixels for internal storage
-                const numValue = this.measurementSystem.stripUnitsFromValue(inputValue);
-                if (!isNaN(numValue)) {
-                    const pixelValue = this.measurementSystem.unitsToPixels(numValue);
-                    dimensions.shaperAttributes[attrName] = pixelValue.toString();
-                }
-            }
+    /**
+     * Save attributes for multiple elements with no-modify support
+     *
+     * @param {Array} selectedElementsInfo - Array of selected elements
+     * @param {Object} formValues - Form values from modal dialog (excluding no-modify fields)
+     */
+    saveAttributesForMultipleElements(selectedElementsInfo, formValues) {
+        console.log('--- Multi-element save process ---');
+        console.log('Form values to save:', formValues);
+
+        selectedElementsInfo.forEach((elementInfo, index) => {
+            const element = elementInfo.element;
+            const appId = element.dataset.appId;
+
+            console.log(`Saving element ${index + 1}/${selectedElementsInfo.length} (appId: ${appId})`);
+
+            // Get current element data BEFORE saving
+            const dimensionsBefore = this.elementManager.getElementDimensions(element);
+            console.log('  Element data BEFORE save:', dimensionsBefore);
+
+            // Save cut type if provided in form values
+            this.saveCutTypeAttribute(element, formValues);
+
+            // Save measurement attributes if provided in form values
+            this.saveMeasurementAttributes(element, formValues);
+
+            // Get element data AFTER saving
+            const dimensionsAfter = this.elementManager.getElementDimensions(element);
+            console.log('  Element data AFTER save:', dimensionsAfter);
         });
+
+        console.log('--- End multi-element save process ---');
     }
 
     /**
@@ -270,32 +230,102 @@ class AttributeSystem {
     }
 
     /**
-     * Remove all shaper attributes from an SVG element
-     *
-     * Cleans up both the DOM element and element data storage.
-     * Used when resetting or clearing shaper data from elements.
-     *
-     * @param {Element} element - SVG element to clear attributes from
+     * Extract shaper attributes from an SVG element's namespace attributes
+     * This method reads directly from the DOM element's namespaced attributes
+     * @param {Element} element - SVG element to extract attributes from
+     * @returns {Object} Map of attribute names to values
      */
-    clearShaperAttributes(element) {
-        ShaperUtils.removeAllRawAttributes(element);
+    getShaperAttributes(element) {
+        const attributes = {};
+
+        ShaperConstants.ALL_ATTRIBUTES.forEach(attr => {
+            const value = element.getAttributeNS(ShaperConstants.NAMESPACE, attr);
+            if (value) {
+                attributes[attr] = value;
+            }
+        });
+
+        return attributes;
     }
 
     /**
-     * Copy all shaper attributes from one element to another
-     *
-     * Useful for duplicating shaper configuration between similar elements.
-     * Copies both the DOM attributes and internal element data.
-     *
-     * @param {Element} fromElement - Source element with attributes to copy
-     * @param {Element} toElement - Target element to receive copied attributes
+     * Set a namespaced shaper attribute on an SVG element
+     * Uses ShaperUtils to ensure proper namespace handling and SVG compliance
+     * @param {Element} element - Target SVG element
+     * @param {string} name - Attribute name (without namespace prefix)
+     * @param {string} value - Attribute value to set
      */
-    copyShaperAttributes(fromElement, toElement) {
-        const attributes = this.getShaperAttributes(fromElement);
+    setShaperAttribute(element, name, value) {
+        ShaperUtils.setNamespacedAttribute(element, name, value);
+    }
 
-        // Copy each attribute to the target element
-        Object.entries(attributes).forEach(([key, value]) => {
-            this.setShaperAttribute(toElement, key, value);
+    /**
+     * Save cut type attribute from the modal form to element data
+     *
+     * Cut type is a string attribute (online, inside, outside, pocket, guide)
+     * that doesn't require unit conversion. Stored directly in element data.
+     *
+     * @param {Element} element - SVG element to save attribute for
+     * @param {Object} formValues - Form values from modal dialog (excluding no-modify fields)
+     */
+    saveCutTypeAttribute(element, formValues) {
+        // Get element data object and ensure shaper attributes section exists
+        const dimensions = this.elementManager.getElementDimensions(element);
+        if (!dimensions.shaperAttributes) {
+            dimensions.shaperAttributes = {};
+        }
+
+        // Use cutType from formValues if provided, otherwise skip (no-modify case)
+        if (formValues && 'cutType' in formValues) {
+            const cutType = formValues.cutType;
+            if (ShaperConstants.isEmptyValue(cutType) || cutType === 'none') {
+                delete dimensions.shaperAttributes['shaper:cutType'];
+            } else {
+                dimensions.shaperAttributes['shaper:cutType'] = cutType;
+            }
+        }
+    }
+
+    /**
+     * Save measurement attributes from modal form, converting to pixels for storage
+     *
+     * This method handles cutDepth, cutOffset, and toolDia attributes that have
+     * numeric values with units. The implementation stores values as pixels internally
+     * to allow lossless unit conversions during editing.
+     *
+     * @param {Element} element - SVG element to save attributes for
+     * @param {Object} formValues - Form values from modal dialog (excluding no-modify fields)
+     */
+    saveMeasurementAttributes(element, formValues) {
+        // Get element data object and ensure shaper attributes section exists
+        const dimensions = this.elementManager.getElementDimensions(element);
+        if (!dimensions.shaperAttributes) {
+            dimensions.shaperAttributes = {};
+        }
+
+        // Process each measurement attribute (cutDepth, cutOffset, toolDia)
+        ShaperConstants.MEASUREMENT_ATTRIBUTES.forEach(attr => {
+            const attrName = `shaper:${attr}`;
+
+            // Use value from formValues if provided, otherwise skip (no-modify case)
+            if (formValues && attr in formValues) {
+                const inputValue = formValues[attr];
+
+                if (ShaperConstants.isEmptyValue(inputValue)) {
+                    // Remove empty values from element data
+                    delete dimensions.shaperAttributes[attrName];
+                } else {
+                    // Get input element to access raw value
+                    const input = document.getElementById(attr);
+                    if (input) {
+                        const rawValueMm = parseFloat(input.dataset.rawValueMm);
+                        if (!isNaN(rawValueMm)) {
+                            const pixelValue = this.measurementSystem.convertBetweenUnits(rawValueMm, 'mm', 'pixels');
+                            dimensions.shaperAttributes[attrName] = pixelValue.toString();
+                        }
+                    }
+                }
+            }
         });
     }
 
